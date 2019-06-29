@@ -247,7 +247,7 @@ static process_file_status_t process_cap_file(capture_file *, char *, int, gbool
 
 static gboolean process_packet_single_pass(capture_file *cf,
     epan_dissect_t *edt, gint64 offset, wtap_rec *rec, Buffer *buf,
-    guint tap_flags);
+    guint tap_flags, guint64 nump);
 static void show_print_file_io_error(int err);
 static gboolean write_preamble(capture_file *cf);
 static gboolean print_packet(capture_file *cf, epan_dissect_t *edt);
@@ -2697,6 +2697,7 @@ capture_input_new_packets(capture_session *cap_session, int to_read)
   capture_file *cf = cap_session->cf;
   gboolean      filtering_tap_listeners;
   guint         tap_flags;
+  gint64        nump = 0;
 
 #ifdef SIGINFO
   /*
@@ -2764,7 +2765,7 @@ capture_input_new_packets(capture_session *cap_session, int to_read)
         cf->provider.wth = NULL;
       } else {
         ret = process_packet_single_pass(cf, edt, data_offset, &rec, &buf,
-                                         tap_flags);
+                                         tap_flags, nump);
       }
       if (ret != FALSE) {
         /* packet successfully read and gone through the "Read Filter" */
@@ -3419,7 +3420,7 @@ process_cap_file_single_pass(capture_file *cf, wtap_dumper *pdh,
 
     reset_epan_mem(cf, edt, create_proto_tree, print_packet_info && print_details);
 
-    if (process_packet_single_pass(cf, edt, data_offset, &rec, &buf, tap_flags)) {
+    if (process_packet_single_pass(cf, edt, data_offset, &rec, &buf, tap_flags, framenum)) {
       /* Either there's no read filtering or this packet passed the
          filter, so, if we're writing to a capture file, write
          this packet out. */
@@ -3706,28 +3707,15 @@ out:
 
 static gboolean
 process_packet_single_pass(capture_file *cf, epan_dissect_t *edt, gint64 offset,
-                           wtap_rec *rec, Buffer *buf, guint tap_flags)
+                           wtap_rec *rec, Buffer *buf, guint tap_flags, guint64 nump)
 {
   frame_data      fdata;
   column_info    *cinfo;
   gboolean        passed;
 
-  gboolean dissect;
-  gboolean output_packet;
-
-  /* Count this packet. */
-  cf->count++;
-
-  if (!selected_for_dissect(cf->count))
-    dissect = FALSE;
-  else
-    dissect = TRUE;
-
-  if (printonly(cf->count))
-    output_packet = TRUE;
-  else
-    output_packet = FALSE;
-
+  gboolean dissect = selected_for_dissect(nump);
+  gboolean output_packet = printonly(nump);
+  
   /* Count this packet. */
   cf->count++;
 
@@ -3788,7 +3776,7 @@ process_packet_single_pass(capture_file *cf, epan_dissect_t *edt, gint64 offset,
       passed = dfilter_apply_edt(cf->dfcode, edt);
   }
 
-  if (passed && dissect) {
+  if (passed && output_packet) {
     frame_data_set_after_dissect(&fdata, &cum_bytes);
 
     /* Process this packet. */

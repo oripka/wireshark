@@ -32,6 +32,7 @@ get_nonzero_guint32(const char *string, const char *name);
 extern double
 get_positive_double(const char *string, const char *name);
 
+void parse_add_print_only(const char *buf, const jsmntok_t *tokens, int count);
 int selected_for_dissect(guint recno);
 int printonly(guint val);
 void add_print_only(unsigned int val);

@@ -13,6 +13,12 @@ real	0m3,022s
 user	0m2,877s
 sys	0m0,144s
 
+with sharkd
+load: filename=test.pcap
+load time = 0.123426 seconds
+frame time = 0.000500 seconds
+frame time = 0.002147 seconds
+
 
 mkdir build
 cd build

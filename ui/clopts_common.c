@@ -129,6 +129,8 @@ gboolean use_selections = FALSE;
 static gboolean print_only = FALSE;
 static unsigned int print_only_packet = 0;
 
+int verbose=0;
+
 static const char *
 json_find_attr(const char *buf, const jsmntok_t *tokens, int count, const char *attr)
 {
@@ -147,15 +149,31 @@ json_find_attr(const char *buf, const jsmntok_t *tokens, int count, const char *
 }
 
 void
+parse_add_print_only(const char *buf, const jsmntok_t *tokens, int count)
+{
+  char *tok_print = (char *)json_find_attr(buf, tokens, count, "print");
+	
+  add_print_only(get_positive_int(tok_print, "packet number"));
+}
+
+void
 add_print_only(unsigned int val){
-    print_only = TRUE;
-    print_only_packet = val;
+  if(verbose)
+    fprintf(stderr, "print: frame=%i\n", val);
+  
+  print_only = TRUE;
+   print_only_packet = val;
 }
 
 int printonly(guint val){
+  int print= FALSE;
     if(val == print_only_packet)
-      return TRUE;
-    return FALSE;
+      print = TRUE;
+
+    if(verbose)
+      fprintf(stderr,"Selected for print %i \n", val);
+
+    return print;
 }
 
 /* Add a selection item, a simple parser for now */
@@ -172,26 +190,26 @@ add_selection(char *sel, guint *max_selection)
     return (FALSE);
   }
 
-  // if (verbose)
-  //   fprintf(stderr, "Add_Selected: %s\n", sel);
+  if (verbose)
+    fprintf(stderr, "Add_Selected: %s\n", sel);
 
   if ((locn = strchr(sel, '-')) == NULL)
   { /* No dash, so a single number? */
-    // if (verbose)
-    //   fprintf(stderr, "Not inclusive ...");
+    if (verbose)
+      fprintf(stderr, "Not inclusive ...");
 
     selectfrm[max_selected].inclusive = FALSE;
     ws_strtou32(sel, NULL, &(selectfrm[max_selected].first));
     if (selectfrm[max_selected].first > *max_selection)
       *max_selection = selectfrm[max_selected].first;
 
-    // if (verbose)
-    //   fprintf(stderr, " %u\n", selectfrm[max_selected].first);
+    if (verbose)
+      fprintf(stderr, " %u\n", selectfrm[max_selected].first);
   }
   else
   {
-    // if (verbose)
-    //   fprintf(stderr, "Inclusive ...");
+    if (verbose)
+      fprintf(stderr, "Inclusive ...");
 
     *locn = '\0'; /* split the range */
     next = locn + 1;
@@ -207,9 +225,9 @@ add_selection(char *sel, guint *max_selection)
     else if (selectfrm[max_selected].second > *max_selection)
       *max_selection = selectfrm[max_selected].second;
 
-    // if (verbose)
-    //   fprintf(stderr, " %u, %u\n", selectfrm[max_selected].first,
-    //           selectfrm[max_selected].second);
+    if (verbose)
+      fprintf(stderr, " %u, %u\n", selectfrm[max_selected].first,
+              selectfrm[max_selected].second);
   }
 
   max_selected++;
@@ -221,23 +239,33 @@ add_selection(char *sel, guint *max_selection)
 int
 selected_for_dissect(guint recno)
 {
+  int selected = 0;
   guint i;
+
+  if(verbose)
+    fprintf(stderr,"Input is %i \n", recno);
 
   for (i = 0; i < max_selected; i++)
   {
     if (selectfrm[i].inclusive)
     {
       if (selectfrm[i].first <= recno && selectfrm[i].second >= recno)
-        return 1;
+        selected = 1;
     }
     else
     {
       if (recno == selectfrm[i].first)
-        return 1;
+        selected = 1;
     }
   }
 
-  return 0;
+  if(selected && verbose){
+    fprintf(stderr,"Selected for dissection %i \n", recno);
+  } else {
+    ;
+    // fprintf(stderr,"Not selected for dissection %i \n", recno);
+  }
+  return selected;
 }
 
 void add_string_selection(char * sel) {
@@ -245,7 +273,6 @@ void add_string_selection(char * sel) {
     pch = strtok(sel, " ");
     while (pch != NULL)
     {
-        // printf("%s\n", pch);
         add_selection(pch, &max_packet_number);
         pch = strtok(NULL, " ");
     }
@@ -257,7 +284,8 @@ parse_selected_frames(const char *buf, const jsmntok_t *tokens, int count)
 	char *pch;
 
 	char *tok_frames = (char *)json_find_attr(buf, tokens, count, "frames");
-	fprintf(stderr, "decode: frames=%s\n", tok_frames);
+  if(verbose)
+	  fprintf(stderr, "decode: frames=%s\n", tok_frames);
 
 	if (tok_frames == NULL)
 	{

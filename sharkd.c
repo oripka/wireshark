@@ -233,29 +233,13 @@ sharkd_epan_new(capture_file *cf)
 
 static gboolean
 process_packet(capture_file *cf, epan_dissect_t *edt,
-               gint64 offset, wtap_rec *rec, Buffer *buf)
+               gint64 offset, wtap_rec *rec, Buffer *buf, gint64 nump)
 {
   frame_data     fdlocal;
   gboolean       passed;
 
-  gboolean dissect;
-  gboolean output_packet;
-
-  /* Count this packet. */
-  cf->count++;
-
-  if (!selected_for_dissect(cf->count))
-    dissect = FALSE;
-  else
-    dissect = TRUE;
-
-  if (printonly(cf->count))
-    output_packet = TRUE;
-  else
-    output_packet = FALSE;
-    
-  output_packet = TRUE;
-  dissect = TRUE;
+  gboolean dissect = selected_for_dissect(nump);
+  gboolean output_packet = printonly(nump);
 
   /* If we're not running a display filter and we're not printing any
      packet information, we don't need to do a dissection. This means
@@ -342,6 +326,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
   wtap_rec     rec;
   Buffer       buf;
   epan_dissect_t *edt = NULL;
+  gint64       nump = 1;
 
   {
     /* Allocate a frame_data_sequence for all the frames. */
@@ -373,7 +358,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
     ws_buffer_init(&buf, 1514);
 
     while (wtap_read(cf->provider.wth, &rec, &buf, &err, &err_info, &data_offset)) {
-      if (process_packet(cf, edt, data_offset, &rec, &buf)) {
+      if (process_packet(cf, edt, data_offset, &rec, &buf, nump)) {
         /* Stop reading if we have the maximum number of packets;
          * When the -c option has not been used, max_packet_count
          * starts at 0, which practically means, never stop reading.
@@ -384,6 +369,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
           break;
         }
       }
+      nump++;
     }
 
     if (edt) {

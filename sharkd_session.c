@@ -69,6 +69,8 @@
 #include <wsutil/pint.h>
 #include <wsutil/strtoi.h>
 
+#include <ui/clopts_common.h>
+
 #include "globals.h"
 
 #include "sharkd.h"
@@ -535,11 +537,21 @@ sharkd_session_process_info(void)
  * Output object with attributes:
  *   (m) err - error code
  */
+
+
+#include <sys/time.h>
+
 static void
 sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 {
+
 	const char *tok_file = json_find_attr(buf, tokens, count, "file");
 	int err = 0;
+
+
+
+	parse_selected_frames(buf, tokens, count);
+	parse_add_print_only(buf, tokens, count);
 
 	fprintf(stderr, "load: filename=%s\n", tok_file);
 
@@ -4191,6 +4203,9 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 			return;
 		}
 
+		struct timeval  tv1, tv2;
+		gettimeofday(&tv1, NULL);
+
 		if (!strcmp(tok_req, "load"))
 			sharkd_session_process_load(buf, tokens, count);
 		else if (!strcmp(tok_req, "status"))
@@ -4227,6 +4242,10 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 			exit(0);
 		else
 			fprintf(stderr, "::: req = %s\n", tok_req);
+
+		gettimeofday(&tv2, NULL);
+		fprintf (stderr, "%s time = %f seconds\n", tok_req, 
+			(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec));
 
 		/* reply for every command are 0+ lines of JSON reply (outputed above), finished by empty new line */
 		json_dumper_finish(&dumper);
