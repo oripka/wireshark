@@ -68,6 +68,7 @@ wireshark.pc
 run/
 build.ninja
 rules.ninja
+build
 .ninja_deps
 .ninja_log
 epan/dissectors/asn1/*/*-stamp
