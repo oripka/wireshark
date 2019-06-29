@@ -67,6 +67,7 @@ WiresharkConfigVersion.cmake
 wireshark.pc
 run/
 build.ninja
+build
 rules.ninja
 .ninja_deps
 .ninja_log

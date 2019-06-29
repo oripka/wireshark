@@ -16,6 +16,11 @@
 #include <wsutil/strtoi.h>
 #include <ui/cmdarg_err.h>
 
+
+// #include <glib.h>
+#include <stdio.h>
+
+
 #include "clopts_common.h"
 
 int
@@ -105,6 +110,169 @@ get_positive_double(const char *string, const char *name)
   }
 
   return number;
+}
+
+/* packet selection support, taken from editcap.c */
+
+struct select_item
+{
+  gboolean inclusive;
+  guint first, second;
+};
+#define MAX_SELECTIONS 51200
+static struct select_item selectfrm[MAX_SELECTIONS];
+static guint max_selected = 0;
+guint max_packet_number = 0;
+
+gboolean use_selections = FALSE;
+
+static gboolean print_only = FALSE;
+static unsigned int print_only_packet = 0;
+
+static const char *
+json_find_attr(const char *buf, const jsmntok_t *tokens, int count, const char *attr)
+{
+	int i;
+
+	for (i = 0; i < count; i += 2)
+	{
+		const char *tok_attr  = &buf[tokens[i + 0].start];
+		const char *tok_value = &buf[tokens[i + 1].start];
+
+		if (!strcmp(tok_attr, attr))
+			return tok_value;
+	}
+
+	return NULL;
+}
+
+void
+add_print_only(unsigned int val){
+    print_only = TRUE;
+    print_only_packet = val;
+}
+
+int printonly(guint val){
+    if(val == print_only_packet)
+      return TRUE;
+    return FALSE;
+}
+
+/* Add a selection item, a simple parser for now */
+gboolean
+add_selection(char *sel, guint *max_selection)
+{
+  char *locn;
+  char *next;
+
+  if (max_selected >= MAX_SELECTIONS)
+  {
+    /* Let the user know we stopped selecting */
+    fprintf(stderr, "Out of room for packet selections.\n");
+    return (FALSE);
+  }
+
+  // if (verbose)
+  //   fprintf(stderr, "Add_Selected: %s\n", sel);
+
+  if ((locn = strchr(sel, '-')) == NULL)
+  { /* No dash, so a single number? */
+    // if (verbose)
+    //   fprintf(stderr, "Not inclusive ...");
+
+    selectfrm[max_selected].inclusive = FALSE;
+    ws_strtou32(sel, NULL, &(selectfrm[max_selected].first));
+    if (selectfrm[max_selected].first > *max_selection)
+      *max_selection = selectfrm[max_selected].first;
+
+    // if (verbose)
+    //   fprintf(stderr, " %u\n", selectfrm[max_selected].first);
+  }
+  else
+  {
+    // if (verbose)
+    //   fprintf(stderr, "Inclusive ...");
+
+    *locn = '\0'; /* split the range */
+    next = locn + 1;
+    selectfrm[max_selected].inclusive = TRUE;
+    ws_strtou32(sel, NULL, &(selectfrm[max_selected].first));
+    ws_strtou32(next, NULL, &(selectfrm[max_selected].second));
+
+    if (selectfrm[max_selected].second == 0)
+    {
+      /* Not a valid number, presume all */
+      selectfrm[max_selected].second = *max_selection = G_MAXUINT;
+    }
+    else if (selectfrm[max_selected].second > *max_selection)
+      *max_selection = selectfrm[max_selected].second;
+
+    // if (verbose)
+    //   fprintf(stderr, " %u, %u\n", selectfrm[max_selected].first,
+    //           selectfrm[max_selected].second);
+  }
+
+  max_selected++;
+  return (TRUE);
+}
+
+/* Was the packet selected? */
+
+int
+selected_for_dissect(guint recno)
+{
+  guint i;
+
+  for (i = 0; i < max_selected; i++)
+  {
+    if (selectfrm[i].inclusive)
+    {
+      if (selectfrm[i].first <= recno && selectfrm[i].second >= recno)
+        return 1;
+    }
+    else
+    {
+      if (recno == selectfrm[i].first)
+        return 1;
+    }
+  }
+
+  return 0;
+}
+
+void add_string_selection(char * sel) {
+    char *pch;
+    pch = strtok(sel, " ");
+    while (pch != NULL)
+    {
+        // printf("%s\n", pch);
+        add_selection(pch, &max_packet_number);
+        pch = strtok(NULL, " ");
+    }
+}
+
+void
+parse_selected_frames(const char *buf, const jsmntok_t *tokens, int count)
+{
+	char *pch;
+
+	char *tok_frames = (char *)json_find_attr(buf, tokens, count, "frames");
+	fprintf(stderr, "decode: frames=%s\n", tok_frames);
+
+	if (tok_frames == NULL)
+	{
+		use_selections = FALSE;
+		return;
+	}
+
+	use_selections = TRUE;
+	pch = strtok(tok_frames, " ");
+	while (pch != NULL)
+	{
+		// printf("%s\n", pch);
+		add_selection(pch, &max_packet_number);
+		pch = strtok(NULL, " ");
+	}
 }
 
 /*

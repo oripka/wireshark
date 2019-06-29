@@ -1,0 +1,38 @@
+ ./tshark --decode-only "1739 1750 1787 1788 1799 1939 1942 1946 1971 1972 1973 1992 2009 2013 2017 2022 2034 2037 2045 2055 2056 2057 2059 2073 2077 2084 2088 2092 2101 2106 2111 2113 2117 2121 2125 2128 2132 2133 2134 2135 2138 2149 2161 2162 2163 2173 2174 2175 2176 2179 2183 2187 2190 2195 2199 2204 2208 2212 2224 2225 2226 2227 2236 2239 2242 2243 2245 2251 2254 2263 2273 2276 2277 2278 2285 2286 2295 2318 2319 2329 2340" --print-only 2277 -r test.pcap 
+ 2277   0.038412     10.3.0.1 → 192.168.1.106 HTTP 355 HTTP/1.0 200 OK  (text/html)
+otr@xps:~/wireshark/build/run$ time ./tshark --decode-only "1739 1750 1787 1788 1799 1939 1942 1946 1971 1972 1973 1992 2009 2013 2017 2022 2034 2037 2045 2055 2056 2057 2059 2073 2077 2084 2088 2092 2101 2106 2111 2113 2117 2121 2125 2128 2132 2133 2134 2135 2138 2149 2161 2162 2163 2173 2174 2175 2176 2179 2183 2187 2190 2195 2199 2204 2208 2212 2224 2225 2226 2227 2236 2239 2242 2243 2245 2251 2254 2263 2273 2276 2277 2278 2285 2286 2295 2318 2319 2329 2340" --print-only 2277 -r test.pcap 
+ 2277   0.038412     10.3.0.1 → 192.168.1.106 HTTP 355 HTTP/1.0 200 OK  (text/html)
+
+real	0m0,258s
+user	0m0,202s
+sys	0m0,055s
+otr@xps:~/wireshark/build/run$ time ./tshark  --print-only 2277 -r test.pcap 
+ 2277   0.182593     10.3.0.1 → 192.168.1.106 HTTP 355 HTTP/1.0 200 OK  (text/html)
+
+real	0m3,022s
+user	0m2,877s
+sys	0m0,144s
+
+
+mkdir build
+cd build
+cmake -DBUILD_wireshark=OFF -DCMAKE_CXX_FLAGS=-pg -DCMAKE_EXE_LINKER_FLAGS=-pg -DCMAKE_SHARED_LINKER_FLAGS=-pg ..
+make -j 8
+
+
+{"req":"status"}
+{"req":"load","file":"test.pcap"}
+{"req":"frame", "frame": 2}
+{"req":"frames"}
+{"req":"status"}
+
+
+
+- quick fix -> load file and ask sharkd every time
+
+ARCHITECTURE
+
+    python wrapper for sharkd
+        - restrict access 
+        - route to correct instance
+        - 
