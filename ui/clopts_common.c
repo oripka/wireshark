@@ -152,7 +152,8 @@ void
 parse_add_print_only(const char *buf, const jsmntok_t *tokens, int count)
 {
   char *tok_print = (char *)json_find_attr(buf, tokens, count, "print");
-	
+	if(tok_print == NULL)
+    return;
   add_print_only(get_positive_int(tok_print, "packet number"));
 }
 
@@ -166,6 +167,9 @@ add_print_only(unsigned int val){
 }
 
 int printonly(guint val){
+  if(!use_selections){
+    return TRUE;
+  }
   int print= FALSE;
     if(val == print_only_packet)
       print = TRUE;
@@ -239,8 +243,12 @@ add_selection(char *sel, guint *max_selection)
 int
 selected_for_dissect(guint recno)
 {
+
   int selected = 0;
   guint i;
+
+  if(!use_selections)
+    return TRUE;
 
   if(verbose)
     fprintf(stderr,"Input is %i \n", recno);
