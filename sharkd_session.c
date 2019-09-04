@@ -548,8 +548,6 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 	const char *tok_file = json_find_attr(buf, tokens, count, "file");
 	int err = 0;
 
-
-
 	parse_selected_frames(buf, tokens, count);
 	parse_add_print_only(buf, tokens, count);
 

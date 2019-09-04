@@ -33,7 +33,7 @@ pf = sys.argv[1]
 
 send_receive({"req": "status"})
 # primitive to open file but do not dissect
-send_receive({"req": "load", "file": "test.pcap",
+send_receive({"req": "load", "file": "/pcaps/test.pcapng",
               "frames": "", "print": pf})
 # dissect x packets
 send_receive({"req": "frame", "frame": "1", "proto": True})
