@@ -3,7 +3,7 @@
 ;
 
 ; Create an installer that only writes an uninstaller.
-; http://nsis.sourceforge.net/Signing_an_Uninstaller
+; https://nsis.sourceforge.io/Signing_an_Uninstaller
 
 !include "common.nsh"
 !include 'LogicLib.nsh'
@@ -380,7 +380,7 @@ SectionEnd
 !insertmacro MUI_UNFUNCTION_DESCRIPTION_END
 
 ;
-; Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+; Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 ;
 ; Local variables:
 ; c-basic-offset: 4

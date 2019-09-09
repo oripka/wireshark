@@ -244,7 +244,7 @@ void FollowStreamDialog::findText(bool go_back)
     if (ui->leFind->text().isEmpty()) return;
 
     /* Version check due to find on teStreamContent. Expects regex since 5.3
-     * http://doc.qt.io/qt-5/qplaintextedit.html#find-1 */
+     * https://doc.qt.io/qt-5/qplaintextedit.html#find-1 */
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))
     bool found;
     if (use_regex_find_) {
@@ -400,8 +400,8 @@ void FollowStreamDialog::resetStream()
     if (!data_out_filename_.isEmpty()) {
         ws_unlink(data_out_filename_.toUtf8().constData());
     }
-    for (cur = follow_info_.payload; cur; cur = g_list_next(cur)) {
-        follow_record = (follow_record_t *)cur->data;
+    for (cur = follow_info_.payload; cur; cur = gxx_list_next(cur)) {
+        follow_record = gxx_list_data(follow_record_t *, cur);
         if(follow_record->data) {
             g_byte_array_free(follow_record->data, TRUE);
         }
@@ -411,25 +411,25 @@ void FollowStreamDialog::resetStream()
 
     //Only TCP stream uses fragments
     if (follow_type_ == FOLLOW_TCP) {
-        for (cur = follow_info_.fragments[0]; cur; cur = g_list_next(cur)) {
-            follow_record = (follow_record_t *)cur->data;
+        for (cur = follow_info_.fragments[0]; cur; cur = gxx_list_next(cur)) {
+            follow_record = gxx_list_data(follow_record_t *, cur);
             if(follow_record->data) {
                 g_byte_array_free(follow_record->data, TRUE);
             }
             g_free(follow_record);
         }
-        follow_info_.fragments[0] = NULL;
-        for (cur = follow_info_.fragments[1]; cur; cur = g_list_next(cur)) {
-            follow_record = (follow_record_t *)cur->data;
+        follow_info_.fragments[0] = Q_NULLPTR;
+        for (cur = follow_info_.fragments[1]; cur; cur = gxx_list_next(cur)) {
+            follow_record = gxx_list_data(follow_record_t *, cur);
             if(follow_record->data) {
                 g_byte_array_free(follow_record->data, TRUE);
             }
             g_free(follow_record);
         }
-        follow_info_.fragments[1] = NULL;
+        follow_info_.fragments[1] = Q_NULLPTR;
     }
 
-    follow_info_.payload = NULL;
+    follow_info_.payload = Q_NULLPTR;
     follow_info_.client_port = 0;
 }
 

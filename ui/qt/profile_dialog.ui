@@ -6,13 +6,30 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>470</width>
-    <height>300</height>
+    <width>570</width>
+    <height>400</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTreeWidget" name="profileTreeWidget">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLineEdit" name="lineProfileFilter">
+       <property name="placeholderText">
+        <string>Search for profile …</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="cmbProfileTypes"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="ProfileTreeView" name="profileTreeView">
+     <property name="selectionMode">
+      <enum>QAbstractItemView::ExtendedSelection</enum>
+     </property>
      <property name="rootIsDecorated">
       <bool>false</bool>
      </property>
@@ -22,24 +39,22 @@
      <property name="itemsExpandable">
       <bool>false</bool>
      </property>
+     <property name="sortingEnabled">
+      <bool>false</bool>
+     </property>
      <property name="headerHidden">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <property name="expandsOnDoubleClick">
       <bool>false</bool>
      </property>
-     <property name="columnCount">
-      <number>1</number>
-     </property>
-     <column>
-      <property name="text">
-       <string>Name</string>
-      </property>
-     </column>
+     <attribute name="headerVisible">
+      <bool>true</bool>
+     </attribute>
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,1">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0">
      <item>
       <widget class="StockIconToolButton" name="newToolButton">
        <property name="toolTip">
@@ -48,12 +63,20 @@
        <property name="text">
         <string/>
        </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>:/stock/plus-8.png</normaloff>:/stock/plus-8.png</iconset>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="StockIconToolButton" name="deleteToolButton">
        <property name="toolTip">
-        <string>Remove this profile. System provided profiles cannot be removed.</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove this profile. System provided profiles cannot be removed. The default profile will be resetted upon deletion.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>:/stock/minus-8.png</normaloff>:/stock/minus-8.png</iconset>
        </property>
       </widget>
      </item>
@@ -64,6 +87,10 @@
        </property>
        <property name="text">
         <string/>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>:/stock/copy-8.png</normaloff>:/stock/copy-8.png</iconset>
        </property>
       </widget>
      </item>
@@ -81,7 +108,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="ElidedLabel" name="infoLabel">
+      <widget class="ElidedLabel" name="hintLabel">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>1</horstretch>
@@ -115,14 +142,19 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ElidedLabel</class>
-   <extends>QLabel</extends>
-   <header>widgets/elided_label.h</header>
-  </customwidget>
-  <customwidget>
    <class>StockIconToolButton</class>
    <extends>QToolButton</extends>
    <header>widgets/stock_icon_tool_button.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProfileTreeView</class>
+   <extends>QTreeView</extends>
+   <header>widgets/profile_tree_view.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ElidedLabel</class>
+   <extends>QLabel</extends>
+   <header>widgets/elided_label.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

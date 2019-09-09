@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Ref 3GPP TS 36.355 version 15.2.0 Release 15
+ * Ref 3GPP TS 36.355 version 15.4.0 Release 15
  * http://www.3gpp.org
  */
 
@@ -50,7 +50,6 @@ static guint32 lpp_epdu_id = -1;
 
 /* Initialize the subtree pointers */
 static gint ett_lpp = -1;
-static gint ett_lpp_bitmap = -1;
 static gint ett_lpp_svHealthExt_v1240 = -1;
 static gint ett_kepSV_StatusINAV = -1;
 static gint ett_kepSV_StatusFNAV = -1;
@@ -2045,7 +2044,6 @@ void proto_register_lpp(void) {
   /* List of subtrees */
   static gint *ett[] = {
     &ett_lpp,
-    &ett_lpp_bitmap,
     &ett_lpp_svHealthExt_v1240,
     &ett_kepSV_StatusINAV,
     &ett_kepSV_StatusFNAV,

@@ -1606,7 +1606,7 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     </message>
     <message>
         <source>Copy from</source>
-        <translation>Copia da</translation>
+        <translation type="vanished">Copia da</translation>
     </message>
     <message>
         <source>Copy coloring rules from another profile.</source>
@@ -1768,6 +1768,70 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     </message>
 </context>
 <context>
+    <name>CopyFromProfileButton</name>
+    <message>
+        <source>Copy from</source>
+        <translation type="unfinished">Copia da</translation>
+    </message>
+    <message>
+        <source>Copy entries from another profile.</source>
+        <translation type="unfinished">Copia voci da un altro profilo.</translation>
+    </message>
+    <message>
+        <source>System default</source>
+        <translation type="unfinished">Predefinito di sistema</translation>
+    </message>
+</context>
+<context>
+    <name>CopyFromProfileMenu</name>
+    <message>
+        <source>System default</source>
+        <translation type="vanished">Predefinito di sistema</translation>
+    </message>
+</context>
+<context>
+    <name>CredentialsDialog</name>
+    <message>
+        <source>Wireshark - Credentials</source>
+        <translation>Wireshark - Credenziali</translation>
+    </message>
+    <message>
+        <source>Credentials</source>
+        <translation>Credenziali</translation>
+    </message>
+</context>
+<context>
+    <name>CredentialsModel</name>
+    <message>
+        <source>Click to select the packet</source>
+        <translation>Fai clic per selezionare il pacchetto</translation>
+    </message>
+    <message>
+        <source>Click to select the packet with username</source>
+        <translation>Fai clic per selezionare il pacchetto con il nome utente</translation>
+    </message>
+    <message>
+        <source>Username not available</source>
+        <translation>Nome utente non disponibile</translation>
+    </message>
+    <message>
+        <source>Packet No.</source>
+        <translation>Pacchetto n.</translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <translation>Protocollo</translation>
+    </message>
+    <message>
+        <source>Username</source>
+        <translation>Nome utente</translation>
+    </message>
+    <message>
+        <source>Additional Info</source>
+        <translation>Informazioni aggiuntive</translation>
+    </message>
+</context>
+<context>
     <name>DataPrinter</name>
     <message>
         <source>Copy Bytes as Hex + ASCII Dump</source>
@@ -1906,6 +1970,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Gestisci i segnalibri salvati.</translation>
     </message>
     <message>
+        <source>Clear display filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Apply this filter string to the display.</source>
         <translation>Applica questa stringa di filtro alla visualizzazione.</translation>
     </message>
@@ -1943,11 +2011,11 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     </message>
     <message>
         <source>Selected</source>
-        <translation type="unfinished">Selezionati</translation>
+        <translation type="vanished">Selezionati</translation>
     </message>
     <message>
         <source>Not Selected</source>
-        <translation type="unfinished">Non selezionati</translation>
+        <translation type="vanished">Non selezionati</translation>
     </message>
 </context>
 <context>
@@ -2108,6 +2176,18 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>Enabled Protocols</source>
         <translation>Protocolli abilitati</translation>
+    </message>
+    <message>
+        <source>Everywhere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only Protocols</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only Description</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2439,8 +2519,8 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>La guida per l&apos;interfaccia %1 non è disponibile. File specificato: %2</translation>
     </message>
     <message>
-        <source>Save parameter on capture start</source>
-        <translation>Salva parametro all&apos;avvio della cattura</translation>
+        <source>Save parameter(s) on capture start</source>
+        <translation>Salva parametri all&apos;avvio della cattura</translation>
     </message>
 </context>
 <context>
@@ -2506,6 +2586,17 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>Size</source>
         <translation>Dimensione</translation>
+    </message>
+</context>
+<context>
+    <name>FilterAction</name>
+    <message>
+        <source>Selected</source>
+        <translation type="unfinished">Selezionati</translation>
+    </message>
+    <message>
+        <source>Not Selected</source>
+        <translation type="unfinished">Non selezionati</translation>
     </message>
 </context>
 <context>
@@ -3558,8 +3649,7 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     </message>
     <message>
         <source>I/O Graphs</source>
-        <oldsource>IO Graphs</oldsource>
-        <translation type="unfinished">Grafici I/O</translation>
+        <translation>Grafici I/O</translation>
     </message>
     <message>
         <source>Copy</source>
@@ -3567,7 +3657,7 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     </message>
     <message>
         <source>Copy from</source>
-        <translation>Copia da</translation>
+        <translation type="vanished">Copia da</translation>
     </message>
     <message>
         <source>Copy graphs from another profile.</source>
@@ -3590,12 +3680,8 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>100 ms</translation>
     </message>
     <message>
-        <source>Wireshark IO Graphs: %1</source>
-        <translation type="vanished">Grafici di I/O di Wireshark: %1</translation>
-    </message>
-    <message>
         <source>Wireshark I/O Graphs: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafici di I/O di Wireshark: %1</translation>
     </message>
     <message>
         <source>All packets</source>
@@ -4214,6 +4300,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>External capture interfaces disabled.</source>
         <translation>Interfacce di cattura esterne disabilitate.</translation>
+    </message>
+    <message>
+        <source>Start capture</source>
+        <translation>Avvia la cattura</translation>
     </message>
 </context>
 <context>
@@ -5637,19 +5727,20 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Profilo: %1</translation>
     </message>
     <message>
-        <source>Manage Profiles</source>
-        <oldsource>Manage Profiles...</oldsource>
-        <translation>Gestisci i profili</translation>
+        <source>Import</source>
+        <translation>Importa</translation>
     </message>
     <message>
-        <source>New</source>
-        <oldsource>New...</oldsource>
-        <translation>Nuovo</translation>
+        <source>from zip file</source>
+        <translation>da file zip</translation>
     </message>
     <message>
-        <source>Edit</source>
-        <oldsource>Edit...</oldsource>
-        <translation>Modifica</translation>
+        <source>from directory</source>
+        <translation>da cartella</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>Esporta</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -5685,13 +5776,13 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <oldsource>No expert info</oldsource>
         <translation>Nessuna informazione per esperti</translation>
     </message>
-    <message>
-        <source>, 1 byte</source>
-        <translation>, 1 byte</translation>
-    </message>
-    <message>
-        <source>, %1 bytes</source>
-        <translation>, %1 byte</translation>
+    <message numerus="yes">
+        <source>%Ln byte(s)</source>
+        <oldsource>, %1 bytes</oldsource>
+        <translation>
+            <numerusform>%Ln byte</numerusform>
+            <numerusform>%Ln byte</numerusform>
+        </translation>
     </message>
     <message>
         <source>Byte %1</source>
@@ -5730,6 +5821,26 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>No Packets</source>
         <translation>Nessun pacchetto</translation>
+    </message>
+    <message>
+        <source>Manage Profiles</source>
+        <translation>Gestisci i profili</translation>
+    </message>
+    <message>
+        <source>New</source>
+        <translation>Nuovo</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>Modifica</translation>
+    </message>
+    <message>
+        <source>selected personal profile</source>
+        <translation>profilo personale selezionato</translation>
+    </message>
+    <message>
+        <source>all personal profiles</source>
+        <translation>tutti i profili personali</translation>
     </message>
     <message>
         <source>Packets: %1</source>
@@ -6139,15 +6250,15 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     </message>
     <message>
         <source>&amp;Selected</source>
-        <translation>&amp;Selezionati</translation>
+        <translation type="vanished">&amp;Selezionati</translation>
     </message>
     <message>
         <source>&amp;Not Selected</source>
-        <translation>&amp;Non selezionati</translation>
+        <translation type="vanished">&amp;Non selezionati</translation>
     </message>
     <message>
         <source>Not Selected</source>
-        <translation>Non selezionati</translation>
+        <translation type="vanished">Non selezionati</translation>
     </message>
     <message>
         <source>Close this capture file</source>
@@ -6851,10 +6962,6 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Mostra le statistiche wireless LAN IEEE 802.11.</translation>
     </message>
     <message>
-        <source>Add a filter button</source>
-        <translation type="vanished">Aggiungi un pulsante di filtro</translation>
-    </message>
-    <message>
         <source>Add a display filter button.</source>
         <translation>Aggiungi un pulsante del filtro di visualizzazione.</translation>
     </message>
@@ -6869,6 +6976,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>&amp;Full Screen</source>
         <translation>Schermo &amp;intero</translation>
+    </message>
+    <message>
+        <source>Credentials</source>
+        <translation>Credenziali</translation>
     </message>
     <message>
         <source>&amp;Options…</source>
@@ -6896,35 +7007,35 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     </message>
     <message>
         <source>…&amp;and Selected</source>
-        <translation>... &amp;e selezionati</translation>
+        <translation type="vanished">... &amp;e selezionati</translation>
     </message>
     <message>
         <source>…and Selected</source>
-        <translation>... e selezionati</translation>
+        <translation type="vanished">... e selezionati</translation>
     </message>
     <message>
         <source>…&amp;or Selected</source>
-        <translation>... &amp;o selezionati</translation>
+        <translation type="vanished">... &amp;o selezionati</translation>
     </message>
     <message>
         <source>…or Selected</source>
-        <translation>... o selezionati</translation>
+        <translation type="vanished">... o selezionati</translation>
     </message>
     <message>
         <source>…a&amp;nd not Selected</source>
-        <translation>... &amp;e non selezionati</translation>
+        <translation type="vanished">... &amp;e non selezionati</translation>
     </message>
     <message>
         <source>…and not Selected</source>
-        <translation>... e non selezionati</translation>
+        <translation type="vanished">... e non selezionati</translation>
     </message>
     <message>
         <source>…o&amp;r not Selected</source>
-        <translation>... &amp;o non selezionati</translation>
+        <translation type="vanished">... &amp;o non selezionati</translation>
     </message>
     <message>
         <source>…or not Selected</source>
-        <translation>... o non selezionati</translation>
+        <translation type="vanished">... o non selezionati</translation>
     </message>
     <message>
         <source>Display Filter &amp;Macros…</source>
@@ -8410,7 +8521,6 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <name>PrefsModel</name>
     <message>
         <source>Advanced</source>
-        <extracomment>Names of special preferences handled by the GUI</extracomment>
         <translation>Avanzate</translation>
     </message>
     <message>
@@ -8496,17 +8606,16 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
 <context>
     <name>ProfileDialog</name>
     <message>
-        <source>Name</source>
-        <translation>Nome</translation>
+        <source>Search for profile …</source>
+        <translation>Cerca profilo...</translation>
     </message>
     <message>
         <source>Create a new profile using default settings.</source>
         <translation>Crea un nuovo profilo usando le impostazioni predefinite.</translation>
     </message>
     <message>
-        <source>Remove this profile. System provided profiles cannot be removed.</source>
-        <oldsource>Remove this profile. The Default profile and system provided profiles cannot be removed.</oldsource>
-        <translation>Rimuovi questo profilo. I profili forniti dal sistema non possono essere rimossi.</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove this profile. System provided profiles cannot be removed. The default profile will be resetted upon deletion.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rimuovi questo profilo. I profili forniti dal sistema non possono essere rimossi. Il profilo predefinito sarà ripristinato dopo l&apos;eliminazione.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Copy this profile.</source>
@@ -8517,52 +8626,255 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Profili di configurazione</translation>
     </message>
     <message>
-        <source>Will be reset to default values</source>
-        <translation>Sarà ripristinato ai valori predefiniti</translation>
+        <source>Import</source>
+        <comment>noun</comment>
+        <translation>Importa</translation>
     </message>
     <message>
-        <source>Created from %1</source>
-        <translation>Creato da %1</translation>
+        <source>Export</source>
+        <comment>noun</comment>
+        <translation>Esporta</translation>
     </message>
     <message>
-        <source>(system provided)</source>
-        <translation>(fornito dal sistema)</translation>
+        <source>New profile</source>
+        <translation>Nuon profilo</translation>
     </message>
     <message>
-        <source>(deleted)</source>
-        <translation>(eliminato)</translation>
+        <source>Profile Error</source>
+        <translation>Errore di profilo</translation>
     </message>
     <message>
-        <source>Created from default settings</source>
-        <translation>Creato dalle impostazioni predefinite</translation>
+        <source>Exporting profiles</source>
+        <translation>Esportazione profili</translation>
     </message>
     <message>
-        <source>Renamed from %1</source>
-        <translation>Rinominato da %1</translation>
+        <source>No profiles found for export</source>
+        <translation>Nessun profilo trovato per l&apos;esportazione</translation>
     </message>
     <message>
-        <source>Go to %1</source>
-        <translation>Vai a %1</translation>
+        <source>Select zip file for export</source>
+        <translation>Seleziona file zip per l&apos;esportazione</translation>
+    </message>
+    <message numerus="yes">
+        <source>… %Ln selected personal profile(s)</source>
+        <translation type="vanished">
+            <numerusform>… %Ln profilo personale selezionato</numerusform>
+            <numerusform>… %Ln profili personali selezionati</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln selected personal profile(s)</source>
+        <translation>
+            <numerusform>%Ln profilo personale selezionato</numerusform>
+            <numerusform>%Ln profili personali selezionati</numerusform>
+        </translation>
     </message>
     <message>
-        <source>This is a system provided profile.</source>
-        <translation>Questo è un profilo fornito dal sistema.</translation>
+        <source>An import of profiles is not allowed, while changes are pending</source>
+        <translation>Non è consentito importare profili, mentre ci sono modifiche in corso</translation>
     </message>
     <message>
-        <source>A profile already exists with this name.</source>
-        <translation>Un profilo con questo nome esiste già.</translation>
+        <source>An import is pending to be saved. Additional imports are not allowed</source>
+        <translation>Un&apos;importazione è in fase di salvataggio. Non sono consentite importazioni aggiuntive</translation>
+    </message>
+    <message>
+        <source>An export of profiles is only allowed for personal profiles</source>
+        <translation>Un&apos;esportazione di profili è consentita solo per i profili personali</translation>
+    </message>
+    <message>
+        <source>An export of profiles is not allowed, while changes are pending</source>
+        <translation>Un&apos;esportazione di profili non è consentita, mentre ci sono modifiche in corso</translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln profile(s) exported</source>
+        <translation>
+            <numerusform>%Ln profilo esportato</numerusform>
+            <numerusform>%Ln profili esportati</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Select zip file for import</source>
+        <translation>Seleziona file zip per l&apos;importazione</translation>
+    </message>
+    <message>
+        <source>Select directory for import</source>
+        <translation>Seleziona cartella per l&apos;importazione</translation>
+    </message>
+    <message>
+        <source>Zip File (*.zip)</source>
+        <translation>File Zip (*.zip)</translation>
+    </message>
+    <message>
+        <source>from zip file</source>
+        <translation>da file zip</translation>
+    </message>
+    <message>
+        <source>from directory</source>
+        <translation>da cartella</translation>
+    </message>
+    <message>
+        <source>all personal profiles</source>
+        <translation>tutti i profili personali</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation>Errore</translation>
+    </message>
+    <message>
+        <source>An error has occurred while exporting profiles</source>
+        <translation>Si è verificato un errore durante l&apos;esportazione dei profili</translation>
+    </message>
+    <message>
+        <source>No profiles found for import in %1</source>
+        <translation>Nessun profilo trovato per l&apos;importazione in %1</translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln profile(s) imported</source>
+        <translation>
+            <numerusform>%Ln profilo importato</numerusform>
+            <numerusform>%Ln profili importati</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>, %Ln profile(s) skipped</source>
+        <translation>
+            <numerusform>, %Ln profilo importato</numerusform>
+            <numerusform>, %Ln profili importati</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Importing profiles</source>
+        <translation>Importazione profili</translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln profile(s) selected</source>
+        <translation type="obsolete">
+            <numerusform>%Ln profile selected</numerusform>
+            <numerusform>%Ln profiles selected</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>ProfileModel</name>
+    <message>
+        <source>Resetting to default</source>
+        <translation>Ripristino dei valori predefiniti</translation>
+    </message>
+    <message>
+        <source>Imported profile</source>
+        <translation>Profilo importato</translation>
+    </message>
+    <message>
+        <source>This is a system provided profile</source>
+        <translation>Questo è un profilo fornito dal sistema</translation>
+    </message>
+    <message>
+        <source>A profile change for this name is pending</source>
+        <translation>Una modifica al profilo per questo nome è in corso</translation>
+    </message>
+    <message>
+        <source> (See: %1)</source>
+        <translation> (Vedi: %1)</translation>
+    </message>
+    <message>
+        <source>This is an invalid profile definition</source>
+        <translation>Questa è una definizione non valida di un profilo</translation>
     </message>
     <message>
         <source>A profile already exists with this name</source>
         <translation>Un profilo con questo nome esiste già</translation>
     </message>
     <message>
-        <source>The profile will be reset to default values.</source>
-        <translation>Il profilo sarà ripristinato ai valori predefiniti.</translation>
+        <source>A profile with this name is being deleted</source>
+        <translation>Un profilo con questo nome è in fase di eliminazione</translation>
     </message>
     <message>
-        <source>Profile Error</source>
-        <translation>Errore di profilo</translation>
+        <source>Created from default settings</source>
+        <translation>Creato dalle impostazioni predefinite</translation>
+    </message>
+    <message>
+        <source>system provided</source>
+        <translation>fornito dal sistema</translation>
+    </message>
+    <message>
+        <source>deleted</source>
+        <translation>eliminato</translation>
+    </message>
+    <message>
+        <source>copy</source>
+        <comment>noun</comment>
+        <translation>copia</translation>
+    </message>
+    <message>
+        <source>Exporting profiles while changes are pending is not allowed</source>
+        <translation>Non è consentito esportare profili mentre ci sono modifiche in corso.</translation>
+    </message>
+    <message>
+        <source>No profiles found to export</source>
+        <translation>Nessun profilo trovato per l&apos;esportazione</translation>
+    </message>
+    <message>
+        <source>Can&apos;t delete profile directory</source>
+        <translation>Impossibile eliminare la cartella del profilo</translation>
+    </message>
+    <message>
+        <source>A profile name cannot contain the following characters: %1</source>
+        <translation>Il nome di un profilo non può contenere i seguenti caratteri: %1</translation>
+    </message>
+    <message>
+        <source>A profile name cannot contain the &apos;/&apos; character</source>
+        <translation>Il nome di un profilo non può contenere il carattere &apos;/&apos;</translation>
+    </message>
+    <message>
+        <source>A profile cannot start or end with a period (.)</source>
+        <translation>Un profilo non può iniziare o finire con un punto (.)</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation>Predefinito</translation>
+    </message>
+    <message>
+        <source>Global</source>
+        <translation>Globale</translation>
+    </message>
+    <message>
+        <source>Personal</source>
+        <translation>Personale</translation>
+    </message>
+    <message>
+        <source>Renamed from: %1</source>
+        <translation>Rinominato da: %1</translation>
+    </message>
+    <message>
+        <source>Copied from: %1</source>
+        <translation>Copiato da: %1</translation>
+    </message>
+    <message>
+        <source>renamed to %1</source>
+        <translation>rinominato in %1</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>Profilo</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation>Tipo</translation>
+    </message>
+</context>
+<context>
+    <name>ProfileSortModel</name>
+    <message>
+        <source>All profiles</source>
+        <translation>Tutti i profili</translation>
+    </message>
+    <message>
+        <source>Personal profiles</source>
+        <translation>Profili personali</translation>
+    </message>
+    <message>
+        <source>Global profiles</source>
+        <translation>Profili globali</translation>
     </message>
 </context>
 <context>
@@ -8577,6 +8889,66 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>Packet details</source>
         <translation>Dettagli del pacchetto</translation>
+    </message>
+    <message>
+        <source>Expand Subtrees</source>
+        <translation>Espandi sottoalberi</translation>
+    </message>
+    <message>
+        <source>Collapse Subtrees</source>
+        <translation>Contrai sottoalberi</translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation>Espandi tutti</translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation>Contrai tutti</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation>Copia</translation>
+    </message>
+    <message>
+        <source>All Visible Items</source>
+        <translation>Tutti gli elementi visibili</translation>
+    </message>
+    <message>
+        <source>All Visible Selected Tree Items</source>
+        <translation>Tutti gli elementi visibili dell&apos;albero selezionato</translation>
+    </message>
+    <message>
+        <source>Desription</source>
+        <translation>Descrizione</translation>
+    </message>
+    <message>
+        <source>Field Name</source>
+        <translation>Nome campo</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation>Valore</translation>
+    </message>
+    <message>
+        <source>As Filter</source>
+        <translation>Come filtro</translation>
+    </message>
+    <message>
+        <source>Wiki Protocol Page</source>
+        <translation>Pagina wiki del protocollo</translation>
+    </message>
+    <message>
+        <source>Filter Field Reference</source>
+        <translation>Riferimento campo di filtro</translation>
+    </message>
+    <message>
+        <source>Wiki Page for %1</source>
+        <translation>Pagina wiki per %1</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Wireshark Wiki is maintained by the community.&lt;/p&gt;&lt;p&gt;The page you are about to load might be wonderful, incomplete, wrong, or nonexistent.&lt;/p&gt;&lt;p&gt;Proceed to the wiki?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Il Wiki di Wireshark è gestito dalla comunità.&lt;/p&gt;&lt;p&gt;La pagina che stai per caricare potrebbe essere perfetta, incompleta, errata o inesistente.&lt;/p&gt;&lt;p&gt;Vuoi proseguire?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Colorize with Filter</source>
@@ -8786,6 +9158,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>Any </source>
         <translation>Tutti </translation>
+    </message>
+    <message>
+        <source>Prepare as Filter</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Don&apos;t show this message again.</source>
@@ -11368,10 +11744,6 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
         <translation>Rete</translation>
     </message>
     <message>
-        <source>Reset</source>
-        <translation>Ripristina</translation>
-    </message>
-    <message>
         <source>Reset Diagram</source>
         <translation>Ripristina diagramma</translation>
     </message>
@@ -12590,11 +12962,11 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     </message>
     <message>
         <source>Copy from</source>
-        <translation>Copia da</translation>
+        <translation type="vanished">Copia da</translation>
     </message>
     <message>
         <source>Copy entries from another profile.</source>
-        <translation>Copia voci da un altro profilo.</translation>
+        <translation type="vanished">Copia voci da un altro profilo.</translation>
     </message>
     <message>
         <source>Open </source>
@@ -12665,6 +13037,10 @@ Ad esempio, usa 1 ora per fare in modo che un nuovo file sia creato ogni ora.</t
     <message>
         <source>Select all calls</source>
         <translation>Seleziona tutte le chiamate</translation>
+    </message>
+    <message>
+        <source>Display time as time of day</source>
+        <translation>Visualizza l&apos;ora come ora del giorno</translation>
     </message>
     <message>
         <source>Copy as CSV</source>

@@ -43,7 +43,7 @@ static guint server_port = 5037;
 
 typedef struct _client_request_t {
     gint64    service_length;
-    guint8   *service;
+    gchar    *service;
     guint32   first_in;
     gint64    service_in;
     gint64    response_frame;
@@ -94,7 +94,7 @@ dissect_adb_cs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
 
     if (pinfo->destport == server_port) { /* Client sent to Server */
         client_request_t  *client_request;
-        guint8            *service = SERVICE_NONE;
+        gchar             *service = SERVICE_NONE;
         wmem_tree_t       *subtree;
         wmem_tree_key_t    key[5];
 
@@ -214,9 +214,20 @@ dissect_adb_cs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
             }
 
             if (client_request) {
-                client_request->service = (guint8 *) wmem_alloc(wmem_file_scope(), (const size_t)(client_request->service_length + 1));
-                tvb_memcpy(tvb, client_request->service, offset, (size_t) client_request->service_length);
-                client_request->service[client_request->service_length] = '\0';
+                /*
+                 * I've no idea why the length is 64 bits, but that's
+                 * too big to be a field length in Wireshark; if it's
+                 * greater than the biggest possible length, clamp it
+                 * at the biggest possible length - which is probably
+                 * going to be bigger than the available data so that
+                 * you'll throw an exception.
+                 */
+                gint service_length;
+                if (client_request->service_length <= G_MAXINT)
+                    service_length = (gint)client_request->service_length;
+                else
+                    service_length = G_MAXINT;
+                client_request->service = (gchar *) tvb_get_string_enc(wmem_file_scope(), tvb, offset, service_length, ENC_ASCII);
                 client_request->service_in = pinfo->num;
             }
         }
@@ -227,16 +238,14 @@ dissect_adb_cs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
         } else if (tvb_reported_length_remaining(tvb, offset) > 0) {
             proto_tree_add_item(main_tree, hf_service, tvb, offset, -1, ENC_NA | ENC_ASCII);
 
-            service = (guint8 *) wmem_alloc(wmem_packet_scope(), tvb_reported_length_remaining(tvb, offset) + 1);
-            tvb_memcpy(tvb, service, offset, tvb_reported_length_remaining(tvb, offset));
-            service[tvb_reported_length_remaining(tvb, offset)] = '\0';
+            service = (gchar *) tvb_get_string_enc(wmem_packet_scope(), tvb, offset, tvb_reported_length_remaining(tvb, offset), ENC_ASCII);
             col_append_fstr(pinfo->cinfo, COL_INFO, " Service=<%s>", service);
         }
 
         offset = tvb_captured_length(tvb);
 
     } else if (pinfo->srcport == server_port) { /* Server sent to Client */
-        guint8             *service = SERVICE_NONE;
+        gchar              *service = SERVICE_NONE;
         wmem_tree_t        *subtree;
         wmem_tree_key_t     key[5];
         client_request_t   *client_request;
@@ -284,14 +293,14 @@ dissect_adb_cs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
             tvb_get_guint8(tvb, offset + 1), tvb_get_guint8(tvb, offset + 2), tvb_get_guint8(tvb, offset + 3));
             offset += 4;
 
-            if (tvb_memeql(tvb, offset - 4, "FAIL", 4) == 0) {
+            if (tvb_memeql(tvb, offset - 4, (const guint8 *) "FAIL", 4) == 0) {
                 guint32 ulength;
 
                 offset = dissect_ascii_uint32(main_tree, hf_hex_ascii_length, ett_length, hf_length, tvb, offset, &ulength);
                 length = (gint64) ulength;
 
                 status = STATUS_FAIL;
-            } else if (tvb_memeql(tvb, offset - 4, "OKAY", 4) == 0) {
+            } else if (tvb_memeql(tvb, offset - 4, (const guint8 *) "OKAY", 4) == 0) {
                 status = STATUS_OKAY;
                 length = -1;
             }
@@ -429,7 +438,7 @@ proto_reg_handoff_adb_cs(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

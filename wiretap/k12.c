@@ -25,7 +25,7 @@
 /*
  * See
  *
- *  http://www.tek.com/manual/record-file-api-programmer-manual
+ *  https://www.tek.com/manual/record-file-api-programmer-manual
  *
  * for some information about the file format.  You may have to fill in
  * a form to download the document ("Record File API Programmer Manual").
@@ -1382,7 +1382,7 @@ gboolean k12_dump_open(wtap_dumper *wdh, int *err) {
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

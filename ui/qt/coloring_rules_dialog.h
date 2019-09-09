@@ -39,7 +39,7 @@ protected:
     void showEvent(QShowEvent *);
 
 private slots:
-    void copyFromProfile(QAction *action);
+    void copyFromProfile(QString fileName);
     void colorRuleSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void on_fGPushButton_clicked();
     void on_bGPushButton_clicked();
@@ -54,6 +54,7 @@ private slots:
     void rowCountChanged();
     void invalidField(const QModelIndex &index, const QString& errMessage);
     void validField(const QModelIndex &index);
+    void treeItemClicked(const QModelIndex &index);
 
 private:
     Ui::ColoringRulesDialog *ui;
@@ -66,10 +67,12 @@ private:
 
     void checkUnknownColorfilters();
     void setColorButtons(QModelIndex &index);
-    void updateHint();
+    void updateHint(QModelIndex idx = QModelIndex());
 
     void addRule(bool copy_from_current = false);
     void changeColor(bool foreground = true);
+
+    bool isValidFilter(QString filter, QString *error);
 };
 
 #endif // COLORING_RULES_DIALOG_H

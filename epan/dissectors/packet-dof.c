@@ -3789,7 +3789,7 @@ typedef guint8                         DOFObjectIDAttributeDataSize;
 
 typedef struct DOFObjectIDAttribute_t
 {
-    guint8                          id;         /**< Attribute Identifier.  Intentionally defined as @ref uint8 for size, but holds all valid values for @ref DOFObjectIDAttributeType.  **/
+    guint8                          id;         /**< Attribute Identifier.  Intentionally defined as uint8 for size, but holds all valid values for DOFObjectIDAttributeType.  **/
     DOFObjectIDAttributeDataSize   dataSize;    /**< Size of the attribute data. **/
     const guint8 *data;                         /**< Attribute data. **/
 } DOFObjectIDAttribute;
@@ -12582,7 +12582,7 @@ static int dof_dissect_dnp_length(tvbuff_t *tvb, packet_info *pinfo, guint8 vers
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

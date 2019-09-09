@@ -164,6 +164,7 @@ typedef enum {
 #define SSL_HND_QUIC_TP_MAX_ACK_DELAY                       11
 #define SSL_HND_QUIC_TP_DISABLE_MIGRATION                   12
 #define SSL_HND_QUIC_TP_PREFERRED_ADDRESS                   13
+#define SSL_HND_QUIC_TP_ACTIVE_CONNECTION_ID_LIMIT          14
 
 /*
  * Lookup tables
@@ -197,6 +198,7 @@ extern const value_string ssl_extension_curves[];
 extern const value_string ssl_extension_ec_point_formats[];
 extern const value_string ssl_curve_types[];
 extern const value_string tls_hello_ext_server_name_type_vs[];
+extern const value_string tls_hello_ext_max_fragment_length[];
 extern const value_string tls_hello_ext_psk_ke_mode[];
 extern const value_string tls13_key_update_request[];
 extern const value_string compress_certificate_algorithm_vals[];
@@ -507,38 +509,49 @@ gchar* ssl_association_info(const char* dissector_table_name, const char* table_
 
 /** Retrieve a SslSession, creating it if it did not already exist.
  * @param conversation The SSL conversation.
- * @param ssl_handle The dissector handle for SSL or DTLS.
+ * @param tls_handle The dissector handle for SSL or DTLS.
  */
 extern SslDecryptSession *
-ssl_get_session(conversation_t *conversation, dissector_handle_t ssl_handle);
+ssl_get_session(conversation_t *conversation, dissector_handle_t tls_handle);
 
 /** Set server address and port */
 extern void
 ssl_set_server(SslSession *session, address *addr, port_type ptype, guint32 port);
 
-/** Marks this packet as the last one before switching to SSL that is supposed
- * to encapsulate this protocol.
- * @param ssl_handle The dissector handle for SSL or DTLS.
+/** Sets the application data protocol dissector. Intended to be called by
+ * protocols that encapsulate TLS instead of switching to it using STARTTLS.
+ * @param tls_handle The dissector handle for TLS or DTLS.
  * @param pinfo Packet Info.
  * @param app_handle Dissector handle for the protocol inside the decrypted
  * Application Data record.
- * @return 0 for the first STARTTLS acknowledgement (success) or if ssl_handle
+ */
+WS_DLL_PUBLIC void
+tls_set_appdata_dissector(dissector_handle_t tls_handle, packet_info *pinfo,
+                 dissector_handle_t app_handle);
+
+/** Marks this packet as the last one before switching to SSL that is supposed
+ * to encapsulate this protocol.
+ * @param tls_handle The dissector handle for SSL or DTLS.
+ * @param pinfo Packet Info.
+ * @param app_handle Dissector handle for the protocol inside the decrypted
+ * Application Data record.
+ * @return 0 for the first STARTTLS acknowledgement (success) or if tls_handle
  * is NULL. >0 if STARTTLS was started before.
  */
 WS_DLL_PUBLIC guint32
-ssl_starttls_ack(dissector_handle_t ssl_handle, packet_info *pinfo,
+ssl_starttls_ack(dissector_handle_t tls_handle, packet_info *pinfo,
                  dissector_handle_t app_handle);
 
 /** Marks this packet as belonging to an SSL conversation started with STARTTLS.
- * @param ssl_handle The dissector handle for SSL or DTLS.
+ * @param tls_handle The dissector handle for SSL or DTLS.
  * @param pinfo Packet Info.
  * @param app_handle Dissector handle for the protocol inside the decrypted
  * Application Data record.
- * @return 0 for the first STARTTLS acknowledgement (success) or if ssl_handle
+ * @return 0 for the first STARTTLS acknowledgement (success) or if tls_handle
  * is NULL. >0 if STARTTLS was started before.
  */
 WS_DLL_PUBLIC guint32
-ssl_starttls_post_ack(dissector_handle_t ssl_handle, packet_info *pinfo,
+ssl_starttls_post_ack(dissector_handle_t tls_handle, packet_info *pinfo,
                  dissector_handle_t app_handle);
 
 extern dissector_handle_t
@@ -777,6 +790,7 @@ typedef struct ssl_common_dissect {
         gint hs_ext_server_name_len;
         gint hs_ext_server_name_list_len;
         gint hs_ext_server_name_type;
+        gint hs_ext_max_fragment_length;
         gint hs_ext_padding_data;
         gint hs_ext_type;
         gint hs_sig_hash_alg;
@@ -875,10 +889,6 @@ typedef struct ssl_common_dissect {
         gint hs_ext_record_size_limit;
 
         /* QUIC Transport Parameters */
-        gint hs_ext_quictp_negotiated_version;
-        gint hs_ext_quictp_initial_version;
-        gint hs_ext_quictp_supported_versions_len;
-        gint hs_ext_quictp_supported_versions;
         gint hs_ext_quictp_len;
         gint hs_ext_quictp_parameter;
         gint hs_ext_quictp_parameter_type;
@@ -905,6 +915,7 @@ typedef struct ssl_common_dissect {
         gint hs_ext_quictp_parameter_pa_connectionid_length;
         gint hs_ext_quictp_parameter_pa_connectionid;
         gint hs_ext_quictp_parameter_pa_statelessresettoken;
+        gint hs_ext_quictp_parameter_active_connection_id_limit;
 
         gint esni_suite;
         gint esni_record_digest_length;
@@ -1133,7 +1144,7 @@ ssl_common_dissect_t name = {   \
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, \
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, \
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, \
-        -1, -1, -1, -1, -1, -1, -1,                                     \
+        -1, -1, -1, -1, -1,                                             \
     },                                                                  \
     /* ett */ {                                                         \
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, \
@@ -1341,6 +1352,11 @@ ssl_common_dissect_t name = {   \
       { "Server Name", prefix ".handshake.extensions_server_name",      \
         FT_STRING, BASE_NONE, NULL, 0x0,                                \
         NULL, HFILL }                                                   \
+    },                                                                  \
+    { & name .hf.hs_ext_max_fragment_length,                            \
+      { "Maximum Fragment Length", prefix ".handshake.max_fragment_length", \
+        FT_UINT8, BASE_DEC, VALS(tls_hello_ext_max_fragment_length), 0x00, \
+        "Maximum fragment length that an endpoint is willing to receive", HFILL } \
     },                                                                  \
     { & name .hf.hs_ext_padding_data,                                   \
       { "Padding Data", prefix ".handshake.extensions_padding_data",    \
@@ -1884,26 +1900,6 @@ ssl_common_dissect_t name = {   \
         FT_UINT16, BASE_DEC, NULL, 0x00,                                \
         "Maximum record size that an endpoint is willing to receive", HFILL } \
     },                                                                  \
-    { & name .hf.hs_ext_quictp_negotiated_version,                      \
-      { "Negotiated Version", prefix ".quic.negotiated_version",        \
-        FT_UINT32, BASE_HEX, VALS(quic_version_vals), 0x00,             \
-        NULL, HFILL }                                                   \
-    },                                                                  \
-    { & name .hf.hs_ext_quictp_initial_version,                         \
-      { "Initial Version", prefix ".quic.initial_version",              \
-        FT_UINT32, BASE_HEX, VALS(quic_version_vals), 0x00,             \
-        NULL, HFILL }                                                   \
-    },                                                                  \
-    { & name .hf.hs_ext_quictp_supported_versions_len,                  \
-      { "Supported Versions Length", prefix ".quic.supported_versions.len", \
-        FT_UINT16, BASE_DEC, NULL, 0x00,                                \
-        NULL, HFILL }                                                   \
-    },                                                                  \
-    { & name .hf.hs_ext_quictp_supported_versions,                      \
-      { "Supported Versions", prefix ".quic.supported_versions",        \
-        FT_UINT32, BASE_HEX, VALS(quic_version_vals), 0x00,             \
-        NULL, HFILL }                                                   \
-    },                                                                  \
     { & name .hf.hs_ext_quictp_len,                                     \
       { "Parameters Length", prefix ".quic.len",                        \
         FT_UINT16, BASE_DEC, NULL, 0x00,                                \
@@ -2032,6 +2028,11 @@ ssl_common_dissect_t name = {   \
     { & name .hf.hs_ext_quictp_parameter_pa_statelessresettoken,        \
       { "statelessResetToken", prefix ".quic.parameter.preferred_address.statelessresettoken",  \
         FT_BYTES, BASE_NONE, NULL, 0x00,                                \
+        NULL, HFILL }                                                   \
+    },                                                                  \
+    { & name .hf.hs_ext_quictp_parameter_active_connection_id_limit,    \
+      { "Active Connection ID Limit", prefix ".quic.parameter.active_connection_id_limit", \
+        FT_UINT64, BASE_DEC, NULL, 0x00,                                \
         NULL, HFILL }                                                   \
     },                                                                  \
     { & name .hf.esni_suite,                                            \
@@ -2165,7 +2166,7 @@ ssl_debug_printf(const gchar* fmt _U_,...)
 #endif /* __PACKET_TLS_UTILS_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -1613,7 +1613,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Copy from</source>
-        <translation>Копировать из</translation>
+        <translation type="vanished">Копировать из</translation>
     </message>
     <message>
         <source>Copy coloring rules from another profile.</source>
@@ -1775,6 +1775,63 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
 </context>
 <context>
+    <name>CopyFromProfileButton</name>
+    <message>
+        <source>Copy from</source>
+        <translation type="unfinished">Копировать из</translation>
+    </message>
+    <message>
+        <source>Copy entries from another profile.</source>
+        <translation type="unfinished">Копировать записи из другого профиля.</translation>
+    </message>
+    <message>
+        <source>System default</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CredentialsDialog</name>
+    <message>
+        <source>Wireshark - Credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CredentialsModel</name>
+    <message>
+        <source>Click to select the packet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to select the packet with username</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Packet No.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <translation type="unfinished">Протокол</translation>
+    </message>
+    <message>
+        <source>Username</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional Info</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DataPrinter</name>
     <message>
         <source>Copy Bytes as Hex + ASCII Dump</source>
@@ -1913,6 +1970,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Управлять сохранёнными закладками.</translation>
     </message>
     <message>
+        <source>Clear display filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Apply this filter string to the display.</source>
         <translation>Применить эту строку фильтра к отображённому на экране.</translation>
     </message>
@@ -1947,14 +2008,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Manage Filter Expressions</source>
         <translation>Управлять Выражениями Фильтра</translation>
-    </message>
-    <message>
-        <source>Selected</source>
-        <translation type="unfinished">Выбрано</translation>
-    </message>
-    <message>
-        <source>Not Selected</source>
-        <translation type="unfinished">Не Выбрано</translation>
     </message>
 </context>
 <context>
@@ -2115,6 +2168,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Enabled Protocols</source>
         <translation>Разрешённые Протоколы</translation>
+    </message>
+    <message>
+        <source>Everywhere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only Protocols</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only Description</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2446,8 +2511,8 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Справка для extcap-интерфейса %1 не найдена. Указанный файл: %2</translation>
     </message>
     <message>
-        <source>Save parameter on capture start</source>
-        <translation>Сохранить параметр при старте захвата</translation>
+        <source>Save parameter(s) on capture start</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2514,6 +2579,17 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Size</source>
         <translation>Размер</translation>
+    </message>
+</context>
+<context>
+    <name>FilterAction</name>
+    <message>
+        <source>Selected</source>
+        <translation type="unfinished">Выбрано</translation>
+    </message>
+    <message>
+        <source>Not Selected</source>
+        <translation type="unfinished">Не Выбрано</translation>
     </message>
 </context>
 <context>
@@ -3572,8 +3648,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>I/O Graphs</source>
-        <oldsource>IO Graphs</oldsource>
-        <translation type="unfinished">Графики Ввода/Вывода</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy</source>
@@ -3581,7 +3656,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Copy from</source>
-        <translation>Копировать из</translation>
+        <translation type="vanished">Копировать из</translation>
     </message>
     <message>
         <source>Copy graphs from another profile.</source>
@@ -3602,10 +3677,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>100 ms</source>
         <translation>100 мс</translation>
-    </message>
-    <message>
-        <source>Wireshark IO Graphs: %1</source>
-        <translation type="vanished">Графики Ввода/Вывода Wireshark: %1</translation>
     </message>
     <message>
         <source>Wireshark I/O Graphs: %1</source>
@@ -4228,6 +4299,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>External capture interfaces disabled.</source>
         <translation>Внешние интерфейсы захвата отключены. </translation>
+    </message>
+    <message>
+        <source>Start capture</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5653,19 +5728,20 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Профиль: %1</translation>
     </message>
     <message>
-        <source>Manage Profiles</source>
-        <oldsource>Manage Profiles...</oldsource>
-        <translation>Управлять Профилями</translation>
+        <source>Import</source>
+        <translation type="unfinished">Импорт</translation>
     </message>
     <message>
-        <source>New</source>
-        <oldsource>New...</oldsource>
-        <translation>Новый</translation>
+        <source>from zip file</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Edit</source>
-        <oldsource>Edit...</oldsource>
-        <translation>Редактировать</translation>
+        <source>from directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished">Экспорт</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -5701,13 +5777,14 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <oldsource>No expert info</oldsource>
         <translation>Нет информации эксперта</translation>
     </message>
-    <message>
-        <source>, 1 byte</source>
-        <translation>, 1 байт</translation>
-    </message>
-    <message>
-        <source>, %1 bytes</source>
-        <translation>, %1 байты</translation>
+    <message numerus="yes">
+        <source>%Ln byte(s)</source>
+        <oldsource>, %1 bytes</oldsource>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
     <message>
         <source>Byte %1</source>
@@ -5746,6 +5823,26 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>No Packets</source>
         <translation>Нет Пакетов</translation>
+    </message>
+    <message>
+        <source>Manage Profiles</source>
+        <translation>Управлять Профилями</translation>
+    </message>
+    <message>
+        <source>New</source>
+        <translation>Новый</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>Редактировать</translation>
+    </message>
+    <message>
+        <source>selected personal profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>all personal profiles</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Packets: %1</source>
@@ -6156,15 +6253,15 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>&amp;Selected</source>
-        <translation>&amp;Выбрано</translation>
+        <translation type="vanished">&amp;Выбрано</translation>
     </message>
     <message>
         <source>&amp;Not Selected</source>
-        <translation>&amp;Не Выбрано</translation>
+        <translation type="vanished">&amp;Не Выбрано</translation>
     </message>
     <message>
         <source>Not Selected</source>
-        <translation>Не Выбрано</translation>
+        <translation type="vanished">Не Выбрано</translation>
     </message>
     <message>
         <source>Close this capture file</source>
@@ -6868,10 +6965,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Показать статистику беспроводной локальной сети IEEE 802.11.</translation>
     </message>
     <message>
-        <source>Add a filter button</source>
-        <translation type="vanished">Добавить кнопку фильтра</translation>
-    </message>
-    <message>
         <source>Add a display filter button.</source>
         <translation>Добавить кнопку дисплейного фильтра.</translation>
     </message>
@@ -6886,6 +6979,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>&amp;Full Screen</source>
         <translation>&amp;Полный Экран</translation>
+    </message>
+    <message>
+        <source>Credentials</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Options…</source>
@@ -6913,35 +7010,35 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>…&amp;and Selected</source>
-        <translation>…&amp;и Выбранное</translation>
+        <translation type="vanished">…&amp;и Выбранное</translation>
     </message>
     <message>
         <source>…and Selected</source>
-        <translation>…и Выбранное</translation>
+        <translation type="vanished">…и Выбранное</translation>
     </message>
     <message>
         <source>…&amp;or Selected</source>
-        <translation>…&amp;или Выбранное</translation>
+        <translation type="vanished">…&amp;или Выбранное</translation>
     </message>
     <message>
         <source>…or Selected</source>
-        <translation>…или Выбранное</translation>
+        <translation type="vanished">…или Выбранное</translation>
     </message>
     <message>
         <source>…a&amp;nd not Selected</source>
-        <translation>…&amp;и не Выбранное</translation>
+        <translation type="vanished">…&amp;и не Выбранное</translation>
     </message>
     <message>
         <source>…and not Selected</source>
-        <translation>…и не Выбранное</translation>
+        <translation type="vanished">…и не Выбранное</translation>
     </message>
     <message>
         <source>…o&amp;r not Selected</source>
-        <translation>…&amp;или не Выбранное</translation>
+        <translation type="vanished">…&amp;или не Выбранное</translation>
     </message>
     <message>
         <source>…or not Selected</source>
-        <translation>…или не Выбранное</translation>
+        <translation type="vanished">…или не Выбранное</translation>
     </message>
     <message>
         <source>Display Filter &amp;Macros…</source>
@@ -8429,7 +8526,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <name>PrefsModel</name>
     <message>
         <source>Advanced</source>
-        <extracomment>Names of special preferences handled by the GUI</extracomment>
         <translation>Улучшенный</translation>
     </message>
     <message>
@@ -8515,17 +8611,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>ProfileDialog</name>
     <message>
-        <source>Name</source>
-        <translation>Имя</translation>
+        <source>Search for profile …</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create a new profile using default settings.</source>
         <translation>Создать новый профиль, используя настройки по умолчанию.</translation>
     </message>
     <message>
-        <source>Remove this profile. System provided profiles cannot be removed.</source>
-        <oldsource>Remove this profile. The Default profile and system provided profiles cannot be removed.</oldsource>
-        <translation>Удалить этот профиль. Системные профили не могут быть удалены.</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove this profile. System provided profiles cannot be removed. The default profile will be resetted upon deletion.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy this profile.</source>
@@ -8536,52 +8631,253 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Конфигурационные Профили</translation>
     </message>
     <message>
-        <source>Will be reset to default values</source>
-        <translation>Будет сброшено до значений по умолчанию</translation>
+        <source>Import</source>
+        <comment>noun</comment>
+        <translation type="unfinished">Импорт</translation>
     </message>
     <message>
-        <source>Created from %1</source>
-        <translation>Создано из %1</translation>
+        <source>Export</source>
+        <comment>noun</comment>
+        <translation type="unfinished">Экспорт</translation>
     </message>
     <message>
-        <source>(system provided)</source>
-        <translation>(системный)</translation>
-    </message>
-    <message>
-        <source>(deleted)</source>
-        <translation>(удалено)</translation>
-    </message>
-    <message>
-        <source>Created from default settings</source>
-        <translation>Создан из настроек по умолчанию</translation>
-    </message>
-    <message>
-        <source>Renamed from %1</source>
-        <translation>Переименовано из %1</translation>
-    </message>
-    <message>
-        <source>Go to %1</source>
-        <translation>Перейти к %1</translation>
-    </message>
-    <message>
-        <source>This is a system provided profile.</source>
-        <translation>Это системный профиль.</translation>
-    </message>
-    <message>
-        <source>A profile already exists with this name.</source>
-        <translation>Профиль с таким именем уже существует.</translation>
-    </message>
-    <message>
-        <source>A profile already exists with this name</source>
-        <translation>Профиль с таким именем уже существует</translation>
-    </message>
-    <message>
-        <source>The profile will be reset to default values.</source>
-        <translation>Профиль будет сброшен до значений по умолчанию.</translation>
+        <source>New profile</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Profile Error</source>
         <translation>Ошибка Профиля</translation>
+    </message>
+    <message>
+        <source>Exporting profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No profiles found for export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select zip file for export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln selected personal profile(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>An import of profiles is not allowed, while changes are pending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An import is pending to be saved. Additional imports are not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An export of profiles is only allowed for personal profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An export of profiles is not allowed, while changes are pending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln profile(s) exported</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Select zip file for import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select directory for import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zip File (*.zip)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>from zip file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>from directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>all personal profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation type="unfinished">Ошибка</translation>
+    </message>
+    <message>
+        <source>An error has occurred while exporting profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No profiles found for import in %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln profile(s) imported</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>, %Ln profile(s) skipped</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Importing profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln profile(s) selected</source>
+        <translation type="obsolete">
+            <numerusform>%Ln profile selected</numerusform>
+            <numerusform>%Ln profiles selected</numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>ProfileModel</name>
+    <message>
+        <source>Resetting to default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Imported profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is a system provided profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile change for this name is pending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> (See: %1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is an invalid profile definition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile already exists with this name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile with this name is being deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Created from default settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>system provided</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>copy</source>
+        <comment>noun</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exporting profiles while changes are pending is not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No profiles found to export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t delete profile directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile name cannot contain the following characters: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile name cannot contain the &apos;/&apos; character</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile cannot start or end with a period (.)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation type="unfinished">По умолчанию</translation>
+    </message>
+    <message>
+        <source>Global</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Personal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renamed from: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copied from: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>renamed to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation type="unfinished">Тип</translation>
+    </message>
+</context>
+<context>
+    <name>ProfileSortModel</name>
+    <message>
+        <source>All profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Personal profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Global profiles</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8596,6 +8892,66 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Packet details</source>
         <translation>Подробная информация о пакете</translation>
+    </message>
+    <message>
+        <source>Expand Subtrees</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse Subtrees</source>
+        <translation type="unfinished">Свернуть Подчинённые Деревья</translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished">Развернуть Всё</translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished">Свернуть Всё</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Копировать</translation>
+    </message>
+    <message>
+        <source>All Visible Items</source>
+        <translation type="unfinished">Все Видимые Пункты</translation>
+    </message>
+    <message>
+        <source>All Visible Selected Tree Items</source>
+        <translation type="unfinished">Все Видимые Пункты Выбранного Дерева</translation>
+    </message>
+    <message>
+        <source>Desription</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Field Name</source>
+        <translation type="unfinished">Имя Поля</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation type="unfinished">Значение</translation>
+    </message>
+    <message>
+        <source>As Filter</source>
+        <translation type="unfinished">Как Фильтр</translation>
+    </message>
+    <message>
+        <source>Wiki Protocol Page</source>
+        <translation type="unfinished">Wiki-страница Протокола</translation>
+    </message>
+    <message>
+        <source>Filter Field Reference</source>
+        <translation type="unfinished">Справка по Полю Фильтра</translation>
+    </message>
+    <message>
+        <source>Wiki Page for %1</source>
+        <translation type="unfinished">Страница Wiki для %1</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Wireshark Wiki is maintained by the community.&lt;/p&gt;&lt;p&gt;The page you are about to load might be wonderful, incomplete, wrong, or nonexistent.&lt;/p&gt;&lt;p&gt;Proceed to the wiki?&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Wireshark Wiki поддерживается сообществом.&lt;/p&gt;&lt;p&gt;Страница, которую Вы пытаетесь загрузить, может быть качественной, незаконченной, ошибочной или несуществующей.&lt;/p&gt;&lt;p&gt;Продолжить работу с wiki?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Colorize with Filter</source>
@@ -8805,6 +9161,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Any </source>
         <translation>Любой</translation>
+    </message>
+    <message>
+        <source>Prepare as Filter</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Don&apos;t show this message again.</source>
@@ -11389,10 +11749,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>Сеть</translation>
     </message>
     <message>
-        <source>Reset</source>
-        <translation>Сброс</translation>
-    </message>
-    <message>
         <source>Reset Diagram</source>
         <translation>Сброс Диаграммы</translation>
     </message>
@@ -12618,11 +12974,11 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Copy from</source>
-        <translation>Копировать из</translation>
+        <translation type="vanished">Копировать из</translation>
     </message>
     <message>
         <source>Copy entries from another profile.</source>
-        <translation>Копировать записи из другого профиля.</translation>
+        <translation type="vanished">Копировать записи из другого профиля.</translation>
     </message>
     <message>
         <source>Open </source>
@@ -12693,6 +13049,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Select all calls</source>
         <translation>Выбрать все звонки</translation>
+    </message>
+    <message>
+        <source>Display time as time of day</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy as CSV</source>

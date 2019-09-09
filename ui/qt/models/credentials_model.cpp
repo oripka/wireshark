@@ -14,19 +14,11 @@
 
 #include <file.h>
 #include <log.h>
+#include <ui/qt/utils/qt_ui_utils.h>
 
-CredentialsModel::CredentialsModel(QObject *parent, CaptureFile& cf)
+CredentialsModel::CredentialsModel(QObject *parent)
     :QAbstractListModel(parent)
 {
-    GString* error_string = register_tap_listener("credentials", this, NULL, TL_REQUIRES_NOTHING,
-        NULL, credentialsPacket, NULL, NULL);
-    if (error_string) {
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_ERROR, "Error registering credentials tap: %s", error_string->str);
-        return;
-    }
-
-    cf_retap_packets(cf.capFile());
-    remove_tap_listener(this);
 }
 
 int CredentialsModel::rowCount(const QModelIndex &) const
@@ -107,17 +99,34 @@ QVariant CredentialsModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-
-tap_packet_status CredentialsModel::credentialsPacket(void *p, packet_info *, epan_dissect_t *, const void *pri)
-{
-    CredentialsModel* model = (CredentialsModel*)p;
-    model->addRecord((tap_credential_t*)pri);
-    return TAP_PACKET_REDRAW;
-}
-
 void CredentialsModel::addRecord(tap_credential_t* auth)
 {
-    credentials_.append(auth);
+    emit beginInsertRows(QModelIndex(), rowCount(), rowCount() + 1);
+
+    tap_credential_t* clone = new tap_credential_t;
+    clone->num = auth->num;
+    clone->username_num = auth->username_num;
+    clone->password_hf_id = auth->password_hf_id;
+    clone->username = qstring_strdup(auth->username);
+    clone->proto = auth->proto;
+    clone->info = qstring_strdup(auth->info);
+    credentials_.append(clone);
+
+    emit endInsertRows();
+}
+
+void CredentialsModel::clear()
+{
+    if (!credentials_.isEmpty()) {
+        emit beginRemoveRows(QModelIndex(), 0, rowCount() - 1);
+        for (QList<tap_credential_t*>::iterator itr = credentials_.begin(); itr != credentials_.end(); ++itr) {
+            g_free((*itr)->username);
+            g_free((*itr)->info);
+            delete *itr;
+        }
+        credentials_.clear();
+        emit endRemoveRows();
+    }
 }
 
 QVariant CredentialsModel::headerData(int section, Qt::Orientation orientation, int role) const

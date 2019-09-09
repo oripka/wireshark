@@ -46,9 +46,9 @@ endif()
 set (MMDBRESOLVE_EXE ${MAXMINDDB_FOUND})
 
 # Must match ${EXTRA_INSTALLER_DIR}/Npcap-X.Y.Z.exe
-set(NPCAP_PACKAGE_VERSION "0.996")
+set(NPCAP_PACKAGE_VERSION "0.9982")
 
-set(USBPCAP_PACKAGE_VERSION "1.5.0.0")
+set(USBPCAP_PACKAGE_VERSION "1.5.3.0")
 
 set(PRODUCT_VERSION ${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_PATCH_VERSION}.${PROJECT_BUILD_VERSION})
 
@@ -82,7 +82,10 @@ endif()
 # 1913 = VS2017 15.6        / 14.13
 # 1914 = VS2017 15.7        / 14.14
 set(_vcredist_name "vcredist_${TARGET_MACHINE}.exe")
-if(MSVC_VERSION GREATER_EQUAL 1910)
+if(MSVC_VERSION GREATER_EQUAL 1920)
+	set(_ws_vcredist_subdir "vcredist_MSVC2019")
+	set(_msvs_version 15.0) # Doesn't appear to be set
+elseif(MSVC_VERSION GREATER_EQUAL 1910)
 	set(_ws_vcredist_subdir "vcredist_MSVC2017")
 	set(_msvs_version 15.0)
 elseif(MSVC_VERSION GREATER_EQUAL 1900)
@@ -138,7 +141,7 @@ foreach(_dll ${GLIB2_DLLS} ${CARES_DLL} ${GCRYPT_DLLS}
 		${GNUTLS_DLLS} ${KERBEROS_DLLS} ${LIBSSH_DLL} ${LUA_DLL}
 		${LZ4_DLL} ${NGHTTP2_DLL} ${SBC_DLL} ${SMI_DLL} ${SNAPPY_DLL}
 		${SPANDSP_DLL} ${BCG729_DLL} ${LIBXML2_DLLS} ${WINSPARKLE_DLL}
-		${ZLIB_DLL} ${BROTLI_DLLS}
+		${ZLIB_DLL} ${BROTLI_DLLS} ${ZSTD_DLL}
 		# Needed for mmdbresolve
 		${MAXMINDDB_DLL}
 	)

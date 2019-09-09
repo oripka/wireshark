@@ -703,7 +703,6 @@ extern C shift##C(lua_State* L,int i)
 extern packet_info* lua_pinfo;
 extern TreeItem lua_tree;
 extern tvbuff_t* lua_tvb;
-extern dissector_handle_t lua_data_handle;
 extern gboolean lua_initialized;
 extern int lua_dissectors_table_ref;
 extern int lua_heur_dissectors_table_ref;
@@ -816,7 +815,7 @@ extern void wslua_deregister_menus(void);
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

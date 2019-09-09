@@ -2,7 +2,7 @@
  *
  * Routines for WiMAX ASN Control Plane packet dissection dissection
  *
- * Copyright 2007, Mobile Metrics - http://mobilemetrics.net/
+ * Copyright 2007, Mobile Metrics - http://www.mobilemetrics.net
  *
  * Author: Stephen Croll <croll@mobilemetrics.net>
  *
@@ -3439,7 +3439,7 @@ proto_reg_handoff_wimaxasncp(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

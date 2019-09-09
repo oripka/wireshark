@@ -103,6 +103,7 @@ typedef struct _smb2_conv_info_t {
 	/* table to store some infos for smb export object */
 	GHashTable *files;
 	guint16 dialect;
+	guint16 enc_alg;
 
 	/* preauth hash before session setup */
 	guint8 *preauth_hash_current;
@@ -203,6 +204,14 @@ typedef struct _smb2_transform_info_t {
 	smb2_conv_info_t *conv;
 	smb2_sesid_info_t *session;
 } smb2_transform_info_t;
+
+typedef struct _smb2_comp_transform_info_t {
+	guint orig_size;
+	guint alg;
+	guint comp_offset;
+	smb2_conv_info_t *conv;
+	smb2_sesid_info_t *session;
+} smb2_comp_transform_info_t;
 
 
 int dissect_smb2_FILE_OBJECTID_BUFFER(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset);

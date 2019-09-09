@@ -7,8 +7,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 
-include(UseABICheck)
-
 if (HAVE_HFI_SECTION_INIT)
 	add_definitions(
 		-DHAVE_HFI_SECTION_INIT
@@ -29,6 +27,7 @@ include_directories(
 		${SMI_INCLUDE_DIRS}
 		${SNAPPY_INCLUDE_DIRS}
 		${ZLIB_INCLUDE_DIRS}
+		${ZSTD_INCLUDE_DIRS}
 		${LIBXML2_INCLUDE_DIRS}
 )
 
@@ -270,6 +269,9 @@ set(LIBWIRESHARK_NONGENERATED_FILES
 	tvbuff_real.c
 	tvbuff_subset.c
 	tvbuff_zlib.c
+	tvbuff_lz77.c
+	tvbuff_lz77huff.c
+	tvbuff_lznt1.c
 	uat.c
 	value_string.c
 	unit_strings.c
@@ -322,52 +324,8 @@ set_target_properties(epan PROPERTIES
 	LINK_FLAGS "${WS_LINK_FLAGS}"
 	VERSION "0.0.0" SOVERSION 0
 	INSTALL_RPATH "${LIBRARY_INSTALL_RPATH}"
-)
-
-ABICHECK(libwireshark)
-
-set(TOP_LEVEL_HEADERS ${CMAKE_BINARY_DIR}/config.h)
-file(GLOB CRYPT_HEADERS crypt/*.h)
-file(GLOB DFILTER_HEADERS dfilter/*.h ../tools/lemon/cppmagic.h)
-file(GLOB D_HEADERS dissectors/*.h)
-file(GLOB FTYPES_HEADERS ftypes/*.h)
-file(GLOB WMEM_HEADERS wmem/*.h)
-
-add_custom_command(OUTPUT libwireshark.abi.tar.gz
-	COMMAND ${CMAKE_COMMAND} -E remove_directory ${ABICHECK_TMPDIR}
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}/epan
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}/crypt
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}/dfilter
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}/dissectors
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}/ftypes
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}/wmem
-	COMMAND ${ABI_COPY_COMMAND} ${TOP_LEVEL_HEADERS} ${ABICHECK_TMPDIR} ${ABI_COPY_FLAGS}
-	COMMAND ${ABI_COPY_COMMAND} ${ABICHECK_HEADERS} ${ABICHECK_TMPDIR}/epan ${ABI_COPY_FLAGS}
-	COMMAND ${ABI_COPY_COMMAND} ${CRYPT_HEADERS} ${ABICHECK_TMPDIR}/crypt ${ABI_COPY_FLAGS}
-	COMMAND ${ABI_COPY_COMMAND} ${DFILTER_HEADERS} ${ABICHECK_TMPDIR}/dfilter ${ABI_COPY_FLAGS}
-	COMMAND ${ABI_COPY_COMMAND} ${D_HEADERS} ${ABICHECK_TMPDIR}/dissectors ${ABI_COPY_FLAGS}
-	COMMAND ${ABI_COPY_COMMAND} ${FTYPES_HEADERS} ${ABICHECK_TMPDIR}/ftypes ${ABI_COPY_FLAGS}
-	COMMAND ${ABI_COPY_COMMAND} ${WMEM_HEADERS} ${ABICHECK_TMPDIR}/wmem ${ABI_COPY_FLAGS}
-	COMMAND rm -f ${ABICHECK_TMPDIR}/dissectors/x11-extension-implementation.h
-		${ABICHECK_TMPDIR}/dissectors/packet-rtps.h
-		${ABICHECK_TMPDIR}/dissectors/x11-glx-render-enum.h
-		${ABICHECK_TMPDIR}/dissectors/x11-register-info.h
-		${ABICHECK_TMPDIR}/dissectors/packet-idmp.h
-	COMMAND ${ABICHECK_COMMAND}
-	COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/abi_dumps/libwireshark/libwireshark_* ${CMAKE_CURRENT_BINARY_DIR}/libwireshark.abi.tar.gz
-	COMMAND rm -rf ${ABICHECK_TMPDIR} ${CMAKE_CURRENT_BINARY_DIR}/abi_dumps
-#	COMMAND rm -rf ${CMAKE_CURRENT_BINARY_DIR}/abi_dumps ${ABICHECK_TMPDIR}/config.h
-#		${ABICHECK_TMPDIR}/epan/* ${ABICHECK_TMPDIR}/crypt/*
-#		${ABICHECK_TMPDIR}/dfilter/* ${ABICHECK_TMPDIR}/dissectors/*
-#		${ABICHECK_TMPDIR}/ftypes/* ${ABICHECK_TMPDIR}/wmem/*
-	DEPENDS ${HEADERS}
-		${CRYPT_HEADERS} ${DFILTER_HEADERS} ${D_HEADERS}
-		${FTYPES_HEADERS} ${WMEM_HEADERS} epan)
-
-# By default the name for a library with target name epan will be libepan,
-# but Ethereal is now named Wireshark
-set_target_properties(epan PROPERTIES
+	# By default the name for a library with target name epan will be libepan,
+	# but Ethereal is now named Wireshark
 	OUTPUT_NAME "wireshark"
 	PREFIX "lib"
 	FOLDER "DLLs"
@@ -395,6 +353,7 @@ target_link_libraries(epan
 		${WIN_PSAPI_LIBRARY}
 		${LIBXML2_LIBRARIES}
 		${ZLIB_LIBRARIES}
+		${ZSTD_LIBRARIES}
 )
 
 target_include_directories(epan
@@ -459,7 +418,7 @@ CHECKAPI(
 )
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 8

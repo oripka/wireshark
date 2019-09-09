@@ -122,7 +122,7 @@ void capture_dissector_add_uint(const char *name, const guint32 pattern, capture
     sub_dissectors = (struct capture_dissector_table*)g_hash_table_lookup( capture_dissector_tables, name );
     if (sub_dissectors == NULL) {
             fprintf(stderr, "OOPS: Subdissector \"%s\" not found in capture_dissector_tables\n", name);
-            if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+            if (wireshark_abort_on_dissector_bug)
                     abort();
             return;
     }
@@ -183,7 +183,7 @@ void capture_dissector_increment_count(capture_packet_info_t *cpinfo, const int 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

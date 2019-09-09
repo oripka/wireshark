@@ -5,7 +5,7 @@
  *
  * This software and documentation has been developed by Endace Technology Ltd.
  * along with the DAG PCI network capture cards. For further information please
- * visit http://www.endace.com/.
+ * visit https://www.endace.com/.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -384,7 +384,7 @@ int erf_get_source_from_header(union wtap_pseudo_header *pseudo_header, guint64 
 #endif /* __W_ERF_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

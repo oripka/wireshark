@@ -758,6 +758,7 @@ show_filter_code(capture_options *capture_opts)
         /* OK, try to compile the capture filter. */
         if (!compile_capture_filter(interface_opts->name, pcap_h, &fcode,
                                     interface_opts->cfilter)) {
+            g_snprintf(errmsg, sizeof(errmsg), "%s", pcap_geterr(pcap_h));
             pcap_close(pcap_h);
             report_cfilter_error(capture_opts, j, errmsg);
             return FALSE;
@@ -1943,24 +1944,24 @@ pcap_pipe_open_live(int fd,
         hdr->network = GUINT32_SWAP_LE_BE(hdr->network);
     }
     pcap_src->linktype = hdr->network;
-#ifdef DLT_DBUS
-    if (pcap_src->linktype == DLT_DBUS) {
-        /*
-         * The maximum D-Bus message size is 128MB, so allow packets up
-         * to that size.
-         */
+    /* Pick the appropriate maximum packet size for the link type */
+    switch (pcap_src->linktype) {
+
+    case 231: /* DLT_DBUS */
         pcap_src->cap_pipe_max_pkt_size = WTAP_MAX_PACKET_SIZE_DBUS;
-    } else
-#endif
-    if (pcap_src->linktype == 279) {             /* DLT_EBHSCR */
-        /*
-         * The maximum EBHSCR message size is 8MB, so allow packets up
-         * to that size.
-         */
+        break;
+
+    case 279: /* DLT_EBHSCR */
         pcap_src->cap_pipe_max_pkt_size = WTAP_MAX_PACKET_SIZE_EBHSCR;
-    }
-    else {
+        break;
+
+    case 249: /* DLT_USBPCAP */
+        pcap_src->cap_pipe_max_pkt_size = WTAP_MAX_PACKET_SIZE_USBPCAP;
+        break;
+
+    default:
         pcap_src->cap_pipe_max_pkt_size = WTAP_MAX_PACKET_SIZE_STANDARD;
+        break;
     }
 
     if (hdr->version_major < 2) {
@@ -2406,7 +2407,7 @@ pcap_pipe_dispatch(loop_data *ld, capture_src *pcap_src, char *errmsg, size_t er
              */
             new_bufsize = pcap_info->rechdr.hdr.incl_len;
             /*
-             * http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+             * https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
              */
             new_bufsize--;
             new_bufsize |= new_bufsize >> 1;
@@ -2632,7 +2633,7 @@ pcapng_pipe_dispatch(loop_data *ld, capture_src *pcap_src, char *errmsg, size_t 
             */
             new_bufsize = bh->block_total_length;
             /*
-            * http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+            * https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
             */
             new_bufsize--;
             new_bufsize |= new_bufsize >> 1;
@@ -4047,29 +4048,41 @@ capture_loop_start(capture_options *capture_opts, gboolean *stats_known, struct 
         pcap_src = g_array_index(global_ld.pcaps, capture_src *, i);
         if (pcap_src->pcap_err) {
             /* On Linux, if an interface goes down while you're capturing on it,
-               you'll get a "recvfrom: Network is down" or
-               "The interface went down" error (ENETDOWN).
+               you'll get "recvfrom: Network is down".
                (At least you will if g_strerror() doesn't show a local translation
                of the error.)
 
+               Newer versions of libpcap maps that to just
+               "The interface went down".
+
                On FreeBSD, DragonFly BSD, and macOS, if a network adapter
-               disappears while you're capturing on it, you'll get a
+               disappears while you're capturing on it, you'll get
                "read: Device not configured" error (ENXIO).  (See previous
                parenthetical note.)
 
                On OpenBSD, you get "read: I/O error" (EIO) in the same case.
 
+               With WinPcap and Npcap, you'll get
+               "read error: PacketReceivePacket failed".
+
+               Newer versions of libpcap map some or all of those to just
+               "The interface disappeared".
+
                These should *not* be reported to the Wireshark developers. */
             char *cap_err_str;
 
             cap_err_str = pcap_geterr(pcap_src->pcap_h);
-            if (strcmp(cap_err_str, "recvfrom: Network is down") == 0 ||
-                strcmp(cap_err_str, "The interface went down") == 0 ||
-                strcmp(cap_err_str, "read: Device not configured") == 0 ||
-                strcmp(cap_err_str, "read: I/O error") == 0 ||
-                strcmp(cap_err_str, "read error: PacketReceivePacket failed") == 0) {
+            if (strcmp(cap_err_str, "The interface went down") == 0 ||
+                strcmp(cap_err_str, "recvfrom: Network is down") == 0) {
                 report_capture_error("The network adapter on which the capture was being done "
                                      "is no longer running; the capture has stopped.",
+                                     "");
+            } else if (strcmp(cap_err_str, "The interface disappeared") == 0 ||
+                       strcmp(cap_err_str, "read: Device not configured") == 0 ||
+                       strcmp(cap_err_str, "read: I/O error") == 0 ||
+                       strcmp(cap_err_str, "read error: PacketReceivePacket failed") == 0) {
+                report_capture_error("The network adapter on which the capture was being done "
+                                     "is no longer attached; the capture has stopped.",
                                      "");
             } else {
                 g_snprintf(errmsg, sizeof(errmsg), "Error while capturing packets: %s",

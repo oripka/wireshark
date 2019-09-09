@@ -45,6 +45,8 @@ WLAN-backhaulRate-r12
 HandoverCommand_PDU
 HandoverPreparationInformation_PDU
 HandoverPreparationInformation-NB_PDU
+MeasResultSCG-FailureMRDC-r15_PDU
+MeasResultList3EUTRA-r15_PDU
 MeasurementReport_PDU
 RLF-Report-r9_PDU
 RLF-Report-v9e0_PDU
@@ -53,6 +55,7 @@ SCG-Config-r12_PDU
 SCG-ConfigInfo-r12_PDU
 UEPagingCoverageInformation_PDU
 UEPagingCoverageInformation-NB_PDU
+UERadioPagingInformation_PDU
 UE-EUTRA-Capability_PDU
 VisitedCellInfo-r12_PDU
 VisitedCellInfoList-r12_PDU
@@ -62,11 +65,13 @@ VisitedCellInfoList-r12_PDU
 HandoverCommand
 HandoverPreparationInformation
 HandoverPreparationInformation-NB
+MeasResultSCG-FailureMRDC-r15
+MeasResultList3EUTRA-r15
 MeasurementReport
 RLF-Report-r9
 RLF-Report-v9e0
 RRCConnectionReconfiguration @rrc_conn_reconf
-RRCConnectionReconfigurationComplete
+RRCConnectionReconfigurationComplete @rrc_conn_reconf_compl
 SCG-Config-r12
 SCG-ConfigInfo-r12
 UEPagingCoverageInformation
@@ -213,6 +218,14 @@ SI-OrPSI-GERAN TYPE_PREFIX
     dissect_nr_rrc_UE_CapabilityRequestFilterNR_PDU(ue_cap_req_filter_nr_tvb, actx->pinfo, subtree, NULL);
   }
 
+#.FN_BODY UECapabilityEnquiry-v1560-IEs/requestedCapabilityCommon-r15 VAL_PTR = &ue_cap_req_filter_common_tvb
+  tvbuff_t *ue_cap_req_filter_common_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (ue_cap_req_filter_common_tvb) {
+    proto_tree *subtree = proto_item_add_subtree(actx->created_item, ett_lte_rrc_requestedCapabilityCommon_r15);
+    dissect_nr_rrc_UE_CapabilityRequestFilterCommon_PDU(ue_cap_req_filter_common_tvb, actx->pinfo, subtree, NULL);
+  }
+
 #.FN_BODY UE-CapabilityRAT-Container
   /* Initialise to invalid value */
   private_data_set_rat_type(actx, 0xFF);
@@ -339,6 +352,14 @@ if(ue_cap_tvb){
   if(featureGroupIndRel9Add_tvb){
     /* Dissect featureGroupIndRel9Add-r9 */
     dissect_lte_rrc_featureGroupIndRel9Add(featureGroupIndRel9Add_tvb, actx);
+  }
+
+#.FN_BODY UE-EUTRA-Capability-v1560-IEs/appliedCapabilityFilterCommon-r15 VAL_PTR = &ue_cap_req_filter_common_tvb
+  tvbuff_t *ue_cap_req_filter_common_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (ue_cap_req_filter_common_tvb) {
+    proto_tree *subtree = proto_item_add_subtree(actx->created_item, ett_lte_rrc_requestedCapabilityCommon_r15);
+    dissect_nr_rrc_UE_CapabilityRequestFilterCommon_PDU(ue_cap_req_filter_common_tvb, actx->pinfo, subtree, NULL);
   }
 
 #.FN_BODY UE-EUTRA-CapabilityAddXDD-Mode-r9/featureGroupIndicators-r9 VAL_PTR = &featureGroupIndicators_tvb
@@ -2480,26 +2501,26 @@ WLAN-OffloadConfig-r12/thresholdWLAN-RSSI-r12/thresholdWLAN-RSSI-Low-r12 DISPLAY
 #.TYPE_ATTR
 WLAN-OffloadConfig-r12/thresholdWLAN-RSSI-r12/thresholdWLAN-RSSI-High-r12 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(lte_rrc_thresholdWLAN_RSSI_fmt)
 
-#.FN_BODY MeasParameters-v1520/measGapPatterns-v1520 VAL_PTR = &meas_gap_pattern_tvb
+#.FN_BODY MeasParameters-v1520/measGapPatterns-r15 VAL_PTR = &meas_gap_pattern_tvb
   tvbuff_t *meas_gap_pattern_tvb = NULL;
   proto_tree *subtree;
 
 %(DEFAULT_BODY)s
 
-#.FN_BODY MeasParameters-v1520/measGapPatterns-v1520
+#.FN_BODY MeasParameters-v1520/measGapPatterns-r15
   if (meas_gap_pattern_tvb) {
     static const int *lte_rrc_meas_gap_pattern_flags[] = {
-      &hf_lte_rrc_measGapPatterns_v1520_bit1,
-      &hf_lte_rrc_measGapPatterns_v1520_bit2,
-      &hf_lte_rrc_measGapPatterns_v1520_bit3,
-      &hf_lte_rrc_measGapPatterns_v1520_bit4,
-      &hf_lte_rrc_measGapPatterns_v1520_bit5,
-      &hf_lte_rrc_measGapPatterns_v1520_bit6,
-      &hf_lte_rrc_measGapPatterns_v1520_bit7,
-      &hf_lte_rrc_measGapPatterns_v1520_bit8,
+      &hf_lte_rrc_measGapPatterns_r15_bit1,
+      &hf_lte_rrc_measGapPatterns_r15_bit2,
+      &hf_lte_rrc_measGapPatterns_r15_bit3,
+      &hf_lte_rrc_measGapPatterns_r15_bit4,
+      &hf_lte_rrc_measGapPatterns_r15_bit5,
+      &hf_lte_rrc_measGapPatterns_r15_bit6,
+      &hf_lte_rrc_measGapPatterns_r15_bit7,
+      &hf_lte_rrc_measGapPatterns_r15_bit8,
       NULL
     };
-    subtree = proto_item_add_subtree(actx->created_item, ett_lte_rrc_measGapPatterns_v1520);
+    subtree = proto_item_add_subtree(actx->created_item, ett_lte_rrc_measGapPatterns_r15);
     proto_tree_add_bitmask_list(subtree, meas_gap_pattern_tvb, 0, 1, lte_rrc_meas_gap_pattern_flags, ENC_NA);
   }
 

@@ -3,9 +3,9 @@ include::attributes.adoc[]
 :linkcss:
 
 = Wireshark {wireshark-version} Release Notes
-// AsciiDoc quick reference: http://powerman.name/doc/asciidoc
+// AsciiDoc quick reference: https://powerman.name/doc/asciidoc
 // Asciidoctor Syntax Quick Reference:
-// http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/
+// https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/
 
 This is an experimental release intended to test new features for
 Wireshark 3.2.
@@ -32,8 +32,19 @@ section below for more details.
 === New and Updated Features
 
 The following features are new (or have been significantly updated)
+since version 3.1.0:
+
+* You can once again mark and unmark packets using the middle mouse button. This feature
+  went missing around 2009 or so.
+
+The following features are new (or have been significantly updated)
 since version 3.0.0:
 
+* Drag&Drop a field to a column header to create a column for that field, or to the
+  display filter input to create a display filter. If a display filter is applied,
+  the new filter can be added using the same rules as "Apply Filter"
+* Drag&Drop a column entry to the display filter to create a filter for it
+* Import profiles from a .zip archive or an existing directory
 * Dark mode support on macOS and dark theme support on other platforms
   has been improved.
 * Brotli decompression support in HTTP/HTTP2 (requires the brotli library).
@@ -44,6 +55,10 @@ since version 3.0.0:
 * A new tap for extracting credentials from the capture file has been added.
   It can be accessed through the "-z credentials" option in tshark or from the
   "tools" menu in Wireshark.
+* Editcap can now split files on floating point intervals.
+* Windows .msi packages are now https://support.microsoft.com/en-us/help/4472027/2019-sha-2-code-signing-support-requirement-for-windows-and-wsus[signed using SHA-2].
+  .exe installers are still dual-signed using SHA-1 and SHA-2.
+* "Enable Protocols" Dialog now only enables/disables and inverts protocols based on the set filter selection. Also the protocol type (standard or heuristic) may be choosen as filter value
 
 // === Removed Features and Support
 
@@ -60,15 +75,31 @@ since version 3.0.0:
 // Add one protocol per line between the -- delimiters.
 [commaize]
 --
-evolved Common Public Radio Interface (eCPRI)
-Distributed Replicated Block Device (DRBD)
-GSM/3GPP CBSP (Cell Broadcast Service Protocol)
-NVM Express over Fabrics for TCP (nvme-tcp)
-Graylog Extended Log Format over UDP (GELF)
-FTDI FT USB Bridging Devices (FTDI FT)
+3GPP BICC MST (BICC-MST)
+3GPP/GSM Cell Broadcast Service Protocol (cbsp)
+3GPP log packet (LOG3GPP)
+Bluetooth Mesh Beacon
+Bluetooth Mesh PB-ADV
+Bluetooth Mesh Provisioning PDU
+Bluetooth Mesh Proxy
 CableLabs Layer-3 Protocol IEEE EtherType 0xb4e3 (CL3)
+DCOM IProvideClassInfo
+DCOM ITypeInfo
+Distributed Replicated Block Device (DRBD)
 Dual Channel Wi-Fi (CL3DCW)
+EBHSCR Protocol (EBHSCR)
+EERO Protocol (EERO)
+evolved Common Public Radio Interface (eCPRI)
+File Server Remote VSS Protocol (FSRVP)
+FTDI FT USB Bridging Devices (FTDI FT)
+Graylog Extended Log Format over UDP (GELF)
+GSM/3GPP CBSP (Cell Broadcast Service Protocol)
+MIDI System Exclusive DigiTech (SYSEX DigiTech)
+Network Controller Sideband Interface (NCSI)
 NR Positioning Protocol A (NRPPa) TS 38.455
+NVM Express over Fabrics for TCP (nvme-tcp)
+OsmoTRX Protocol (GSM Transceiver control and data)
+Linux net_dm (network drop monitor) protocol
 --
 
 === Updated Protocol Support
@@ -77,10 +108,18 @@ Too many protocols have been updated to list here.
 
 === New and Updated Capture File Support
 
-//_Non-empty section placeholder._
-// Add one file type per line between the --sort-and-group-- delimiters.
+// There is no new or updated capture file support in this release.
+// Add one file type per line between the -- delimiters.
 [commaize]
 --
+3gpp phone
+Android Logcat Text
+Ascend
+Candump
+Endace ERF
+NetScaler
+pcapng
+Savvius {asterisk}Peek
 --
 
 // === New and Updated Capture Interfaces support
@@ -123,7 +162,7 @@ Bugs and feature requests can be reported on
 https://bugs.wireshark.org/[the bug tracker].
 
 Official Wireshark training and certification are available from
-http://www.wiresharktraining.com/[Wireshark University].
+https://www.wiresharktraining.com/[Wireshark University].
 
 == Frequently Asked Questions
 

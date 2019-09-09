@@ -27,13 +27,13 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QDesktopServices>
-#include <QDesktopWidget>
 #include <QDir>
 #include <QFileInfo>
 #include <QFontDatabase>
 #include <QProcess>
 #include <QUrl>
 #include <QUuid>
+#include <QScreen>
 
 /* Make the format_size_flags_e enum usable in C++ */
 format_size_flags_e operator|(format_size_flags_e lhs, format_size_flags_e rhs) {
@@ -194,7 +194,7 @@ bool qStringCaseLessThan(const QString &s1, const QString &s2)
     return s1.compare(s2, Qt::CaseInsensitive) < 0;
 }
 
-// http://stackoverflow.com/questions/3490336/how-to-reveal-in-finder-or-show-in-explorer-with-qt
+// https://stackoverflow.com/questions/3490336/how-to-reveal-in-finder-or-show-in-explorer-with-qt
 void desktop_show_in_folder(const QString file_path)
 {
     bool success = false;
@@ -229,10 +229,10 @@ void desktop_show_in_folder(const QString file_path)
 
 bool rect_on_screen(const QRect &rect)
 {
-    QDesktopWidget *desktop = qApp->desktop();
-    for (int i = 0; i < desktop->screenCount(); i++) {
-        if (desktop->availableGeometry(i).contains(rect))
+    foreach (QScreen *screen, qApp->screens()) {
+        if (screen->availableGeometry().contains(rect)) {
             return true;
+        }
     }
 
     return false;

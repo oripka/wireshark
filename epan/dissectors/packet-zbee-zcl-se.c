@@ -6715,8 +6715,12 @@ dissect_zcl_met_set_uncontrolled_flow_threshold(tvbuff_t *tvb, proto_tree *tree,
 static void
 dissect_zcl_met_get_profile_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
 {
+    nstime_t end_time;
+
     /* End Time */
-    proto_tree_add_item(tree, hf_zbee_zcl_met_get_profile_response_end_time, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+    end_time.secs = (time_t)tvb_get_letohl(tvb, *offset) + ZBEE_ZCL_NSTIME_UTC_OFFSET;
+    end_time.nsecs = 0;
+    proto_tree_add_time(tree, hf_zbee_zcl_met_get_profile_response_end_time, tvb, *offset, 4, &end_time);
     *offset += 4;
 
     /* Status */
@@ -15720,7 +15724,7 @@ proto_reg_handoff_zbee_zcl_ke(void)
 } /*proto_reg_handoff_zbee_zcl_ke*/
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

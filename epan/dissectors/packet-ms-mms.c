@@ -4,7 +4,7 @@
  *
  * See
  *
- *    http://msdn.microsoft.com/en-us/library/cc234711.aspx
+ *    https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-mmsp
  *
  * for the [MS-MMSP] specification.
  *
@@ -1873,7 +1873,7 @@ void proto_reg_handoff_msmms_command(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

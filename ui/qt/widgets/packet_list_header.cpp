@@ -28,7 +28,9 @@
 
 PacketListHeader::PacketListHeader(Qt::Orientation orientation, capture_file * cap_file, QWidget *parent) :
     QHeaderView(orientation, parent),
-    cap_file_(cap_file)
+    cap_file_(cap_file),
+    sectionIdx(-1),
+    lastSize(-1)
 {
     setAcceptDrops(true);
     setSectionsMovable(true);
@@ -252,7 +254,7 @@ void PacketListHeader::setAlignment(QAction *action)
 
 void PacketListHeader::showColumnPrefs()
 {
-    emit showColumnPreferences(PrefsModel::COLUMNS_PREFERENCE_TREE_NAME);
+    emit showColumnPreferences(PrefsModel::typeToString(PrefsModel::Columns));
 }
 
 void PacketListHeader::doEditColumn()
@@ -272,9 +274,15 @@ void PacketListHeader::doEditColumn()
 void PacketListHeader::doResolveNames()
 {
     QAction * action = qobject_cast<QAction *>(sender());
+    if (!action)
+        return;
+
     QMenu * menu = qobject_cast<QMenu *>(action->parent());
+    if (!menu)
+        return;
+
     PacketListModel * plmModel = qobject_cast<PacketListModel *>(model());
-    if ( ! action || ! menu || ! plmModel )
+    if (!plmModel)
         return;
 
     int section = menu->property("column").toInt();
@@ -288,8 +296,11 @@ void PacketListHeader::doResolveNames()
 void PacketListHeader::resizeToContent()
 {
     QAction * action = qobject_cast<QAction *>(sender());
+    if (!action)
+        return;
+
     QMenu * menu = qobject_cast<QMenu *>(action->parent());
-    if (! action || ! menu)
+    if (!menu)
         return;
 
     int section = menu->property("column").toInt();
@@ -301,8 +312,11 @@ void PacketListHeader::resizeToContent()
 void PacketListHeader::removeColumn()
 {
     QAction * action = qobject_cast<QAction *>(sender());
+    if (!action)
+        return;
+
     QMenu * menu = qobject_cast<QMenu *>(action->parent());
-    if (! action || ! menu)
+    if (!menu)
         return;
 
     int section = menu->property("column").toInt();
@@ -317,8 +331,11 @@ void PacketListHeader::removeColumn()
 void PacketListHeader::resizeToWidth()
 {
     QAction * action = qobject_cast<QAction *>(sender());
+    if (!action)
+        return;
+
     QMenu * menu = qobject_cast<QMenu *>(action->parent());
-    if (! action || ! menu)
+    if (!menu)
         return;
 
     bool ok = false;

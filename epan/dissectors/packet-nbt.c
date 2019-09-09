@@ -327,10 +327,10 @@ get_nbns_name(tvbuff_t *tvb, int offset, int nbns_data_offset,
               char *name_ret, int name_ret_len, int *name_type_ret)
 {
     int           name_len;
-    const guchar *name;
-    const guchar *nbname;
+    const gchar  *name;
+    const gchar  *nbname;
     char         *nbname_buf;
-    const guchar *pname;
+    const gchar  *pname;
     char          cname, cnbname;
     int           name_type;
     char         *pname_ret;
@@ -1985,7 +1985,7 @@ proto_reg_handoff_nbt(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

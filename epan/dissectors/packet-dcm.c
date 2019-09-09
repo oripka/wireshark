@@ -3,7 +3,7 @@
  * Copyright 2003, Rich Coe <richcoe2@gmail.com>
  * Copyright 2008-2019, David Aggeler <david_aggeler@hispeed.ch>
  *
- * DICOM communication protocol: http://www.dicomstandard.org/current/
+ * DICOM communication protocol: https://www.dicomstandard.org/current/
  *
  * Part  5: Data Structures and Encoding
  * Part  6: Data Dictionary
@@ -630,11 +630,10 @@ typedef struct dcm_state_assoc {
 
     guint32 packet_no;                  /* Wireshark packet number, where association starts */
 
-#define AEEND 16
-    gchar ae_called[1+AEEND];           /* Called  AE title in A-ASSOCIATE RQ */
-    gchar ae_calling[1+AEEND];          /* Calling AE title in A-ASSOCIATE RQ */
-    gchar ae_called_resp[1+AEEND];      /* Called  AE title in A-ASSOCIATE RP */
-    gchar ae_calling_resp[1+AEEND];     /* Calling AE title in A-ASSOCIATE RP */
+    char *ae_called;                    /* Called  AE title in A-ASSOCIATE RQ */
+    char *ae_calling;                   /* Calling AE title in A-ASSOCIATE RQ */
+    char *ae_called_resp;               /* Called  AE title in A-ASSOCIATE RP */
+    char *ae_calling_resp;              /* Calling AE title in A-ASSOCIATE RP */
 
 } dcm_state_assoc_t;
 
@@ -1428,6 +1427,11 @@ dissect_dcm_assoc_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gu
     const char   *abort_source_desc = "";
     const char   *abort_reason_desc = "";
 
+    char  *ae_called;
+    char  *ae_calling;
+    char  *ae_called_resp;
+    char  *ae_calling_resp;
+
     guint8  reject_result;
     guint8  reject_source;
     guint8  reject_reason;
@@ -1444,20 +1448,33 @@ dissect_dcm_assoc_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gu
 
         offset += 2;                            /* Two reserved bytes*/
 
-        tvb_memcpy(tvb, assoc->ae_called, offset, 16);
-        assoc->ae_called[AEEND] = 0;
-        proto_tree_add_string(assoc_header_ptree, hf_dcm_assoc_called, tvb, offset, 16, assoc->ae_called);
+        /*
+         * XXX - this is in "the ISO 646:1990-Basic G0 Set"; ISO/IEC 646:1991
+         * claims to be the third edition of the standard, with the second
+         * version being ISO 646:1983, so I'm not sure what happened to
+         * ISO 646:1990.  ISO/IEC 646:1991 speaks of "the basic 7-bit code
+         * table", which leaves positions 2/3 (0x23) and 2/4 (0x24) as
+         * being either NUMBER SIGN or POUND SIGN and either DOLLAR SIGN or
+         * CURRENCY SIGN, respectively, and positions 4/0 (0x40), 5/11 (0x5b),
+         * 5/12 (0x5c), 5/13 (0x5d), 5/14 (0x5e), 6/0 (0x60), 7/11 (0x7b),
+         * 7/12 (0x7c), 7/13 (0x7d), and 7/14 (0x7e) as being "available for
+         * national or application-oriented use", so I'm *guessing* that
+         * "the ISO 646:1990-Basic G0 Set" means "those positions aren't
+         * specified" and thus should probably be treated as not valid
+         * in that "Basic" set.
+         */
+        proto_tree_add_item_ret_display_string(assoc_header_ptree, hf_dcm_assoc_called, tvb, offset, 16, ENC_ISO_646_BASIC|ENC_NA, wmem_packet_scope(), &ae_called);
+        assoc->ae_called = wmem_strdup(wmem_file_scope(), g_strstrip(ae_called));
         offset += 16;
 
-        tvb_memcpy(tvb, assoc->ae_calling, offset, 16);
-        assoc->ae_calling[AEEND] = 0;
-        proto_tree_add_string(assoc_header_ptree, hf_dcm_assoc_calling, tvb, offset, 16, assoc->ae_calling);
+        proto_tree_add_item_ret_display_string(assoc_header_ptree, hf_dcm_assoc_calling, tvb, offset, 16, ENC_ISO_646_BASIC|ENC_NA, wmem_packet_scope(), &ae_calling);
+        assoc->ae_calling = wmem_strdup(wmem_file_scope(), g_strstrip(ae_calling));
         offset += 16;
 
         offset += 32;                           /* 32 reserved bytes */
 
         buf_desc = wmem_strdup_printf(pinfo->pool, "A-ASSOCIATE request %s --> %s",
-            g_strstrip(assoc->ae_calling), g_strstrip(assoc->ae_called));
+            assoc->ae_calling, assoc->ae_called);
 
         offset = dissect_dcm_assoc_detail(tvb, pinfo, assoc_header_ptree, assoc, offset, pdu_len-offset);
 
@@ -1469,20 +1486,18 @@ dissect_dcm_assoc_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gu
 
         offset += 2;                            /* Two reserved bytes*/
 
-        tvb_memcpy(tvb, assoc->ae_called_resp, offset, 16);
-        assoc->ae_called_resp[AEEND] = 0;
-        proto_tree_add_string(assoc_header_ptree, hf_dcm_assoc_called, tvb, offset, 16, assoc->ae_called_resp);
+        proto_tree_add_item_ret_display_string(assoc_header_ptree, hf_dcm_assoc_called, tvb, offset, 16, ENC_ISO_646_BASIC|ENC_NA, wmem_packet_scope(), &ae_called_resp);
+        assoc->ae_called_resp = wmem_strdup(wmem_file_scope(), g_strstrip(ae_called_resp));
         offset += 16;
 
-        tvb_memcpy(tvb, assoc->ae_calling_resp, offset, 16);
-        assoc->ae_calling_resp[AEEND] = 0;
-        proto_tree_add_string(assoc_header_ptree, hf_dcm_assoc_calling, tvb, offset, 16, assoc->ae_calling_resp);
+        proto_tree_add_item_ret_display_string(assoc_header_ptree, hf_dcm_assoc_calling, tvb, offset, 16, ENC_ISO_646_BASIC|ENC_NA, wmem_packet_scope(), &ae_calling_resp);
+        assoc->ae_calling_resp = wmem_strdup(wmem_file_scope(), g_strstrip(ae_calling_resp));
         offset += 16;
 
         offset += 32;                           /* 32 reserved bytes */
 
         buf_desc = wmem_strdup_printf(pinfo->pool, "A-ASSOCIATE accept  %s <-- %s",
-            g_strstrip(assoc->ae_calling_resp), g_strstrip(assoc->ae_called_resp));
+            assoc->ae_calling_resp, assoc->ae_called_resp);
 
         offset = dissect_dcm_assoc_detail(tvb, pinfo, assoc_header_ptree, assoc, offset, pdu_len-offset);
 
@@ -1540,7 +1555,7 @@ dissect_dcm_assoc_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gu
 
         /* Provider aborted */
         buf_desc = wmem_strdup_printf(pinfo->pool, "A-ASSOCIATE reject  %s <-- %s (%s)",
-            g_strstrip(assoc->ae_calling), g_strstrip(assoc->ae_called), reject_reason_desc);
+            assoc->ae_calling, assoc->ae_called, reject_reason_desc);
 
         expert_add_info(pinfo, assoc_header_pitem, &ei_dcm_assoc_rejected);
 
@@ -1597,12 +1612,12 @@ dissect_dcm_assoc_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gu
         if (abort_source == 0) {
             /* User aborted */
             buf_desc = wmem_strdup_printf(pinfo->pool, "ABORT %s --> %s",
-                g_strstrip(assoc->ae_calling), g_strstrip(assoc->ae_called));
+                assoc->ae_calling, assoc->ae_called);
         }
         else {
             /* Provider aborted, slightly more information */
             buf_desc = wmem_strdup_printf(pinfo->pool, "ABORT %s <-- %s (%s)",
-                g_strstrip(assoc->ae_calling), g_strstrip(assoc->ae_called), abort_reason_desc);
+                assoc->ae_calling, assoc->ae_called, abort_reason_desc);
         }
 
         expert_add_info(pinfo, assoc_header_pitem, &ei_dcm_assoc_aborted);
@@ -4484,7 +4499,7 @@ From 3.7 Annex D Association Negotiation
  */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -33,7 +33,6 @@ class PacketList : public QTreeView
     Q_OBJECT
 public:
     explicit PacketList(QWidget *parent = 0);
-    PacketListModel *packetListModel() const;
     QMenu *conversationMenu() { return &conv_menu_; }
     QMenu *colorizeMenu() { return &colorize_menu_; }
     void setProtoTree(ProtoTree *proto_tree);
@@ -55,7 +54,7 @@ public:
     void clear();
     void writeRecent(FILE *rf);
     bool contextMenuActive();
-    QString getFilterFromRowAndColumn();
+    QString getFilterFromRowAndColumn(QModelIndex idx);
     void resetColorized();
     QString packetComment();
     void setPacketComment(QString new_comment);
@@ -68,30 +67,31 @@ public:
     bool haveNextHistory(bool update_cur = false);
     bool havePreviousHistory(bool update_cur = false);
 
+    frame_data * getFDataForRow(int row) const;
+
 protected:
-    void selectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
-    void contextMenuEvent(QContextMenuEvent *event);
-    void timerEvent(QTimerEvent *event);
-    void paintEvent(QPaintEvent *event);
-    virtual void mousePressEvent (QMouseEvent *event);
-    virtual void mouseReleaseEvent (QMouseEvent *event);
-    virtual void mouseMoveEvent (QMouseEvent *event);
-    virtual void resizeEvent(QResizeEvent *event);
+    void selectionChanged(const QItemSelection & selected, const QItemSelection & deselected) override;
+    virtual void contextMenuEvent(QContextMenuEvent *event) override;
+    void timerEvent(QTimerEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
+    virtual void mousePressEvent (QMouseEvent *event) override;
+    virtual void mouseReleaseEvent (QMouseEvent *event) override;
+    virtual void mouseMoveEvent (QMouseEvent *event) override;
+    virtual void resizeEvent(QResizeEvent *event) override;
 
 protected slots:
-    void rowsInserted(const QModelIndex &parent, int start, int end);
-    void drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    void rowsInserted(const QModelIndex &parent, int start, int end) override;
+    virtual void drawRow(QPainter *painter, const QStyleOptionViewItem &option,
+        const QModelIndex &index) const override;
 
 private:
     PacketListModel *packet_list_model_;
     PacketListHeader * packet_list_header_;
     ProtoTree *proto_tree_;
     capture_file *cap_file_;
-    QMenu ctx_menu_;
     QMenu conv_menu_;
     QMenu colorize_menu_;
     ProtocolPreferencesMenu proto_prefs_menu_;
-    QAction *decode_as_;
     int ctx_column_;
     QByteArray column_state_;
     OverlayScrollBar *overlay_sb_;
@@ -118,7 +118,7 @@ private:
 
     void setFrameReftime(gboolean set, frame_data *fdata);
     void setColumnVisibility();
-    int sizeHintForColumn(int column) const;
+    int sizeHintForColumn(int column) const override;
     void setRecentColumnWidth(int column);
     void drawCurrentPacket();
     void applyRecentColumnWidths();
@@ -170,6 +170,7 @@ private slots:
     void drawFarOverlay();
     void drawNearOverlay();
     void updatePackets(bool redraw);
+    void ctxDecodeAsDialog();
 };
 
 #endif // PACKET_LIST_H

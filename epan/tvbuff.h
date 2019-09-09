@@ -732,6 +732,14 @@ WS_DLL_PUBLIC gint tvb_get_nstringz(tvbuff_t *tvb, const gint offset,
 WS_DLL_PUBLIC gint tvb_get_nstringz0(tvbuff_t *tvb, const gint offset,
     const guint bufsize, guint8 *buffer);
 
+/*
+ * Given a tvbuff, an offset into the tvbuff, a buffer, and a buffer size,
+ * extract as many raw bytes from the tvbuff, starting at the offset,
+ * as 1) are available in the tvbuff and 2) will fit in the buffer, leaving
+ * room for a terminating NUL.
+ */
+WS_DLL_PUBLIC gint tvb_get_raw_bytes_as_string(tvbuff_t *tvb, const gint offset, char *buffer, size_t bufsize);
+
 /** Iterates over the provided portion of the tvb checking that each byte
 * is an ascii printable character.
 * Returns TRUE if all bytes are printable, FALSE otherwise
@@ -925,10 +933,76 @@ WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_brotli(tvbuff_t *tvb, const int offset,
 WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_brotli(tvbuff_t *parent, tvbuff_t *tvb,
     const int offset, int comprlen);
 
+/* From tvbuff_lz77.c */
+
+/**
+ * Uncompresses a Microsoft Plain LZ77 compressed payload inside a
+ * tvbuff at offset with length comprlen.  Returns an uncompressed
+ * tvbuffer if uncompression succeeded or NULL if uncompression
+ * failed.
+ */
+WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_lz77(tvbuff_t *tvb,
+    const int offset, int comprlen);
+
+/**
+ * Uncompresses a Microsoft Plain LZ77 compressed payload inside a
+ * tvbuff at offset with length comprlen.  Returns an uncompressed
+ * tvbuffer attached to tvb if uncompression succeeded or NULL if
+ * uncompression failed.
+ */
+WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_lz77(tvbuff_t *parent,
+     tvbuff_t *tvb, const int offset, int comprlen);
+
+/* From tvbuff_lz77huff.c */
+
+/**
+ * Uncompresses a Microsoft LZ77+Huffman compressed payload inside a
+ * tvbuff at offset with length comprlen.  Returns an uncompressed
+ * tvbuffer if uncompression succeeded or NULL if uncompression
+ * failed.
+ */
+WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_lz77huff(tvbuff_t *tvb,
+    const int offset, int comprlen);
+
+/**
+ * Uncompresses a Microsoft LZ77+Huffman compressed payload inside a
+ * tvbuff at offset with length comprlen.  Returns an uncompressed
+ * tvbuffer attached to tvb if uncompression succeeded or NULL if
+ * uncompression failed.
+ */
+WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_lz77huff(tvbuff_t *parent,
+    tvbuff_t *tvb, const int offset, int comprlen);
+
+/* From tvbuff_lznt1.c */
+
+/**
+ * Uncompresses a Microsoft LZNT1 compressed payload inside
+ * a tvbuff at offset with length comprlen.  Returns an uncompressed
+ * tvbuffer if uncompression succeeded or NULL if uncompression
+ * failed.
+ */
+WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_lznt1(tvbuff_t *tvb,
+    const int offset, int comprlen);
+
+/**
+ * Uncompresses a Microsoft LZNT1 compressed payload inside
+ * a tvbuff at offset with length comprlen.  Returns an uncompressed
+ * tvbuffer if uncompression succeeded or NULL if uncompression
+ * failed.
+ */
+WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_lznt1(tvbuff_t *parent,
+    tvbuff_t *tvb, const int offset, int comprlen);
+
 /* From tvbuff_base64.c */
 
 /** Return a tvb that contains the binary representation of a base64
- *  string
+ *  string as a child of the indicated tvb.
+ *
+ * @param parent The parent tvbuff.
+ * @param base64 The base64 encoded string which binary representation will be
+ *               returned in the child tvb.
+ *
+ * @return   A tvb with the binary representation of the base64 decoded string.
  */
 extern tvbuff_t* base64_to_tvb(tvbuff_t *parent, const char *base64);
 
@@ -958,7 +1032,7 @@ WS_DLL_PUBLIC guint tvb_get_varint(tvbuff_t *tvb, guint offset, guint maxlen, gu
 #endif /* __TVBUFF_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

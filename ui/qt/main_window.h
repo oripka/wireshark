@@ -300,12 +300,14 @@ public slots:
      * @param cf_path Path to the file.
      * @param display_filter Display filter to apply. May be empty.
      * @param type File type.
+     * @param is_tempfile TRUE/FALSE.
      * @return True on success, false on failure.
      */
     // XXX We might want to return a cf_read_status_t or a CaptureFile.
     bool openCaptureFile(QString cf_path, QString display_filter, unsigned int type, gboolean is_tempfile = FALSE);
     bool openCaptureFile(QString cf_path = QString(), QString display_filter = QString()) { return openCaptureFile(cf_path, display_filter, WTAP_TYPE_AUTO); }
     void filterPackets(QString new_filter = QString(), bool force = false);
+    void setDisplayFilter(QString filter, FilterAction::Action action, FilterAction::ActionType filterType);
     void updateForUnsavedChanges();
     void layoutPanes();
     void applyRecentPaneGeometry();
@@ -419,9 +421,9 @@ private slots:
     // Automatically connected slots ("on_<object>_<signal>").
     //
     // The slots below follow the naming conventaion described in
-    // http://doc.qt.io/qt-4.8/qmetaobject.html#connectSlotsByName and are
-    // automatically connected at initialization time via main_ui_->setupUi,
-    // which in turn calls connectSlotsByName.
+    // https://doc.qt.io/archives/qt-4.8/qmetaobject.html#connectSlotsByName
+    // and are automatically connected at initialization time via
+    // main_ui_->setupUi, which in turn calls connectSlotsByName.
     //
     // If you're manually connecting a signal to a slot, don't prefix its name
     // with "on_". Otherwise you'll get runtime warnings.
@@ -531,18 +533,8 @@ private slots:
     void on_actionAnalyzeDisplayFilterMacros_triggered();
     void matchFieldFilter(FilterAction::Action action, FilterAction::ActionType filter_type);
     void on_actionAnalyzeCreateAColumn_triggered();
-    void on_actionAnalyzeAAFSelected_triggered();
-    void on_actionAnalyzeAAFNotSelected_triggered();
-    void on_actionAnalyzeAAFAndSelected_triggered();
-    void on_actionAnalyzeAAFOrSelected_triggered();
-    void on_actionAnalyzeAAFAndNotSelected_triggered();
-    void on_actionAnalyzeAAFOrNotSelected_triggered();
-    void on_actionAnalyzePAFSelected_triggered();
-    void on_actionAnalyzePAFNotSelected_triggered();
-    void on_actionAnalyzePAFAndSelected_triggered();
-    void on_actionAnalyzePAFOrSelected_triggered();
-    void on_actionAnalyzePAFAndNotSelected_triggered();
-    void on_actionAnalyzePAFOrNotSelected_triggered();
+
+    void filterMenuAboutToShow();
 
     void applyConversationFilter();
     void applyExportObject();

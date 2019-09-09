@@ -630,7 +630,7 @@ dissect_docsis (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* da
   }
 
   /* Captured Payload Length is based on the length of the header */
-  payload_length = tvb_captured_length_remaining (tvb, hdrlen);
+  payload_length = tvb_reported_length_remaining (tvb, hdrlen);
 
   /* If this is a Request Frame, then pdulen is 0 and framelen is 6 */
   if ((fctype == FCTYPE_MACSPC) && (fcparm == FCPARM_RQST_FRM || fcparm == FCPARM_QUEUE_DEPTH_REQ_FRM))
@@ -1241,7 +1241,7 @@ proto_reg_handoff_docsis (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

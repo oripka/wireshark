@@ -154,7 +154,7 @@ DIAG_ON(frame-larger-than=)
 #include "voip_calls_dialog.h"
 #include "wireshark_application.h"
 #include "wlan_statistics_dialog.h"
-#include "wireless_timeline.h"
+#include <ui/qt/widgets/wireless_timeline.h>
 
 #include <QClipboard>
 #include <QFileInfo>
@@ -1145,8 +1145,6 @@ void MainWindow::setMenusForSelectedPacket()
        than one time reference frame or the current frame isn't a
        time reference frame). (XXX - why check frame_selected?) */
     bool another_is_time_ref = false;
-    /* We have a valid filter expression */
-    bool have_filter_expr = false;
 
     QList<QAction *> cc_actions = QList<QAction *>()
             << main_ui_->actionViewColorizeConversation1 << main_ui_->actionViewColorizeConversation2
@@ -1178,8 +1176,6 @@ void MainWindow::setMenusForSelectedPacket()
         }
     }
 
-    have_filter_expr = !packet_list_->getFilterFromRowAndColumn().isEmpty();
-
     main_ui_->actionEditMarkPacket->setEnabled(frame_selected);
     main_ui_->actionEditMarkAllDisplayed->setEnabled(have_frames);
     /* Unlike un-ignore, do not allow unmark of all frames when no frames are displayed  */
@@ -1204,20 +1200,6 @@ void MainWindow::setMenusForSelectedPacket()
     main_ui_->actionGoGoToLinkedPacket->setEnabled(false);
     main_ui_->actionGoNextHistoryPacket->setEnabled(next_selection_history);
     main_ui_->actionGoPreviousHistoryPacket->setEnabled(previous_selection_history);
-
-    main_ui_->actionAnalyzeAAFSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzeAAFNotSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzeAAFAndSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzeAAFOrSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzeAAFAndNotSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzeAAFOrNotSelected->setEnabled(have_filter_expr);
-
-    main_ui_->actionAnalyzePAFSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzePAFNotSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzePAFAndSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzePAFOrSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzePAFAndNotSelected->setEnabled(have_filter_expr);
-    main_ui_->actionAnalyzePAFOrNotSelected->setEnabled(have_filter_expr);
 
     main_ui_->actionAnalyzeFollowTCPStream->setEnabled(is_tcp);
     main_ui_->actionAnalyzeFollowUDPStream->setEnabled(is_udp);
@@ -1356,19 +1338,6 @@ void MainWindow::setMenusForSelectedTreeRow(FieldInformation *finfo) {
     //                         frame_selected && (gbl_resolv_flags.mac_name || gbl_resolv_flags.network_name ||
     //                                            gbl_resolv_flags.transport_name));
 
-    main_ui_->actionAnalyzeAAFSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzeAAFNotSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzeAAFAndSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzeAAFOrSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzeAAFAndNotSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzeAAFOrNotSelected->setEnabled(can_match_selected);
-
-    main_ui_->actionAnalyzePAFSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzePAFNotSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzePAFAndSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzePAFOrSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzePAFAndNotSelected->setEnabled(can_match_selected);
-    main_ui_->actionAnalyzePAFOrNotSelected->setEnabled(can_match_selected);
 }
 
 void MainWindow::interfaceSelectionChanged()
@@ -1470,7 +1439,6 @@ void MainWindow::reloadLuaPlugins()
     closePacketDialogs();
 
     // Preferences may have been deleted so close all widgets using prefs
-    proto_tree_->closeContextMenu();
     main_ui_->preferenceEditorFrame->animatedHide();
 
     wsApp->readConfigurationFiles(true);
@@ -1554,7 +1522,7 @@ void MainWindow::addStatsPluginsToMenu() {
     bool            first_item = true;
 
     while (iter) {
-        stats_tree_cfg *cfg = (stats_tree_cfg*)iter->data;
+        stats_tree_cfg *cfg = gxx_list_data(stats_tree_cfg *, iter);
         if (cfg->plugin) {
             if (first_item) {
                 main_ui_->menuStatistics->addSeparator();
@@ -1577,7 +1545,7 @@ void MainWindow::addStatsPluginsToMenu() {
             parent_menu->addAction(stats_tree_action);
             connect(stats_tree_action, SIGNAL(triggered()), this, SLOT(actionStatisticsPlugin_triggered()));
         }
-        iter = g_list_next(iter);
+        iter = gxx_list_next(iter);
     }
     g_list_free(cfg_list);
 }
@@ -1630,7 +1598,7 @@ void MainWindow::onFilterSelected(QString filterText, bool prepare)
 
 void MainWindow::onFilterPreferences()
 {
-    emit showPreferencesDialog(PrefsModel::FILTER_BUTTONS_PREFERENCE_TREE_NAME);
+    emit showPreferencesDialog(PrefsModel::typeToString(PrefsModel::FilterButtons));
 }
 
 void MainWindow::onFilterEdit(int uatIndex)
@@ -1997,7 +1965,7 @@ void MainWindow::on_actionEditCopyAsFilter_triggered()
 
 void MainWindow::on_actionEditFindPacket_triggered()
 {
-    if (packet_list_->packetListModel()->rowCount() < 1) {
+    if (packet_list_->model()->rowCount() < 1) {
         return;
     }
     previous_focus_ = wsApp->focusWidget();
@@ -2164,7 +2132,7 @@ void MainWindow::showPreferencesDialog(QString pane_name)
 
 void MainWindow::on_actionEditPreferences_triggered()
 {
-    showPreferencesDialog(PrefsModel::APPEARANCE_PREFERENCE_TREE_NAME);
+    showPreferencesDialog(PrefsModel::typeToString(PrefsModel::Appearance));
 }
 
 // View Menu
@@ -2366,7 +2334,7 @@ void MainWindow::on_actionViewNormalSize_triggered()
 void MainWindow::on_actionViewColorizePacketList_triggered(bool checked) {
     recent.packet_list_colorize = checked;
     packet_list_recolor_packets();
-    packet_list_->packetListModel()->resetColorized();
+    packet_list_->resetColorized();
 }
 
 void MainWindow::on_actionViewColoringRules_triggered()
@@ -2483,7 +2451,7 @@ void MainWindow::on_actionViewResetLayout_triggered()
 
 void MainWindow::on_actionViewResizeColumns_triggered()
 {
-    for (int col = 0; col < packet_list_->packetListModel()->columnCount(); col++) {
+    for (int col = 0; col < packet_list_->model()->columnCount(); col++) {
         packet_list_->resizeColumnToContents(col);
         recent_set_column_width(col, packet_list_->columnWidth(col));
     }
@@ -2507,6 +2475,11 @@ void MainWindow::openPacketDialog(bool from_reference)
     /* If we have a frame, pop up the dialog */
     if (fdata) {
         PacketDialog *packet_dialog = new PacketDialog(*this, capture_file_, fdata);
+
+        connect(packet_dialog, SIGNAL(showProtocolPreferences(QString)),
+                this, SLOT(showPreferencesDialog(QString)));
+        connect(packet_dialog, SIGNAL(editProtocolPreference(preference*, pref_module*)),
+                main_ui_->preferenceEditorFrame, SLOT(editPreference(preference*, pref_module*)));
 
         connect(this, SIGNAL(closePacketDialogs()),
                 packet_dialog, SLOT(close()));
@@ -2583,12 +2556,31 @@ void MainWindow::on_actionViewReload_as_File_Format_or_Capture_triggered()
 
 // Analyze Menu
 
+void MainWindow::filterMenuAboutToShow()
+{
+    QMenu * menu = qobject_cast<QMenu *>(sender());
+    QString field_filter;
+
+    if (capture_file_.capFile() && capture_file_.capFile()->finfo_selected) {
+        char *tmp_field = proto_construct_match_selected_string(capture_file_.capFile()->finfo_selected,
+                                                                capture_file_.capFile()->edt);
+        field_filter = QString(tmp_field);
+        wmem_free(NULL, tmp_field);
+    }
+    bool enable = ! field_filter.isEmpty();
+    bool prepare = menu->objectName().compare("menuPrepareAFilter") == 0;
+
+    menu->clear();
+    QActionGroup * group = FilterAction::createFilterGroup(field_filter, prepare, enable, menu);
+    menu->addActions(group->actions());
+}
+
 void MainWindow::matchFieldFilter(FilterAction::Action action, FilterAction::ActionType filter_type)
 {
     QString field_filter;
 
     if (packet_list_->contextMenuActive() || packet_list_->hasFocus()) {
-        field_filter = packet_list_->getFilterFromRowAndColumn();
+        field_filter = packet_list_->getFilterFromRowAndColumn(packet_list_->currentIndex());
     } else if (capture_file_.capFile() && capture_file_.capFile()->finfo_selected) {
         char *tmp_field = proto_construct_match_selected_string(capture_file_.capFile()->finfo_selected,
                                                                 capture_file_.capFile()->edt);
@@ -2604,7 +2596,12 @@ void MainWindow::matchFieldFilter(FilterAction::Action action, FilterAction::Act
         return;
     }
 
-    emit filterAction(field_filter, action, filter_type);
+    setDisplayFilter(field_filter, action, filter_type);
+}
+
+void MainWindow::setDisplayFilter(QString filter, FilterAction::Action action, FilterAction::ActionType filterType)
+{
+    emit filterAction(filter, action, filterType);
 }
 
 void MainWindow::on_actionAnalyzeDisplayFilters_triggered()
@@ -2667,69 +2664,6 @@ void MainWindow::applyExportObject()
     connect(export_dialog->getExportObjectView(), SIGNAL(goToPacket(int)),
             packet_list_, SLOT(goToPacket(int)));
 
-}
-
-// XXX We could probably create the analyze and prepare actions
-// dynamically using FilterActions and consolidate the methods
-// below into one callback.
-void MainWindow::on_actionAnalyzeAAFSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionApply, FilterAction::ActionTypePlain);
-}
-
-void MainWindow::on_actionAnalyzeAAFNotSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionApply, FilterAction::ActionTypeNot);
-}
-
-void MainWindow::on_actionAnalyzeAAFAndSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionApply, FilterAction::ActionTypeAnd);
-}
-
-void MainWindow::on_actionAnalyzeAAFOrSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionApply, FilterAction::ActionTypeOr);
-}
-
-void MainWindow::on_actionAnalyzeAAFAndNotSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionApply, FilterAction::ActionTypeAndNot);
-}
-
-void MainWindow::on_actionAnalyzeAAFOrNotSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionApply, FilterAction::ActionTypeOrNot);
-}
-
-void MainWindow::on_actionAnalyzePAFSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionPrepare, FilterAction::ActionTypePlain);
-}
-
-void MainWindow::on_actionAnalyzePAFNotSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionPrepare, FilterAction::ActionTypeNot);
-}
-
-void MainWindow::on_actionAnalyzePAFAndSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionPrepare, FilterAction::ActionTypeAnd);
-}
-
-void MainWindow::on_actionAnalyzePAFOrSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionPrepare, FilterAction::ActionTypeOr);
-}
-
-void MainWindow::on_actionAnalyzePAFAndNotSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionPrepare, FilterAction::ActionTypeAndNot);
-}
-
-void MainWindow::on_actionAnalyzePAFOrNotSelected_triggered()
-{
-    matchFieldFilter(FilterAction::ActionPrepare, FilterAction::ActionTypeOrNot);
 }
 
 void MainWindow::on_actionAnalyzeEnabledProtocols_triggered()
@@ -3472,7 +3406,7 @@ void MainWindow::on_actionHelpAbout_triggered()
 }
 
 void MainWindow::on_actionGoGoToPacket_triggered() {
-    if (packet_list_->packetListModel()->rowCount() < 1) {
+    if (packet_list_->model()->rowCount() < 1) {
         return;
     }
     previous_focus_ = wsApp->focusWidget();
@@ -3776,7 +3710,7 @@ void MainWindow::insertColumn(QString name, QString abbrev, gint pos)
     gint colnr = 0;
     if ( name.length() > 0 && abbrev.length() > 0 )
     {
-        colnr = column_prefs_add_custom_with_position(COL_CUSTOM, name.toStdString().c_str(), abbrev.toStdString().c_str(), 0, pos);
+        colnr = column_prefs_add_custom(COL_CUSTOM, name.toStdString().c_str(), abbrev.toStdString().c_str(), pos);
         packet_list_->columnsChanged();
         packet_list_->resizeColumnToContents(colnr);
         prefs_main_write();

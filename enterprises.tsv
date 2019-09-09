@@ -5,7 +5,7 @@
 # The format used here is: <NUMERICAL_ID><SPACE><NAME>
 # Where SPACE can be any sequence of spaces and tabs.
 #
-# (last updated 2019-06-22)
+# (last updated 2019-08-30)
 
 0	Reserved
 1	NxNetworks
@@ -2149,7 +2149,7 @@
 2142	Future Systems, Inc.
 2143	IMGIS
 2144	Skywire Corporation
-2145	Irdeto Access B. V.
+2145	Irdeto B. V.
 2146	Peasantworks
 2147	Onion Peel Software
 2148	PS Partnership
@@ -4410,7 +4410,7 @@
 4410	Earth Star Group
 4411	Swinburne.com
 4412	Wrox Press
-4413	Broadcom Corporation
+4413	Broadcom Limited
 4414	Scandinavian Softline Technology Oy
 4415	Florida Department of Law Enforcement
 4416	Starfire Experts Ltd
@@ -10675,7 +10675,7 @@
 10701	Telefonica DataCorp, S.A.
 10702	Solvare
 10703	ATnet
-10704	Barracuda Networks AG	# formerly 'phion Information Technologies'
+10704	Barracuda Networks AG (previous was 'phion Information Technologies')
 10705	VOGT electronic AG
 10706	Accelerated Encryption Processing Ltd
 10707	Adhersis
@@ -20253,7 +20253,7 @@
 20405	Omkhar, LLC
 20406	Naesasoft,Inc.
 20407	Fuhrer Engineering AG
-20408	pysnmp
+20408	SNMP Laboratories	# formerly 'pysnmp'
 20409	Kvinnherad Breiband AS
 20410	Janusys Networks, Inc.
 20411	lepo
@@ -34326,7 +34326,7 @@
 34490	Teliwave Pte Ltd
 34491	Almaz-Antey Telecom
 34492	Aryaka Networks
-34493	CPSG
+34493	CCMIB CCB
 34494	HSQ Technology
 34495	Streetcar Ltd
 34496	Cision US Inc.
@@ -34777,7 +34777,7 @@
 34943	Sumisho Computer Systems Corporation
 34944	Amplus Communication PTE LTD
 34945	Albert Ziegler GmbH & Co. KG
-34946	Independent Project Engineering Ltd
+34946	Densitron Technologies Limited	# formerly 'Independent Project Engineering Ltd'
 34947	chill-n-go, Inc
 34948	NORMHOST
 34949	Electronics Source Co.,Ltd.
@@ -45908,7 +45908,7 @@
 46086	Infoteam Technique SA
 46087	IT Scharschinger
 46088	Sylvain Girod
-46089	DB.Studio
+46089	edisonlee55	# formerly 'DB.Studio'
 46090	namotronic GmbH
 46091	ICM University of Warsaw
 46092	Ingenieurgesellschaft für Gebäudeautomation mbH
@@ -50717,7 +50717,7 @@
 50902	Stadt Nuertingen
 50903	ASOCS
 50904	Kemberton Healthcare Services
-50905	Zyrenth
+50905	OpenMuffin
 50906	mediainvent Service GmbH
 50907	Lowe-Martin Company Inc.
 50908	Mystery Ranch Ltd.
@@ -52924,7 +52924,7 @@
 53113	STDERR.PL
 53114	Foot and Ankle Associates of Maine, P.A.
 53115	Sinclair Technologies, a division of Norsat International Inc.
-53116	Virgin Mobile UK
+53116	Virgin Mobile UK SIT3
 53117	CUTTER Systems s.r.o.
 53118	Pierre Lind
 53119	Lindenberg Software
@@ -53931,7 +53931,6 @@
 54120	visionvera information technology Co., Ltd.
 54121	Deadlogic Desenvolvimento e  Tecnologia LTDA
 54122	fwgx
-54123	Ravnik IT
 54124	MSG Mechatronic Systems GmbH
 54125	Kreativität trifft Technik e.V.
 54126	Hitachi Advanced Systems Corporation.
@@ -53953,4 +53952,381 @@
 54142	ZZ Vermoegensverwaltung Gesellschaft m.b.H.
 54143	Ixsson Systems Kft.
 54144	Evangelisches Christophoruswerk e.V.
-54145	«SevenTest R&D Centre» Co. Ltd
+54145	SevenTest R&D Centre Co. Ltd
+54146	Simac BMS
+54147	MicroArx Corporation
+54148	STI Servicios SpA
+54149	Computer Pros
+54150	IDTrust
+54151	Microsystem S.A.
+54153	SecureMFA
+54154	Mediaworks Hungary zrt.
+54155	Top Dog PC Services, LLC
+54156	fortuna network
+54157	le Fay Network Services
+54158	Neural Technologies (HK)
+54159	Dr. James Fierro D.O., PA
+54160	Conperience GmbH
+54161	AdSign Inc.
+54162	TCAM Technology Pte Ltd
+54163	Infomedia Technologies Corp.,Ltd
+54164	Thirdwayv Inc
+54165	PROTAB S.A.
+54166	Collège de Bois-de-Boulogne
+54167	CAHI Corporation
+54168	“Display“ Design office”, JSC
+54169	G.E.G. S.R.L.
+54170	Vanderlande
+54171	Macq
+54172	Panobit, Inc
+54173	zajkovski.dev
+54174	MWPDEMO
+54175	Allen A Flood MD
+54176	Fareportal Inc
+54177	ITcom Pro AG
+54178	Cossack Labs Limited
+54179	Radionor Communications AS
+54180	Softwise, Inc.
+54181	Treon
+54182	JSC "Informtehtrans"
+54183	Evaluate Ltd
+54184	Meson
+54185	PHOTRON LIMITED
+54186	Beijing xencore network technology CO.,LTD
+54187	DDSat Technologies Private Limited
+54188	Akksan Ingenieurbüro
+54189	Lagardere Media News
+54190	Abstrakt Marketing Group
+54191	Enstar Group Limited
+54192	R.K. Deep Sea Technologies limited
+54193	LightWave Networks, Inc
+54194	The Resolvers s.r.l.s.
+54195	Foodstuffs South Island Limited
+54196	Hotplate Labs
+54197	The Barnes Foundation
+54198	Insomnia Security Group Limited
+54199	kakaopay
+54200	Hunan Kuangan Network Technology Co., Ltd.
+54201	Suewag Energie AG
+54202	Hangar Hosting, srl
+54203	Diffblue Ltd
+54204	Aero-Comm
+54205	PioneerTimeSystem
+54206	dvdxdue s.n.c.
+54207	Stadt Wuerzburg
+54208	Mmapro IT Solutions (Pty) Ltd
+54209	S.I.C.E.S.
+54210	Ooredoo
+54211	BCAST Sp. z o.o.
+54212	Stiftung Sankt Johannes
+54213	Prime Interway
+54214	Derbyshire Fire & Rescue Service
+54215	Datateam Consulting S.A. de C.V.
+54216	Zahnmedizinisches Kompetenzzentrum Wolfsburg MVZ GmbH
+54217	vlaine.fr
+54218	Clinique Saint-Jean
+54219	WeSee Automação
+54220	BH Solutions SPRL
+54221	Adreon Technologies
+54222	Velankani Communications Technologies, Inc.
+54223	Kraftway Corporation PLC.
+54224	YoGoKo SAS
+54225	DIGITEL ON TRUSTED SERVICES S.L.U.
+54226	Professional Link
+54227	Engineering Services and Testing
+54228	GBM
+54229	Viero, Inc.
+54230	WestCoast Children's Clinic
+54231	Malta Information Technology Agency
+54232	CrossFirst Bank
+54233	TX RX Systems
+54234	StarHub Ltd
+54235	HENGBAO
+54236	General Programming, LLC
+54237	Zahnzentrum Alstertal MVZ GmbH
+54238	AWR Dental Labor GmbH
+54239	Dres. R.Ast & Kollegen MVZ GmbH
+54240	Zahnaerzte am Kurhaus Wiesbaden MVZ GmbH
+54241	Dr. Schneider und Kollegen MVZ GmbH
+54242	Zahnaerzte Much MVZ GmbH
+54243	MKG Bogenhausen Dr. Hauck & Kollegen MVZ GmbH
+54244	Zahnmedizinisches Zentrum im Rosenhof Dr. Aigster, Dr. Sonntag & Kollgen MVZ GmbH
+54245	Dwornik Classen Zahnzentrum Juelich MVZ GmbH
+54246	Dres. Ast & Kollegen MVZ GmbH
+54247	Zentrum für Zahnheilkunde HafenCity MVZ GmbH
+54248	Zahnaerztliches Kompetenzzentrum bei der Jakobskirche MVZ GmbH
+54249	Dr. Beck & Kollegen MVZ GmbH
+54250	bytesofgigabytes
+54251	Digicon S.A.
+54252	Collab9 LLC
+54253	NAS Australia Pty Ltd
+54254	TSP SpA
+54255	Bacchus-Group
+54256	CMS Cameron McKenna Nabarro and Olswang LLP
+54257	Chiltern and South Bucks District Council
+54258	Wander
+54259	SC Digital Solutions Limited
+54260	Shenzhen Mindray Bio-Medical Electronics Co.,Ltd.
+54261	Korea Airports Corporation
+54262	SWSAM Solution
+54263	LSR Group Ltd
+54264	Monitoring Systems
+54265	Byldis B V
+54266	Trelar
+54267	MACS Group SRL
+54268	netElastic Systems Inc
+54269	Wolf & Danniel s.r.o.
+54270	Nanjing e-Quantum Information Technology Co., Ltd.
+54271	Lulin Systems Co., Ltd.
+54272	Encurest
+54273	LLC "Imlight-Showtechnic"
+54274	ITEres GmbH
+54275	Surface Generation Ltd
+54276	DWF LLP
+54277	Jan de Rijk
+54278	Silverengine GmbH
+54279	Nelson Tran
+54280	PC Informatica
+54281	VARTOS
+54282	Fuuzio Group
+54283	Max Kessler
+54284	iD Corporation.
+54285	ECNS.EPC.HCI.CN
+54286	Wagner Group
+54287	Blue Box Group Srl
+54288	Aristotle Space and Aeronautics Team
+54289	Microdigital Argentina
+54290	RMACD.COM
+54291	Rebecca Pruim
+54292	CareFlite
+54293	8ZERO2 Consultants
+54294	Magellan Robotech
+54295	Network Treinamento e Capacitação
+54296	Waagner-Biro Bridge
+54297	SHARD CAPITAL PARTNERS LLP
+54298	Private citizen
+54299	Lawrenceburg Municipal Utilities
+54300	The Zanzibar Company Ltd.
+54301	Andromeda Research, Inc
+54302	EverFocus Electronics Corp.
+54303	ADB Safegate Austria GmbH.
+54304	Permian Women's Center, P.A.
+54305	iMed Software Inc.
+54306	Jackson River
+54307	ABN AMRO Bank N.V.
+54308	Binarno s.p.
+54309	Camrize
+54310	AG Rechnersicherheit (TU-Berlin)
+54311	Vektor LLC
+54312	Naval Group
+54313	Personal
+54314	ARM Automation
+54315	Pevans East Africa Limited
+54316	Tibx
+54317	SPECIALTY MICROWAVE
+54318	Center of Hope
+54319	Disy Informationssysteme GmbH
+54320	Häger+Busch GbR
+54321	Research School of Astronomy and Astrophysics, Australian National University
+54322	LogPoint A/S
+54323	Datera Inc.
+54324	Rhenus SE & Co. KG
+54325	Datamecanic
+54326	Saudia, Corp.
+54327	Tule River Tribe Gaming Commission
+54328	Kimbrell
+54329	Modern Treasury Corp.
+54330	"Digital Solutions" JSC
+54331	Eurofins Digital Testing
+54332	Nefeli Networks
+54333	Clicks Online Business e.K
+54334	Central National Gottesman
+54335	Infrascale, Inc
+54336	rowspace
+54337	OpenPOWER Foundation
+54338	Certsys Tecnologia da Informação LTDA
+54339	Yunnan Tobacco Company
+54340	Next Stride AG
+54341	Enabled Energy
+54342	Copperhead Limited
+54343	Malco Theatres, Inc.
+54344	PoisonCloud
+54345	Allo Communications LLC
+54346	Penombre.eu
+54347	Kamunet, Prime Minister's Office of the Turkish Republic of Northern Cyprus
+54348	Traffic ITS GmbH
+54349	Adolf Nissen Elektrobau GmbH + Co. KG
+54350	NPO Baum JSC
+54351	SLT-Technologies GmbH & Co. KG
+54352	Contiki-NG
+54353	Joseph Orraca-Tetteh, MD
+54354	The Home Depot Mexico
+54355	Badge Inc.
+54356	Shandong Huachentel Information Technology Co., Ltd.
+54357	Cancon Information Industry Co.,Ltd
+54358	TESCOM corp.
+54359	Hillsboro School District
+54360	PPMnet AG
+54361	UB Merchants
+54362	Barry J. Burns
+54363	BijKluit
+54364	Graviton Org
+54365	LinchpinLabs Australia
+54366	Maincare Solutions
+54367	HUNAN SCROWN ELECTRONIC INFORMATION TECH.CO.,LTD
+54368	THE 52ND RESEARCH INSTITUDE OF CETC
+54369	Dragon Systems Software Limited (DssW)
+54370	Stichting Patyna
+54371	Compactive, s.r.o.
+54372	Codegic Pvt Ltd
+54373	Brehm Praezisionstechnik GmbH & Co. KG
+54374	VR-Yhtymä Oy
+54375	POSTEK Electronics Co., Ltd.
+54376	Baloise Group
+54377	Picture Code Co., Ltd.
+54378	U.I. Lapp GmbH
+54379	IT42
+54380	XSYS.CH
+54381	Ministerium der Finanzen des Landes Sachsen-Anhalt
+54382	Virgin Mobile UK SAIP
+54383	LAWtrust Third Party Services
+54384	Yeni Hayat Bilisim Teknolojileri A.S.
+54385	Teleindustria S.r.l.
+54386	Delem B.V.
+54387	VANCL - IT s.r.o.
+54388	Emerson College
+54389	Spectrum Health Lakeland
+54390	Cedars Health
+54391	Casper Cardiology
+54392	Waterjuice
+54393	Network Solutions Group
+54394	LoadEx AB
+54395	Contentpepper GmbH
+54396	Proviron
+54397	ENQUETES FORENSIK INC.
+54398	metALCOM Zrt.
+54399	The ORP Project
+54400	Beijing Microvision Technology CO.,Ltd.
+54401	Canterbury District Health Board (CDHB)
+54402	Opensource ICT Solutions b.V.
+54403	Virgin Mobile UK SIT2
+54404	Virgin Mobile UK SIT1
+54405	Virgin Mobile UK PROD
+54406	Sonove GmbH
+54407	SIC DEI-FCTUC
+54408	BEKAS
+54409	Bit Mapper Integration Technologies Pvt Ltd
+54410	Z1 Zentrum für Qualitaetszahnmedizin MVZ GmbH
+54411	Implaneo Dental Labor GmbH
+54412	ACECR branch of Zanjan
+54413	Core Consulting
+54414	TimeMachines Inc.
+54415	AKLARO, Blaž Bregar s.p.
+54416	JUNO Software SRL
+54417	Security and Protection Solutions
+54418	Beijing Tuoming Technology Co., Ltd.
+54419	m-privacy GmbH
+54420	Cyber Defense Institute, Inc.
+54421	MonetaGo
+54422	FLYFISH TECHNOLOGIES d.o.o.
+54423	Schweizerische Parlamentsdienste Bern
+54424	Procubed Inc.
+54425	Coda Octopus Colmek
+54426	Struxture IT, Inc.
+54427	Westelcom Networks
+54428	ČD - Informační systémy, a.s
+54429	MEMC Korea Company
+54430	Elexis Open Source Project, www.elexis.info
+54431	Denevy
+54432	pemsy
+54433	guardREC AS
+54434	ONE NATIONAL EARTH
+54435	MaXentric Technologies LLC
+54436	wimxtelecom
+54437	Haud Systems Limited
+54438	Bradford Teaching Hospitals NHS Foundation Trust
+54439	Kanoon Iran Novin
+54440	Alperia Ltd.
+54441	Interact Consulting AG
+54442	Beahashy Network
+54443	Hospital Alemão Oswaldo Cruz
+54444	WARP
+54445	Nolte IT Services Limited
+54446	beratergruppe:Leistungen PartGmbB
+54447	Hausner Cloud
+54448	KeyPKI, Inc.
+54449	Vancouver Dispensary Society
+54450	Geedge  (Hainan) Information Technology Co., Ltd.
+54451	Icon Industrial Engineering
+54452	Novo Gaming
+54453	Ministry of Interior of Republika Srpska
+54454	Zurtax
+54455	CelerSMS
+54456	Olean Medical Group
+54457	Novetta
+54458	Fernandes Banerjee Shenoy Kidney Center,LLC
+54459	XCome Technology CO., Ltd.
+54460	Cadoles
+54461	GALIOS
+54462	lorengraff.net
+54463	ITGLOBAL
+54464	YDK Co.,Ltd.
+54465	Extreme Solutions
+54466	Supalta
+54467	btdev
+54468	Research and Producion Enterprise EKRA Ltd.
+54469	Health Insurance Fund of Republika Srpska
+54470	KUBITZA Network Solutions
+54471	Belfast Health and Social Care Trust
+54472	British Standards Institution (BSI)
+54473	VR PLUS Altmark-Wendland eG
+54474	Olean Medical Group
+54475	72 Fashion Corp.
+54476	Whitlock Infrastructure Solutions
+54477	Ulbrich Technologies
+54478	Shenzhen Kiwi Smartek Co., Ltd.
+54479	NOCSI, Ltd. Liability Co.
+54480	Orphans Care Center - Dreama
+54481	CloudVirga
+54482	Virtium LLC
+54483	Infrastruktura TK, OOO (limited liability company)
+54484	weclapp SE
+54485	Airnace SA
+54486	Zecurion
+54487	Zavarovalnica Sava d.d.
+54488	Comprod Inc.
+54489	KVL
+54490	中广优视新媒体文化（成都）有限公司  (Zhongguang Youshi New Media Culture (Chengdu) Co., Ltd.)
+54491	TranSendX, LLC
+54492	BBPC
+54493	Bistum Eichstätt
+54494	Google Inc
+54495	Provino Inc.
+54496	Shire of Dardanup
+54497	Claritas Solutions Ltd
+54498	Direção Regional das Obras Públicas e Comunicações
+54499	Viakoo, Inc.
+54500	Movement Mortgage
+54501	Primary Health Medical Group
+54502	Rovenma Corp.
+54503	Area9 Pty Ltd
+54504	Warsaw University of Technology
+54505	Transcelestial Technologies PTE LTD
+54506	Intereuropa d.d.
+54507	IdeaData
+54508	Deutsche Telekom - Access 4.0
+54509	iCE - Intelligent Controlled Environments
+54510	Noscendo GmbH
+54511	1st Financial Bank USA
+54512	Dynalog India Ltd
+54513	EVBox
+54514	Teramed Limited
+54515	EN TOUTE CONFIANCE INC.
+54516	INTERTRONIC IT GmbH Wörrstadt
+54517	Vibrant Health, P.C.
+54518	LLC "Medicina AlfaStrahovaniya"
+54519	JD
+54520	Baryon, LLC
+54521	AP Sensing GmbH
+54522	Vanderkooij Telecommunicatie BV
+54523	MSS International Group

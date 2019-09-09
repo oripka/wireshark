@@ -36,11 +36,17 @@ public:
     void autoScrollTo(const QModelIndex &index);
     void goToHfid(int hfid);
     void clear();
-    void closeContextMenu();
     void restoreSelectedField();
     QString toString(const QModelIndex &start_idx = QModelIndex()) const;
 
 protected:
+
+    enum {
+        Name = 0,
+        Description,
+        Value
+    } CopyInfos;
+
     virtual void contextMenuEvent(QContextMenuEvent *event);
     virtual void timerEvent(QTimerEvent *event);
     virtual void keyReleaseEvent(QKeyEvent *event);
@@ -51,7 +57,6 @@ protected:
 
 private:
     ProtoTreeModel *proto_tree_model_;
-    QMenu ctx_menu_;
     QMenu conv_menu_;
     QMenu colorize_menu_;
     ProtocolPreferencesMenu proto_prefs_menu_;
@@ -93,6 +98,14 @@ public slots:
 
 protected slots:
     void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+#if 0
+    void ctxShowPacketBytes();
+    void ctxExportPacketBytes();
+#endif
+    void ctxCopyVisibleItems();
+    void ctxCopyAsFilter();
+    void ctxCopySelectedInfo();
+    void ctxOpenUrlWiki();
 
 private slots:
     void updateContentWidth();

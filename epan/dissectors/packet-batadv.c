@@ -698,6 +698,8 @@ static int hf_batadv_tvlv_mcast_flags = -1;
 static int hf_batadv_tvlv_mcast_flags_unsnoopables = -1;
 static int hf_batadv_tvlv_mcast_flags_ipv4 = -1;
 static int hf_batadv_tvlv_mcast_flags_ipv6 = -1;
+static int hf_batadv_tvlv_mcast_flags_no_rtr4 = -1;
+static int hf_batadv_tvlv_mcast_flags_no_rtr6 = -1;
 static int hf_batadv_tvlv_tt_change_flags_del = -1;
 static int hf_batadv_tvlv_tt_change_flags_roam = -1;
 static int hf_batadv_tvlv_tt_change_flags_wifi = -1;
@@ -4320,6 +4322,8 @@ static void dissect_batadv_tvlv_v15_mcast(tvbuff_t *tvb, packet_info *pinfo,
 		&hf_batadv_tvlv_mcast_flags_unsnoopables,
 		&hf_batadv_tvlv_mcast_flags_ipv4,
 		&hf_batadv_tvlv_mcast_flags_ipv6,
+		&hf_batadv_tvlv_mcast_flags_no_rtr4,
+		&hf_batadv_tvlv_mcast_flags_no_rtr6,
 		NULL
 	};
 
@@ -5335,6 +5339,16 @@ void proto_register_batadv(void)
 		    FT_BOOLEAN, 8, TFS(&tfs_set_notset), 0x4,
 		    NULL, HFILL }
 		},
+		{ &hf_batadv_tvlv_mcast_flags_no_rtr4,
+		  { "No IPv4 multicast router", "batadv.tvlv.mcast.flags.no_rtr4",
+		    FT_BOOLEAN, 8, TFS(&tfs_set_notset), 0x8,
+		    NULL, HFILL }
+		},
+		{ &hf_batadv_tvlv_mcast_flags_no_rtr6,
+		  { "No IPv6 multicast router", "batadv.tvlv.mcast.flags.no_rtr6",
+		    FT_BOOLEAN, 8, TFS(&tfs_set_notset), 0x10,
+		    NULL, HFILL }
+		},
 		{ &hf_batadv_tvlv_gw_download,
 		  { "Download Speed", "batadv.tvlv.gw.dl_speed",
 		    FT_UINT32, BASE_DEC, NULL, 0x0,
@@ -5539,7 +5553,7 @@ void proto_reg_handoff_batadv(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -36,11 +36,11 @@
  *
  * Some other compressed file formats we might want to support:
  *
- *      XZ format: http://tukaani.org/xz/
+ *      XZ format: https://tukaani.org/xz/
  *
- *      Bzip2 format: http://bzip.org/
+ *      Bzip2 format: https://www.sourceware.org/bzip2/
  *
- *      Lzip format: http://www.nongnu.org/lzip/
+ *      Lzip format: https://www.nongnu.org/lzip/
  */
 
 /*
@@ -1900,7 +1900,7 @@ gzwfile_geterr(GZWFILE_T state)
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -353,8 +353,7 @@ write_ek_proto_tree(output_fields_t* fields,
     write_json_data data;
 
     json_dumper dumper = {
-        .output_file = fh,
-        .flags = JSON_DUMPER_DOT_TO_UNDERSCORE
+        .output_file = fh
     };
 
     data.dumper = &dumper;
@@ -1221,8 +1220,8 @@ ek_write_name(proto_node *pnode, gchar* suffix, write_json_data* pdata)
     gchar      *str;
 
     if (fi->hfinfo->parent != -1) {
-        header_field_info* parent = proto_registrar_get_nth(fi->hfinfo->parent);
-        str = g_strdup_printf("%s_%s%s", parent->abbrev, fi->hfinfo->abbrev, suffix ? suffix : "");
+        //header_field_info* parent = proto_registrar_get_nth(fi->hfinfo->parent);
+        str = g_strdup_printf("%s%s", fi->hfinfo->abbrev, suffix ? suffix : "");
         json_dumper_set_member_name(pdata->dumper, str);
     } else {
         str = g_strdup_printf("%s%s", fi->hfinfo->abbrev, suffix ? suffix : "");
@@ -2671,7 +2670,7 @@ output_fields_t* output_fields_new(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

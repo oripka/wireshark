@@ -48,7 +48,7 @@
  * values to be used in capture files, and have libpcap map between
  * those values in capture file headers and the DLT_ values that the
  * pcap_datalink() and pcap_open_dead() APIs use.  See
- * http://www.tcpdump.org/linktypes.html for a list of LINKTYPE_ values.
+ * https://www.tcpdump.org/linktypes.html for a list of LINKTYPE_ values.
  *
  * In most cases, the corresponding LINKTYPE_ and DLT_ values are the
  * same.  In the cases where the same link-layer header type was given
@@ -472,6 +472,9 @@ static const struct {
 
 	/* IEEE 802.15.4 TAP */
 	{ 283,		WTAP_ENCAP_IEEE802_15_4_TAP },
+
+	/* USB 2.0/1.1/1.0 packets as transmitted over the cable */
+	{ 288,		WTAP_ENCAP_USB_2_0 },
 	/*
 	 * To repeat:
 	 *
@@ -734,25 +737,30 @@ wtap_wtap_encap_to_pcap_encap(int encap)
  * that should be enough for most link-layer types, and shouldn't be
  * too big.
  *
- * For D-Bus, we use WTAP_MAX_PACKET_SIZE_DBUS, because the maximum
- * D-Bus message size is 128MB, which is bigger than we'd want for
- * all link-layer types - files with that snapshot length might cause
- * some programs reading them to allocate a huge and wasteful buffer
- * and, at least on 32-bit platforms, run the risk of running out of
- * memory.
- * For EBHSCR, we use WTAP_MAX_PACKET_SIZE_EBHSCR, because the maximum
- * EBHSCR message size is 8MB
+ * For some link-layer types, we use larger types, because, for each
+ * of them, the maximum packet size is larger than the standard
+ * maximum, and is bigger than we'd want for all link-layer types - files
+ * with that snapshot length might cause some programs reading them to
+ * allocate a huge and wasteful buffer and, at least on 32-bit platforms,
+ * run the risk of running out of memory.
  */
 guint
 wtap_max_snaplen_for_encap(int wtap_encap)
 {
-	if (wtap_encap == WTAP_ENCAP_DBUS)
-		return WTAP_MAX_PACKET_SIZE_DBUS;
-	else if (wtap_encap == WTAP_ENCAP_EBHSCR)
-		return WTAP_MAX_PACKET_SIZE_EBHSCR;
-	else
-		return WTAP_MAX_PACKET_SIZE_STANDARD;
+	switch (wtap_encap) {
 
+	case WTAP_ENCAP_DBUS:
+		return WTAP_MAX_PACKET_SIZE_DBUS;
+
+	case WTAP_ENCAP_EBHSCR:
+		return WTAP_MAX_PACKET_SIZE_EBHSCR;
+
+	case WTAP_ENCAP_USBPCAP:
+		return WTAP_MAX_PACKET_SIZE_USBPCAP;
+
+	default:
+		return WTAP_MAX_PACKET_SIZE_STANDARD;
+	}
 }
 
 /*
@@ -1827,7 +1835,7 @@ struct linux_usb_isodesc {
 /*
  * USB setup header as defined in USB specification
  * See usb_20.pdf, Chapter 9.3 'USB Device Requests' for details.
- * http://www.usb.org/developers/docs/usb_20_122909-2.zip
+ * https://www.usb.org/document-library/usb-20-specification
  *
  * This structure is 8 bytes long.
  */
@@ -2514,7 +2522,7 @@ pcap_write_phdr(wtap_dumper *wdh, int encap, const union wtap_pseudo_header *pse
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

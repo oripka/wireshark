@@ -17,6 +17,7 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/proto_data.h>
+#include <epan/ipproto.h>
 
 #include <wsutil/pow2.h>
 #include <wsutil/wsjson.h>
@@ -39,6 +40,8 @@ static dissector_handle_t eap_handle = NULL;
 static dissector_handle_t nas_eps_handle = NULL;
 static dissector_handle_t nas_eps_plain_handle = NULL;
 static dissector_handle_t lpp_handle = NULL;
+static dissector_handle_t gsm_a_dtap_handle;
+
 
 #define PNAME  "Non-Access-Stratum 5GS (NAS)PDU"
 #define PSNAME "NAS-5GS"
@@ -219,6 +222,7 @@ static int hf_nas_5gs_allow_pdu_ses_sts_psi_8_b0 = -1;
 static int hf_nas_5gs_sm_pdu_session_type = -1;
 static int hf_nas_5gs_sm_sc_mode = -1;
 static int hf_nas_5gs_sm_sel_sc_mode = -1;
+static int hf_nas_5gs_sm_mh6_pdu_b1 = -1;
 static int hf_nas_5gs_sm_rqos_b0 = -1;
 static int hf_nas_5gs_sm_5gsm_cause = -1;
 static int hf_nas_5gs_sm_int_prot_max_data_rate_ul = -1;
@@ -240,7 +244,18 @@ static int hf_nas_5gs_sm_nof_params = -1;
 static int hf_nas_5gs_sm_param_id = -1;
 static int hf_nas_5gs_sm_param_len = -1;
 static int hf_nas_5gs_sm_qos_rule_precedence = -1;
-static int hf_nas_5gs_sm_pal_cont = -1;
+static int hf_nas_5gs_sm_param_cont = -1;
+static int hf_nas_5gs_sm_5qi = -1;
+static int hf_nas_5gs_sm_unit_for_gfbr_ul = -1;
+static int hf_nas_5gs_sm_gfbr_ul = -1;
+static int hf_nas_5gs_sm_unit_for_gfbr_dl = -1;
+static int hf_nas_5gs_sm_gfbr_dl = -1;
+static int hf_nas_5gs_sm_unit_for_mfbr_ul = -1;
+static int hf_nas_5gs_sm_mfbr_ul = -1;
+static int hf_nas_5gs_sm_unit_for_mfbr_dl = -1;
+static int hf_nas_5gs_sm_mfbr_dl = -1;
+static int hf_nas_5gs_sm_averaging_window = -1;
+static int hf_nas_5gs_sm_eps_bearer_id = -1;
 static int hf_nas_5gs_sm_qfi = -1;
 static int hf_nas_5gs_sm_mapd_eps_b_cont_id = -1;
 static int hf_nas_5gs_sm_mapd_eps_b_cont_opt_code = -1;
@@ -286,6 +301,9 @@ static int ett_nas_5gs_mm_sor = -1;
 static int ett_nas_5gs_sm_pkt_filter_components = -1;
 static int ett_nas_5gs_updp_ue_policy_section_mgm_lst = -1;
 static int ett_nas_5gs_updp_ue_policy_section_mgm_sublst = -1;
+static int ett_nas_5gs_ue_policies_ursp = -1;
+static int ett_nas_5gs_ursp_traff_desc = -1;
+static int ett_nas_5gs_ursp_r_sel_desc_cont = -1;
 
 static int hf_nas_5gs_mm_abba = -1;
 static int hf_nas_5gs_mm_supi_fmt = -1;
@@ -318,6 +336,9 @@ static int hf_nas_5gs_mm_tal_t_li = -1;
 static int hf_nas_5gs_mm_tal_num_e = -1;
 static int hf_nas_5gs_sm_mapd_eps_b_cont_eps_param_cont = -1;
 
+static int hf_nas_5gs_sm_max_nb_sup_pkt_flt_nb = -1;
+static int hf_nas_5gs_sm_max_nb_sup_pkt_flt_spare = -1;
+
 static int hf_nas_5gs_kacf = -1;
 static int hf_nas_5gs_ncc = -1;
 
@@ -349,6 +370,20 @@ static int hf_nas_5gs_updp_upsc = -1;
 static int hf_nas_5gs_updp_policy_len = -1;
 static int hf_nas_5gs_updp_ue_policy_part_type = -1;
 static int hf_nas_5gs_updp_ue_policy_part_cont = -1;
+static int hf_nas_5gs_ursp_rule_len = -1;
+static int hf_nas_5gs_ursp_rule_prec = -1;
+static int hf_nas_5gs_ursp_traff_desc_lst_len = -1;
+static int hf_nas_5gs_ursp_traff_desc = -1;
+static int hf_nas_5gs_ursp_r_sel_desc_lst_len = -1;
+static int hf_nas_5gs_ursp_r_sel_desc_lst = -1;
+static int hf_nas_5gs_ursp_traff_desc_ipv4 = -1;
+static int hf_nas_5gs_ursp_traff_desc_ipv4_mask = -1;
+static int hf_nas_5gs_ursp_traff_desc_next_hdr = -1;
+static int hf_nas_5gs_ursp_traff_desc_len = -1;
+static int hf_nas_5gs_ursp_r_sel_des_prec = -1;
+static int hf_nas_5gs_ursp_r_sel_des_cont_len = -1;
+static int hf_nas_5gs_ursp_ursp_r_sel_desc_comp_type = -1;
+static int hf_nas_5gs_ursp_r_sel_desc_dnn_len = -1;
 
 static expert_field ei_nas_5gs_extraneous_data = EI_INIT;
 static expert_field ei_nas_5gs_unknown_pd = EI_INIT;
@@ -364,6 +399,8 @@ static expert_field ei_nas_5gs_num_pkt_flt = EI_INIT;
 static expert_field ei_nas_5gs_not_diss = EI_INIT;
 
 #define NAS_5GS_PLAN_NAS_MSG 0
+
+static void disect_nas_5gs_updp(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int offset);
 
 static const value_string nas_5gs_security_header_type_vals[] = {
     { 0,    "Plain NAS message, not security protected"},
@@ -410,7 +447,6 @@ nas5gs_get_private_data(packet_info *pinfo)
     struct nas5gs_private_data *nas5gs_data = (struct nas5gs_private_data*)p_get_proto_data(pinfo->pool, pinfo, proto_nas_5gs, pinfo->curr_layer_num);
     if (!nas5gs_data) {
         nas5gs_data = wmem_new0(pinfo->pool, struct nas5gs_private_data);
-        nas5gs_data->payload_container_type = 0;
         p_add_proto_data(pinfo->pool, pinfo, proto_nas_5gs, pinfo->curr_layer_num, nas5gs_data);
     }
     return nas5gs_data;
@@ -426,22 +462,21 @@ get_ext_ambr_unit(guint32 unit, const char **unit_str)
         *unit_str = "Unit value 0, Illegal";
         return mult;
     }
-    unit = unit - 1;
 
     if (unit <= 0x05) {
-        mult = pow4(guint32, unit);
+        mult = pow4(guint32, unit - 0x01);
         *unit_str = "Kbps";
     } else if (unit <= 0x0a) {
-        mult = pow4(guint32, unit - 0x05);
+        mult = pow4(guint32, unit - 0x06);
         *unit_str = "Mbps";
-    } else if (unit <= 0x0e) {
-        mult = pow4(guint32, unit - 0x07);
+    } else if (unit <= 0x0f) {
+        mult = pow4(guint32, unit - 0x0b);
         *unit_str = "Gbps";
     } else if (unit <= 0x14) {
-        mult = pow4(guint32, unit - 0x0c);
+        mult = pow4(guint32, unit - 0x10);
         *unit_str = "Tbps";
     } else if (unit <= 0x19) {
-        mult = pow4(guint32, unit - 0x11);
+        mult = pow4(guint32, unit - 0x15);
         *unit_str = "Pbps";
     } else {
         mult = 256;
@@ -1040,19 +1075,20 @@ de_nas_5gs_mm_abba(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_,
 /*
  * 9.11.3.11    Access type
  */
+static const int* nas_5gs_mm_access_type_flags[] = {
+    &hf_nas_5gs_spare_b3,
+    &hf_nas_5gs_spare_b2,
+    &hf_nas_5gs_mm_acc_type,
+    NULL
+};
+
 static guint16
 de_nas_5gs_mm_access_type(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_,
     guint32 offset, guint len _U_,
     gchar *add_string _U_, int string_len _U_)
 {
-    static const int * flags[] = {
-        &hf_nas_5gs_spare_b3,
-        &hf_nas_5gs_spare_b2,
-        &hf_nas_5gs_mm_acc_type,
-        NULL
-    };
 
-    proto_tree_add_bitmask_list(tree, tvb, offset, 1, flags, ENC_BIG_ENDIAN);
+    proto_tree_add_bitmask_list(tree, tvb, offset, 1, nas_5gs_mm_access_type_flags, ENC_BIG_ENDIAN);
 
     return 1;
 
@@ -1589,6 +1625,23 @@ de_nas_5gs_mm_pld_cont(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo,
     switch (nas5gs_data->payload_container_type) {
     case 1: /* N1 SM information */
         dissect_nas_5gs_common(tvb_new_subset_length(tvb, offset, len), pinfo, tree, 0, NULL);
+        break;
+    case 2: /* SMS */
+        if (gsm_a_dtap_handle) {
+            call_dissector(gsm_a_dtap_handle, tvb_new_subset_length(tvb, offset, len), pinfo, tree);
+        } else {
+            proto_tree_add_item(tree, hf_nas_5gs_mm_pld_cont, tvb, offset, len, ENC_NA);
+        }
+        break;
+    case 3: /* LPP */
+        if (lpp_handle) {
+            call_dissector(lpp_handle, tvb_new_subset_length(tvb, offset, len), pinfo, tree);
+        } else {
+            proto_tree_add_item(tree, hf_nas_5gs_mm_pld_cont, tvb, offset, len, ENC_NA);
+        }
+        break;
+    case 5: /* UE policy container */
+        disect_nas_5gs_updp(tvb_new_subset_length(tvb, offset, len), pinfo, tree, 0);
         break;
     default:
         proto_tree_add_item(tree, hf_nas_5gs_mm_pld_cont, tvb, offset, len, ENC_NA);
@@ -2328,10 +2381,11 @@ de_nas_5gs_mm_ul_data_status(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo
  */
 
 static guint16
-de_nas_5gs_sm_5gsm_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_,
-    guint32 offset, guint len _U_,
+de_nas_5gs_sm_5gsm_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo,
+    guint32 offset, guint len,
     gchar *add_string _U_, int string_len _U_)
 {
+    guint32 curr_offset = offset;
 
     static const int * flags[] = {
         &hf_nas_5gs_spare_b7,
@@ -2340,15 +2394,17 @@ de_nas_5gs_sm_5gsm_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_,
         &hf_nas_5gs_spare_b4,
         &hf_nas_5gs_spare_b3,
         &hf_nas_5gs_spare_b2,
-        &hf_nas_5gs_spare_b1,
+        &hf_nas_5gs_sm_mh6_pdu_b1,
         &hf_nas_5gs_sm_rqos_b0,
         NULL
     };
 
+    proto_tree_add_bitmask_list(tree, tvb, curr_offset, 1, flags, ENC_BIG_ENDIAN);
+    curr_offset++;
 
-    proto_tree_add_bitmask_list(tree, tvb, offset, 1, flags, ENC_BIG_ENDIAN);
+    EXTRANEOUS_DATA_CHECK(len, curr_offset - offset, pinfo, &ei_nas_5gs_extraneous_data);
 
-    return 1;
+    return (curr_offset - offset);
 }
 
 /*
@@ -2356,22 +2412,26 @@ de_nas_5gs_sm_5gsm_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_,
  */
 
 const value_string nas_5gs_sm_cause_vals[] = {
+    { 0x08, "Operator determined barring" },
     { 0x1a, "Insufficient resources" },
     { 0x1b, "Missing or unknown DNN" },
     { 0x1c, "Unknown PDU session type" },
     { 0x1d, "User authentication or authorization failed" },
     { 0x1f, "Request rejected, unspecified" },
+    { 0x20, "Service option not supported" },
+    { 0x21, "Requested service option not subscribed" },
     { 0x22, "Service option temporarily out of order" },
     { 0x23, "PTI already in use" },
     { 0x24, "Regular deactivation" },
+    { 0x26, "Network failure" },
     { 0x27, "Reactivation requested" },
     { 0x2b, "Invalid PDU session identity" },
     { 0x2c, "Semantic errors in packet filter(s)" },
     { 0x2d, "Syntactical error in packet filter(s)" },
     { 0x2e, "Out of LADN service area" },
     { 0x2f, "PTI mismatch" },
-    { 0x32, "PDU session type Ipv4 only allowed" },
-    { 0x33, "PDU session type Ipv6 only allowed" },
+    { 0x32, "PDU session type IPv4 only allowed" },
+    { 0x33, "PDU session type IPv6 only allowed" },
     { 0x36, "PDU session does not exist" },
     { 0x43, "Insufficient resources for specific slice and DNN" },
     { 0x44, "Not supported SSC mode" },
@@ -2384,9 +2444,9 @@ const value_string nas_5gs_sm_cause_vals[] = {
     { 0x55, "Invalid mapped EPS bearer identity" },
     { 0x5f, "Semantically incorrect message" },
     { 0x60, "Invalid mandatory information" },
-    { 0x61, "Message type non - existent or not implemented" },
+    { 0x61, "Message type non-existent or not implemented" },
     { 0x62, "Message type not compatible with the protocol state" },
-    { 0x63, "Information element non - existent or not implemented" },
+    { 0x63, "Information element non-existent or not implemented" },
     { 0x64, "Conditional IE error" },
     { 0x65, "Message not compatible with the protocol state" },
     { 0x6f, "Protocol error, unspecified" },
@@ -2659,13 +2719,19 @@ de_nas_5gs_sm_mapped_eps_b_cont(tvbuff_t *tvb, proto_tree *tree, packet_info *pi
  *     9.11.4.9    Maximum number of supported packet filters
  */
 static guint16
-de_nas_5gs_sm_max_num_sup_pkt_flt(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo,
-    guint32 offset, guint len,
+de_nas_5gs_sm_max_num_sup_pkt_flt(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_,
+    guint32 offset, guint len _U_,
     gchar *add_string _U_, int string_len _U_)
 {
-    proto_tree_add_expert(tree, pinfo, &ei_nas_5gs_ie_not_dis, tvb, offset, len);
+    static const int * flags[] = {
+        &hf_nas_5gs_sm_max_nb_sup_pkt_flt_nb,
+        &hf_nas_5gs_sm_max_nb_sup_pkt_flt_spare,
+        NULL
+    };
 
-    return len;
+    proto_tree_add_bitmask_list(tree, tvb, offset, 2, flags, ENC_BIG_ENDIAN);
+
+    return 2;
 }
 
 /*
@@ -2779,8 +2845,9 @@ de_nas_5gs_sm_qos_flow_des(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _
     guint32 param_len, param_id;
     guint32 curr_offset, start_offset;
     guint8 num_param;
-    guint32 unit, mult, ambr_val;
+    guint32 unit, mult, val;
     const char *unit_str;
+    int hf_unit, hf_val;
 
     static const int * param_flags[] = {
         &hf_nas_5gs_sm_e,
@@ -2829,37 +2896,46 @@ de_nas_5gs_sm_qos_flow_des(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _
             switch (param_id) {
                 /* 01H (5QI)*/
             case 0x01:
-                proto_tree_add_item(sub_tree2, hf_nas_5gs_sm_pal_cont, tvb, curr_offset, param_len, ENC_BIG_ENDIAN);
+                proto_tree_add_item(sub_tree2, hf_nas_5gs_sm_5qi, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
                 curr_offset += param_len;
                 break;
                 /* 02H (GFBR uplink); 04H (MFBR uplink);*/
             case 0x02:
+            case 0x03:
             case 0x04:
-                /* Unit for Session-AMBR for uplink */
-                proto_tree_add_item_ret_uint(sub_tree2, hf_nas_5gs_sm_unit_for_session_ambr_ul, tvb, curr_offset, 1, ENC_BIG_ENDIAN, &unit);
+            case 0x05:
+                if (param_id == 2) {
+                    hf_unit = hf_nas_5gs_sm_unit_for_gfbr_ul;
+                    hf_val = hf_nas_5gs_sm_gfbr_ul;
+                } else if (param_id == 3) {
+                    hf_unit = hf_nas_5gs_sm_unit_for_gfbr_dl;
+                    hf_val = hf_nas_5gs_sm_gfbr_dl;
+                } else if (param_id == 4) {
+                    hf_unit = hf_nas_5gs_sm_unit_for_mfbr_ul;
+                    hf_val = hf_nas_5gs_sm_mfbr_ul;
+                } else {
+                    hf_unit = hf_nas_5gs_sm_unit_for_mfbr_dl;
+                    hf_val = hf_nas_5gs_sm_mfbr_dl;
+                }
+                proto_tree_add_item_ret_uint(sub_tree2, hf_unit, tvb, curr_offset, 1, ENC_BIG_ENDIAN, &unit);
                 curr_offset++;
-                /* Session-AMBR for downlink */
                 mult = get_ext_ambr_unit(unit, &unit_str);
-                ambr_val = tvb_get_ntohs(tvb, curr_offset);
-                proto_tree_add_uint_format_value(sub_tree2, hf_nas_5gs_sm_session_ambr_ul, tvb, curr_offset, param_len - 1,
-                    ambr_val, "%u %s (%u)", ambr_val * mult, unit_str, ambr_val);
+                val = tvb_get_ntohs(tvb, curr_offset);
+                proto_tree_add_uint_format_value(sub_tree2, hf_val, tvb, curr_offset, param_len - 1,
+                    val, "%u %s (%u)", val * mult, unit_str, val);
                 curr_offset += (param_len - 1);
                 break;
-                /* 03H (GFBR downlink); 05H (MFBR downlink);*/
-            case 0x03:
-            case 0x05:
-                /* Unit for Session-AMBR for uplink */
-                proto_tree_add_item_ret_uint(sub_tree2, hf_nas_5gs_sm_unit_for_session_ambr_dl, tvb, curr_offset, 1, ENC_BIG_ENDIAN, &unit);
-                curr_offset++;
-                /* Session-AMBR for downlink*/
-                mult = get_ext_ambr_unit(unit, &unit_str);
-                ambr_val = tvb_get_ntohs(tvb, curr_offset);
-                proto_tree_add_uint_format_value(sub_tree2, hf_nas_5gs_sm_session_ambr_dl, tvb, curr_offset, param_len - 1,
-                    ambr_val, "%u %s (%u)", ambr_val * mult, unit_str, ambr_val);
-                curr_offset += (param_len - 1);
+                break;
+            case 0x06:
+                proto_tree_add_item(sub_tree2, hf_nas_5gs_sm_averaging_window, tvb, curr_offset, 2, ENC_BIG_ENDIAN);
+                curr_offset += param_len;
+                break;
+            case 0x07:
+                proto_tree_add_item(sub_tree2, hf_nas_5gs_sm_eps_bearer_id, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
+                curr_offset += param_len;
                 break;
             default:
-                proto_tree_add_item(sub_tree2, hf_nas_5gs_sm_pal_cont, tvb, curr_offset, param_len, ENC_BIG_ENDIAN);
+                proto_tree_add_item(sub_tree2, hf_nas_5gs_sm_param_cont, tvb, curr_offset, param_len, ENC_NA);
                 curr_offset += param_len;
                 break;
             }
@@ -2925,20 +3001,6 @@ static const value_string nas_5gs_sm_pkt_flt_dir_values[] = {
     { 0x03, "Bidirectional" },
     { 0, NULL }
  };
-
-static const value_string nas_5gs_rule_param_cont[] = {
-    { 0x0, "Reserved" },
-    { 0x01, "5QI 1" },
-    { 0x02, "5QI 2" },
-    { 0x03, "5QI 3" },
-    { 0x04, "5QI 4" },
-    { 0x05, "5QI 5" },
-    { 0x06, "5QI 6" },
-    { 0x07, "5QI 7" },
-    { 0x08, "5QI 8" },
-    { 0x09, "5QI 9" },
-    { 0, NULL }
-};
 
 guint16
 de_nas_5gs_sm_qos_rules(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo,
@@ -5074,6 +5136,327 @@ nas_5gs_sm_5gsm_status(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, 
 
 }
 
+/* Traffic descriptor component type identifier */
+static const value_string nas_5gs_ursp_traff_desc_component_type_values[] = {
+    { 0x01, "Match-all type" },
+    { 0x08, "OS Id + OS App Id type" },
+    { 0x10, "IPv4 remote address type" },
+    { 0x21, "IPv6 remote address/prefix length type" },
+    { 0x30, "Protocol identifier/next header type" },
+    { 0x50, "Single remote port type" },
+    { 0x51, "Remote port range type" },
+    { 0x60, "Security parameter index type" },
+    { 0x70, "Type of service/traffic class type" },
+    { 0x80, "Flow label type" },
+    { 0x81, "Destination MAC address type" },
+    { 0x83, "802.1Q C-TAG VID type" },
+    { 0x84, "802.1Q S-TAG VID type" },
+    { 0x85, "802.1Q C-TAG PCP/DEI type" },
+    { 0x86, "802.1Q S-TAG PCP/DEI type" },
+    { 0x87, "Ethertype type" },
+    { 0x88, "DNN type" },
+    { 0x90, "Connection capabilities type" },
+    { 0x91, "Destination FQDN" },
+    { 0xa0, "OS App Id type" },
+    { 0, NULL }
+ };
+
+static void
+de_nas_5gs_ursp_traff_desc(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
+{
+    int len = tvb_reported_length(tvb);
+    guint32 traff_desc;
+    int offset = 0;
+
+    /*
+    Traffic descriptor (octets v+5 to w)
+    The traffic descriptor field is of variable size and contains a variable number (at least one) of traffic descriptor components.
+    Each traffic descriptor component shall be encoded as a sequence of one octet traffic descriptor component type identifier
+    and a traffic descriptor component value field. The traffic descriptor component type identifier shall be transmitted first.
+    */
+    while (offset < len) {
+        proto_tree_add_item_ret_uint(tree, hf_nas_5gs_ursp_traff_desc, tvb, offset, 1, ENC_BIG_ENDIAN, &traff_desc);
+        offset++;
+        switch (traff_desc) {
+        case 1: /* Match-all type*/
+            return;
+            /* For "OS Id + OS App Id type", the traffic descriptor component value field shall be encoded as
+            a sequence of a sixteen octet OS Id field, a one octet OS App Id length field, and an OS App Id field.
+            The OS Id field shall be transmitted first. The OS Id field contains a Universally Unique IDentifier (UUID)
+            as specified in IETF RFC 4122 [16].
+            */
+
+            case 0x10: /* IPv4 remote address type */
+                /* For "IPv4 remote address type", the traffic descriptor component value field shall be encoded as
+                   a sequence of a four octet IPv4 address field and a four octet IPv4 address mask field.
+                   The IPv4 address field shall be transmitted first.
+                */
+                proto_tree_add_item(tree, hf_nas_5gs_ursp_traff_desc_ipv4, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
+                proto_tree_add_item(tree, hf_nas_5gs_ursp_traff_desc_ipv4_mask, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
+                break;
+            /* For "IPv6 remote address/prefix length type", the traffic descriptor component value field shall be encoded as
+            a sequence of a sixteen octet IPv6 address field and one octet prefix length field.
+            The IPv6 address field shall be transmitted first. */
+            case  0x30: /* Protocol identifier/next header type*/
+                /* For "protocol identifier/next header type", the traffic descriptor component value field shall be encoded as
+                   one octet which specifies the IPv4 protocol identifier or Ipv6 next header. */
+                proto_tree_add_item(tree, hf_nas_5gs_ursp_traff_desc_next_hdr, tvb, offset, 1, ENC_BIG_ENDIAN);
+                offset++;
+                break;
+
+            /* For "single remote port type", the traffic descriptor component value field shall be encoded as
+            two octets which specify a port number.
+
+            For "remote port range type", the traffic descriptor component value field shall be encoded as a sequence of
+            a two octet port range low limit field and a two octet port range high limit field.
+            The port range low limit field shall be transmitted first.
+
+            For "security parameter index type", the traffic descriptor component value field shall be encoded as
+            four octets which specify the IPSec security parameter index.
+
+            For "type of service/traffic class type", the traffic descriptor component value field shall be encoded as a
+            sequence of a one octet type-of-service/traffic class field and a one octet type-of-service/traffic class mask field.
+            The type-of-service/traffic class field shall be transmitted first.
+
+            For "flow label type", the traffic descriptor component value field shall be encoded as three octets
+            which specify the IPv6 flow label. The bits 8 through 5 of the first octet shall be spare whereas the
+            remaining 20 bits shall contain the IPv6 flow label.
+
+            For "destination MAC address type", the traffic descriptor component value field shall be encoded as
+            6 octets which specify a MAC address.
+
+            For "802.1Q C-TAG VID type", the traffic descriptor component value field shall be encoded as
+            two octets which specify the VID of the customer-VLAN tag (C-TAG).
+            The bits 8 through 5 of the first octet shall be spare whereas the remaining 12 bits shall contain the VID.
+
+            For "802.1Q S-TAG VID type", the traffic descriptor component value field shall be encoded as
+            two octets which specify the VID of the service-VLAN tag (S-TAG).
+            The bits 8 through 5 of the first octet shall be spare whereas the remaining 12 bits shall contain the VID.
+
+            For "802.1Q C-TAG PCP/DEI type", the traffic descriptor component value field shall be encoded as
+            one octet which specifies the 802.1Q C-TAG PCP and DEI. The bits 8 through 5 of the octet shall be spare,
+            and the bits 4 through 2 contain the PCP and bit 1 contains the DEI.
+
+            For "802.1Q S-TAG PCP/DEI type", the traffic descriptor component value field shall be encoded as
+            one octet which specifies the 802.1Q S-TAG PCP.
+            The bits 8 through 5 of the octet shall be spare, and the bits 4 through 2 contain the PCP and bit 1 contains the DEI.
+
+            For "ethertype type", the traffic descriptor component value field shall be encoded as
+            two octets which specify an ethertype.
+
+            For "DNN type", the traffic descriptor component value field shall be encoded as
+            a sequence of a one octet DNN length field and a DNN value field of a variable size.
+            The DNN value contains an APN as defined in 3GPP TS 23.003 [4].
+
+            For "connection capabilities” type, the traffic descriptor component value field shall be encoded as
+            a sequence of one octet for number of network capabilities followed by one or more octets,
+            each containing a connection capability identifier encoded as follows:
+            Bits
+            8 7 6 5 4 3 2 1
+            0 0 0 0 0 0 0 1 IMS
+            0 0 0 0 0 0 1 0 MMS
+            0 0 0 0 0 1 0 0 SUPL
+            0 0 0 0 1 0 0 0 Internet
+            All other values are spare. If received they shall be interpreted as unknown.
+
+            For "destination FQDN" type, the traffic descriptor component value field shall be encoded as
+            a sequence of one octet destination FQDN length field and a destination FQDN value of variable size.
+            The destination FQDN value field shall be encoded as defined in IETF RFC 1035 [12].
+
+            For "OS App Id type", the traffic descriptor component value field shall be encoded as
+            a one octet OS App Id length field and an OS App Id field.
+             */
+        default:
+            proto_tree_add_expert(tree, pinfo, &ei_nas_5gs_ie_not_dis, tvb, offset, -1);
+            return;
+        }
+    }
+}
+
+/*
+Route selection descriptor contents (octets b+5 to c)
+The route selection descriptor contents field is of variable size and contains a variable number (at least one)
+of route selection descriptor components. Each route selection descriptor component shall be encoded as a sequence of
+a one octet route selection descriptor component type identifier and
+a route selection descriptor component value field.
+The route selection descriptor component type identifier shall be transmitted first.
+
+Route selection descriptor component type identifier
+Bits
+8 7 6 5 4 3 2 1
+0 0 0 0 0 0 0 1	SSC mode type
+0 0 0 0 0 0 1 0	S-NSSAI type
+0 0 0 0 0 1 0 0	DNN type
+0 0 0 0 1 0 0 0	PDU session type type
+0 0 0 1 0 0 0 0	Preferred access type type
+0 0 0 1 0 0 0 1	Multi-access preference type
+0 0 1 0 0 0 0 0	Non-seamless non-3GPP offload indication type
+All other values are spare. If received they shall be interpreted as unknown.
+
+*/
+static const value_string nas_5gs_ursp_r_sel_desc_comp_type_values[] = {
+    { 0x01, "SSC mode" },
+    { 0x02, "S-NSSAI" },
+    { 0x04, "DNN" },
+    { 0x08, "PDU session type" },
+    { 0x10, "Preferred access type" },
+    { 0x11, "Multi-access preference" },
+    { 0x20, "Non-seamless non-3GPP offload indication" },
+    { 0, NULL }
+};
+
+static void
+de_nas_5gs_ursp_r_sel_desc(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
+{
+    int len = tvb_reported_length(tvb);
+    guint32 type_id;
+    int offset = 0;
+    guint32 length;
+
+    while (offset < len) {
+
+        /* Route selection descriptor component type identifier */
+        proto_tree_add_item_ret_uint(tree, hf_nas_5gs_ursp_ursp_r_sel_desc_comp_type, tvb, offset, 1, ENC_BIG_ENDIAN, &type_id);
+        offset++;
+
+        switch (type_id) {
+        case 0x01: /* SSC mode*/
+            /* For "SSC mode type", the route selection descriptor component value field shall be encoded as a
+               one octet SSC mode field. The bits 8 through 4 of the octet shall be spare,
+               and the bits 3 through 1 shall be encoded as the value part of the SSC mode information element
+               defined in subclause 9.11.4.16 of 3GPP TS 24.501.
+               The "SSC mode type" route selection descriptor component shall not appear more than once
+               in the route selection descriptor.*/
+            proto_tree_add_item(tree, hf_nas_5gs_sm_sc_mode, tvb, offset, 1, ENC_BIG_ENDIAN);
+            offset++;
+            break;
+        case 0x02: /* S-NSSAI type*/
+            /* For "S-NSSAI type", the route selection descriptor component value field shall be encoded as a
+               sequence of a one octet S-NSSAI length field and an S-NSSAI value field of a variable size.
+               The S-NSSAI value shall be encoded as the value part of NSSAI information element defined in
+               subclause 9.11.3.37 of 3GPP TS 24.501 [11].*/
+            proto_tree_add_item_ret_uint(tree, hf_nas_5gs_mm_length, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
+            offset++;
+            de_nas_5gs_cmn_s_nssai(tvb, tree, pinfo, offset, length, NULL, 0);
+            offset += length;
+            break;
+        case 0x04: /* DNN */
+            /* For "DNN type", the route selection descriptor component value field shall be encoded as a
+               sequence of a one octet DNN length field and a DNN value field of a variable size.
+               The DNN value contains an APN as defined in 3GPP TS 23.003.*/
+            proto_tree_add_item_ret_uint(tree, hf_nas_5gs_ursp_r_sel_desc_dnn_len, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
+            offset++;
+            de_nas_5gs_cmn_dnn(tvb, tree, pinfo, offset, length, NULL, 0);
+            offset += length;
+            break;
+        case 0x08: /* PDU session type*/
+            /* For "PDU session type type", the route selection descriptor component value field shall be encoded as a
+               one octet PDU session type field. The bits 8 through 4 of the octet shall be spare, and the bits 3 through 1
+               shall be encoded as the value part of the PDU session type information element defined in
+               subclause 9.11.4.11 of 3GPP TS 24.501.
+               The "PDU session type type" route selection descriptor component shall not appear more than once
+               in the route selection descriptor.*/
+            proto_tree_add_item(tree, hf_nas_5gs_sm_pdu_session_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+            offset++;
+            break;
+        case 0x10: /* preferred access type type */
+            /* For "preferred access type type", the route selection descriptor component value field shall be encoded as a
+               one octet preferred access type field. The bits 8 through 3 shall be spare, and the bits 2 and 1 shall be
+               encoded as the value part of the access type information element defined in subclause 9.11.3.11 of 3GPP TS 24.501.
+               The "preferred access type type" route selection descriptor component shall not appear more than once
+               in the route selection descriptor.*/
+            proto_tree_add_bitmask_list(tree, tvb, offset, 1, nas_5gs_mm_access_type_flags, ENC_BIG_ENDIAN);
+            offset++;
+            break;
+        case  0x11: /* Multi-access preference */
+            /* For "multi-access preference type", the route selection descriptor component value field shall be of zero length.
+               The "multi-access preference type" route selection descriptor component shall not appear more than once
+               in the route selection descriptor.
+               The "multi-access preference type" route selection descriptor component in the route selection descriptor
+               indicates the multi-access preference.*/
+            break;
+        case 0x20: /* non-seamless non-3GPP offload indication type */
+            /* For "non-seamless non-3GPP offload indication type", the route selection descriptor component shall not include
+               the route selection descriptor component value field.
+               The "non-seamless non-3GPP offload indication type" route selection descriptor component shall not appear more than once
+               in the route selection descriptor.
+               If the "non-seamless non-3GPP offload indication type" route selection descriptor component is included
+               in a route selection descriptor, there shall be no route selection descriptor component with a type other than
+               "non-seamless non-3GPP offload indication type" in the route selection descriptor.*/
+            break;
+        default:
+            proto_tree_add_expert(tree, pinfo, &ei_nas_5gs_ie_not_dis, tvb, offset, -1);
+            return;
+        }
+    }
+
+}
+/* Dissect UE policy part encoded as specified in 3GPP TS 24.526 */
+static void
+de_nas_5gs_ue_policies_ursp(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
+{
+    proto_tree* sub_tree, * traff_desc_sub_tree, *r_sel_tree, *r_sel_desc_sub_tree;
+    proto_item* item;
+    guint32 len = tvb_reported_length(tvb);
+    guint32 curr_offset = 0, offset;
+    guint32 list_len, traff_desc_len, r_sel_desc_lst_len, r_sel_desc_len, r_sel_desc_cont_len;
+
+    int i = 0;
+    while ((curr_offset) < len) {
+        i++;
+        sub_tree = proto_tree_add_subtree_format(tree, tvb, curr_offset, -1, ett_nas_5gs_ue_policies_ursp, &item,
+            "URSP rule %u", i);
+        /* Length of URSP rule octet v octet v+1 */
+        proto_tree_add_item_ret_uint(sub_tree, hf_nas_5gs_ursp_rule_len, tvb, curr_offset, 2, ENC_BIG_ENDIAN, &list_len);
+        proto_item_set_len(item, list_len + 2);
+        curr_offset += 2;
+
+        /* Precedence value of URSP rule octet v+2 */
+        proto_tree_add_item(sub_tree, hf_nas_5gs_ursp_rule_prec, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
+        curr_offset += 1;
+
+        /* Length of traffic descriptor octet v+3 octet v+4 */
+        proto_tree_add_item_ret_uint(sub_tree, hf_nas_5gs_ursp_traff_desc_lst_len, tvb, curr_offset, 2, ENC_BIG_ENDIAN, &traff_desc_len);
+        curr_offset += 2;
+
+        /* Traffic descriptor octet v+5 octet w */
+        traff_desc_sub_tree = proto_tree_add_subtree(sub_tree, tvb, curr_offset, traff_desc_len, ett_nas_5gs_ursp_traff_desc, NULL, "Traffic descriptor");
+        de_nas_5gs_ursp_traff_desc(tvb_new_subset_length(tvb, curr_offset, traff_desc_len), pinfo, traff_desc_sub_tree);
+        curr_offset += traff_desc_len;
+
+        /* Length of route selection descriptor list octet w+1 octet w+2 */
+        proto_tree_add_item_ret_uint(sub_tree, hf_nas_5gs_ursp_r_sel_desc_lst_len, tvb, curr_offset, 2, ENC_BIG_ENDIAN, &r_sel_desc_lst_len);
+        curr_offset += 2;
+
+        /* Route selection descriptor list */
+        offset = curr_offset;
+        proto_tree_add_item(sub_tree, hf_nas_5gs_ursp_r_sel_desc_lst, tvb, curr_offset, r_sel_desc_lst_len, ENC_NA);
+        int j = 0;
+        while ((curr_offset - offset) < r_sel_desc_lst_len) {
+            j++;
+            r_sel_tree = proto_tree_add_subtree_format(sub_tree, tvb, curr_offset, -1, ett_nas_5gs_ue_policies_ursp, &item,
+                "Route selection descriptor %u", j);
+            /* Length of route selection descriptor octet b octet b+1 */
+            proto_tree_add_item_ret_uint(r_sel_tree, hf_nas_5gs_ursp_traff_desc_len, tvb, curr_offset, 2, ENC_BIG_ENDIAN, &r_sel_desc_len);
+            curr_offset += 2;
+            /* Precedence value of route selection descriptor octet b + 2 */
+            proto_tree_add_item(r_sel_tree, hf_nas_5gs_ursp_r_sel_des_prec, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
+            curr_offset++;
+
+            /* Length of route selection descriptor contents octet b + 3 octet b + 4 */
+            proto_tree_add_item_ret_uint(r_sel_tree, hf_nas_5gs_ursp_r_sel_des_cont_len, tvb, curr_offset, 2, ENC_BIG_ENDIAN, &r_sel_desc_cont_len);
+            curr_offset += 2;
+            /* Route selection descriptor contents octet b+5 octet c */
+            r_sel_desc_sub_tree = proto_tree_add_subtree(r_sel_tree, tvb, curr_offset, r_sel_desc_cont_len, ett_nas_5gs_ursp_r_sel_desc_cont, NULL, "Route selection descriptor contents");
+            de_nas_5gs_ursp_r_sel_desc(tvb_new_subset_length(tvb, curr_offset, r_sel_desc_cont_len), pinfo, r_sel_desc_sub_tree);
+            curr_offset += r_sel_desc_cont_len;
+        }
+        curr_offset = offset + r_sel_desc_lst_len;
+    }
+
+}
 
 /* D.6.2 UE policy section management list */
 
@@ -5103,18 +5486,19 @@ de_nas_5gs_updp_ue_policy_section_mgm_lst(tvbuff_t* tvb, proto_tree* tree, packe
             "UE policy section management sublist (PLMN %u)", i);
         /* Length of UE policy section management sublist */
         proto_tree_add_item_ret_uint(sub_tree, hf_nas_5gs_updp_ue_pol_sect_sublst_len, tvb, curr_offset, 2, ENC_BIG_ENDIAN, &sub_list_len);
-        proto_item_set_len(item, sub_list_len + 5);
+        proto_item_set_len(item, sub_list_len + 2);
         curr_offset += 2;
         /* MCC digit 2    MCC digit 1
          * MNC digit 3    MCC digit 3
          * MNC digit 2    MNC digit 1
          */
-        curr_offset = dissect_e212_mcc_mnc(tvb, pinfo, tree, curr_offset, E212_NONE, TRUE);
+        curr_offset = dissect_e212_mcc_mnc(tvb, pinfo, sub_tree, curr_offset, E212_NONE, TRUE);
         /* UE policy section management sublist contents*/
         /* Instruction X */
+        int j = 1;
+        sub_list_len = sub_list_len - 3;
         while (sub_list_len > 0){
-            int j = 0;
-            sub_tree2 = proto_tree_add_subtree_format(tree, tvb, curr_offset, -1, ett_nas_5gs_updp_ue_policy_section_mgm_sublst, &item,
+            sub_tree2 = proto_tree_add_subtree_format(sub_tree, tvb, curr_offset, -1, ett_nas_5gs_updp_ue_policy_section_mgm_sublst, &item,
                 "Instruction %u", j);
             /* Instruction contents length */
             proto_tree_add_item_ret_uint(sub_tree2, hf_nas_5gs_updp_instr_len, tvb, curr_offset, 2, ENC_BIG_ENDIAN, &instr_len);
@@ -5122,25 +5506,36 @@ de_nas_5gs_updp_ue_policy_section_mgm_lst(tvbuff_t* tvb, proto_tree* tree, packe
             /* UPSC */
             proto_tree_add_item(sub_tree2, hf_nas_5gs_updp_upsc, tvb, curr_offset, 2, ENC_BIG_ENDIAN);
             curr_offset += 2;
-            proto_item_set_len(item, instr_len + 4);
+            proto_item_set_len(item, instr_len + 2);
             /* UE policy section contents */
+            sub_list_len = sub_list_len - instr_len - 2;
+            instr_len = instr_len - 2;
+            int k = 1;
             while (instr_len > 0) {
-                int k = 0;
-                sub_tree3 = proto_tree_add_subtree_format(tree, tvb, curr_offset, -1, ett_nas_5gs_updp_ue_policy_section_mgm_sublst, &item,
+                guint32 ue_policy_type;
+                sub_tree3 = proto_tree_add_subtree_format(sub_tree2, tvb, curr_offset, -1, ett_nas_5gs_updp_ue_policy_section_mgm_sublst, &item,
                     "UE policy part %u", k);
                 /* UE policy part contents length */
                 proto_tree_add_item_ret_uint(sub_tree3, hf_nas_5gs_updp_policy_len, tvb, curr_offset, 2, ENC_BIG_ENDIAN, &policy_len);
                 curr_offset += 2;
-                proto_item_set_len(item, policy_len + 3);
+                proto_item_set_len(item, policy_len + 2);
                 /* UE policy part type */
-                proto_tree_add_item(sub_tree3, hf_nas_5gs_updp_ue_policy_part_type, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
-                offset++;
+                proto_tree_add_item_ret_uint(sub_tree3, hf_nas_5gs_updp_ue_policy_part_type, tvb, curr_offset, 1, ENC_BIG_ENDIAN, &ue_policy_type);
+                curr_offset++;
                 /* UE policy part contents, This field contains a UE policy part encoded as specified in 3GPP TS 24.526 */
-                proto_tree_add_item(sub_tree3, hf_nas_5gs_updp_ue_policy_part_cont, tvb, curr_offset, policy_len, ENC_NA);
-                curr_offset += policy_len;
-                instr_len = instr_len - (policy_len + 3);
+                switch (ue_policy_type) {
+                case 1: /* 5.2 Encoding of UE policy part type URSP */
+                    de_nas_5gs_ue_policies_ursp(tvb_new_subset_length(tvb, curr_offset, policy_len - 1), pinfo, sub_tree3);
+                    break;
+                default:
+                    proto_tree_add_item(sub_tree3, hf_nas_5gs_updp_ue_policy_part_cont, tvb, curr_offset, policy_len - 1, ENC_NA);
+                    break;
+                }
+                curr_offset += (policy_len - 1);
+                instr_len = instr_len - (policy_len + 2);
+                k++;
             }
-            sub_list_len = sub_list_len - instr_len - 4;
+            j++;
         }
     }
 
@@ -5254,6 +5649,15 @@ nas_5gs_updp_manage_ue_policy_cmd(tvbuff_t* tvb, proto_tree* tree, packet_info* 
 Direction:        UE to network
  No data
 */
+
+static void
+nas_5gs_updp_manage_ue_policy_cmd_cmpl(tvbuff_t* tvb _U_, proto_tree* tree _U_, packet_info* pinfo, guint32 offset _U_, guint len _U_)
+{
+    /*  Direction: UE to network */
+    pinfo->link_dir = P2P_DIR_UL;
+
+    /* No data */
+}
 
 /* D.5.3 Manage UE policy command reject*/
 static void
@@ -5504,7 +5908,7 @@ static gint ett_nas_5gs_updp_msg[NUM_NAS_5GS_UPDP_MSG];
 static void(*nas_5gs_updp_msg_fcn[])(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo, guint32 offset, guint len) = {
     nas_5gs_exp_not_dissected_yet,         /* 0x0     Reserved */
     nas_5gs_updp_manage_ue_policy_cmd,     /* 0x1     MANAGE UE POLICY COMMAND */
-    nas_5gs_exp_not_dissected_yet,         /* 0x2     MANAGE UE POLICY COMPLETE */
+    nas_5gs_updp_manage_ue_policy_cmd_cmpl,/* 0x2     MANAGE UE POLICY COMPLETE */
     nas_5gs_updp_manage_ue_policy_cmd_rej, /* 0x3     MANAGE UE POLICY COMMAND REJECT */
     nas_5gs_updp_ue_state_indication,      /* 0x4     UE STATE INDICATION */
 
@@ -5523,8 +5927,6 @@ get_nas_5gsmm_msg_params(guint8 oct, const gchar **msg_str, int *ett_tree, int *
         *ett_tree = ett_nas_5gs_mm_msg[idx];
         *msg_fcn_p = nas_5gs_mm_msg_fcn[idx];
     }
-
-    return;
 }
 
 static void
@@ -5538,8 +5940,6 @@ get_nas_5gssm_msg_params(guint8 oct, const gchar **msg_str, int *ett_tree, int *
         *ett_tree = ett_nas_5gs_sm_msg[idx];
         *msg_fcn_p = nas_5gs_sm_msg_fcn[idx];
     }
-
-    return;
 }
 
 static void
@@ -5553,8 +5953,6 @@ get_nas_5gs_updp_msg_params(guint8 oct, const gchar** msg_str, int* ett_tree, in
         *ett_tree = ett_nas_5gs_updp_msg[idx];
         *msg_fcn_p = nas_5gs_updp_msg_fcn[idx];
     }
-
-    return;
 }
 
 static void
@@ -5726,10 +6124,10 @@ disect_nas_5gs_updp(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int off
 
 const value_string nas_5gs_pdu_session_id_vals[] = {
     { 0x00, "No PDU session identity assigned" },
-    { 0x01, "Reserved" },
-    { 0x02, "Reserved" },
-    { 0x03, "Reserved" },
-    { 0x04, "Reserved" },
+    { 0x01, "PDU session identity value 1" },
+    { 0x02, "PDU session identity value 2" },
+    { 0x03, "PDU session identity value 3" },
+    { 0x04, "PDU session identity value 4" },
     { 0x05, "PDU session identity value 5" },
     { 0x06, "PDU session identity value 6" },
     { 0x07, "PDU session identity value 7" },
@@ -6019,7 +6417,7 @@ dissect_nas_5gs_media_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     } else if (!strcmp(n1_msg_class, "UPDP")) {
         /* UD policy delivery service */
         disect_nas_5gs_updp(tvb, pinfo, tree, 0);
-        return tvb_captured_length(tvb);;
+        return tvb_captured_length(tvb);
     } else {
         subdissector = NULL;
     }
@@ -6845,8 +7243,13 @@ proto_register_nas_5gs(void)
             FT_UINT8, BASE_DEC, VALS(nas_5gs_sc_mode_values), 0xf0,
             NULL, HFILL }
         },
+        { &hf_nas_5gs_sm_mh6_pdu_b1,
+        { "Multi-homed IPv6 PDU session (MH6-PDU)",   "nas_5gs.sm.mh6_pdu",
+            FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x02,
+            NULL, HFILL }
+        },
         { &hf_nas_5gs_sm_rqos_b0,
-        { "Reflective QoS(RqoS)",   "nas_5gs.sm.rqos",
+        { "Reflective QoS (RqoS)",   "nas_5gs.sm.rqos",
             FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x01,
             NULL, HFILL }
         },
@@ -6952,7 +7355,7 @@ proto_register_nas_5gs(void)
         },
         { &hf_nas_5gs_protocol_identifier_or_next_hd,
         { "Protocol identifier/Next header type", "nas_5gs.protocol_identifier_or_next_hd",
-            FT_UINT8, BASE_DEC, NULL, 0x0,
+            FT_UINT8, BASE_DEC | BASE_EXT_STRING, &ipproto_val_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_nas_5gs_sm_qos_rule_precedence,
@@ -6960,9 +7363,64 @@ proto_register_nas_5gs(void)
             FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
-        { &hf_nas_5gs_sm_pal_cont,
-        { "Parameters content",   "nas_5gs.sm.pal_cont",
-            FT_UINT8, BASE_DEC, VALS(nas_5gs_rule_param_cont), 0x0,
+        { &hf_nas_5gs_sm_param_cont,
+        { "Parameter content",   "nas_5gs.sm.param_content",
+            FT_BYTES, BASE_NONE, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_5qi,
+        { "5QI",   "nas_5gs.sm.5qi",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_unit_for_gfbr_ul,
+        { "Unit for GFBR uplink",   "nas_5gs.sm.unit_for_gfbr_ul",
+            FT_UINT8, BASE_DEC, VALS(nas_5gs_sm_unit_for_session_ambr_values), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_gfbr_ul,
+        { "GFBR uplink",   "nas_5gs.sm.gfbr_ul",
+            FT_UINT16, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_unit_for_gfbr_dl,
+        { "Unit for GFBR downlink",   "nas_5gs.sm.unit_for_gfbr_dl",
+            FT_UINT8, BASE_DEC, VALS(nas_5gs_sm_unit_for_session_ambr_values), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_gfbr_dl,
+        { "GFBR downlink",   "nas_5gs.sm.gfbr_dl",
+            FT_UINT16, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_unit_for_mfbr_ul,
+        { "Unit for MFBR uplink",   "nas_5gs.sm.unit_for_mfbr_ul",
+            FT_UINT8, BASE_DEC, VALS(nas_5gs_sm_unit_for_session_ambr_values), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_mfbr_ul,
+        { "MFBR uplink",   "nas_5gs.sm.mfbr_ul",
+            FT_UINT16, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_unit_for_mfbr_dl,
+        { "Unit for MFBR downlink",   "nas_5gs.sm.unit_for_mfbr_dl",
+            FT_UINT8, BASE_DEC, VALS(nas_5gs_sm_unit_for_session_ambr_values), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_mfbr_dl,
+        { "MFBR downlink",   "nas_5gs.sm.mfbr_dl",
+            FT_UINT16, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_averaging_window,
+        { "Averaging window",   "nas_5gs.sm.averaging_window",
+            FT_UINT16, BASE_DEC | BASE_UNIT_STRING, &units_millisecond_milliseconds, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_eps_bearer_id,
+        { "EPS bearer identity",   "nas_5gs.sm.eps_bearer_id",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_nas_5gs_sm_qfi,
@@ -7165,6 +7623,16 @@ proto_register_nas_5gs(void)
             FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
+        { &hf_nas_5gs_sm_max_nb_sup_pkt_flt_nb,
+        { "Maximum number of supported packet filters", "nas_5gs.sm.max_nb_sup_pkt_flt.nb",
+            FT_UINT16, BASE_DEC, NULL, 0xffe0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_sm_max_nb_sup_pkt_flt_spare,
+        { "Spare", "nas_5gs.sm.max_nb_sup_pkt_flt.spare",
+            FT_UINT16, BASE_HEX, NULL, 0x001f,
+            NULL, HFILL }
+        },
         { &hf_nas_5gs_kacf,
         { "K_AMF change flag", "nas_5gs.kacf",
             FT_BOOLEAN, 8, TFS(&nas_5gs_kacf_tfs), 0x10,
@@ -7336,7 +7804,7 @@ proto_register_nas_5gs(void)
             NULL, HFILL }
         },
         { &hf_nas_5gs_updp_upsc,
-        { "Length", "nas_5gs.updp.upsc",
+        { "UPSC", "nas_5gs.updp.upsc",
             FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
@@ -7355,13 +7823,83 @@ proto_register_nas_5gs(void)
             FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
+        { &hf_nas_5gs_ursp_rule_len,
+        { "Length", "nas_5gs.ursp.rule_len",
+            FT_UINT16, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_rule_prec,
+        { "Precedence", "nas_5gs.ursp.rule_prec",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_traff_desc_lst_len,
+        { "Length", "nas_5gs.ursp.traff_desc_len",
+            FT_UINT16, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_traff_desc,
+        { "Traffic descriptor", "nas_5gs.ursp.traff_desc",
+            FT_UINT8, BASE_DEC, VALS(nas_5gs_ursp_traff_desc_component_type_values), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_r_sel_desc_lst_len,
+        { "Length", "nas_5gs.ursp.r_sel_desc_lst_len",
+            FT_UINT16, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_r_sel_desc_lst,
+        { "Route selection descriptor list", "nas_5gs.ursp.r_sel_desc_lst",
+            FT_BYTES, BASE_NONE, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_traff_desc_ipv4,
+        { "IPv4 Address", "nas_5gs.ursp.traff_desc.ipv4",
+            FT_IPv4, BASE_NONE, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_traff_desc_ipv4_mask,
+        { "Mask", "nas_5gs.ursp.traff_desc.ipv4_mask",
+            FT_UINT32, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_traff_desc_next_hdr,
+        { "Protocol identifier/next header type", "nas_5gs.ursp.desc_next_hdr",
+            FT_UINT8,  BASE_DEC | BASE_EXT_STRING, &ipproto_val_ext, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_traff_desc_len,
+        { "Length", "nas_5gs.ursp.r_sel_desc_len",
+            FT_UINT16, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_r_sel_des_prec,
+        { "Precedence", "nas_5gs.ursp.r_sel_des_prec",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_r_sel_des_cont_len,
+        { "Length", "nas_5gs.ursp.r_sel_des_cont_len",
+            FT_UINT16, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_ursp_r_sel_desc_comp_type,
+        { "Route selection descriptor component type identifier", "nas_5gs.ursp.r_sel_desc_comp_type",
+            FT_UINT8, BASE_DEC, VALS(nas_5gs_ursp_r_sel_desc_comp_type_values), 0x0,
+            NULL, HFILL }
+        },
+        { &hf_nas_5gs_ursp_r_sel_desc_dnn_len,
+        { "Length", "nas_5gs.ursp.r_sel_desc_dnn_len",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
     };
 
     guint     i;
     guint     last_offset;
 
     /* Setup protocol subtree array */
-#define NUM_INDIVIDUAL_ELEMS    17
+#define NUM_INDIVIDUAL_ELEMS    20
     gint *ett[NUM_INDIVIDUAL_ELEMS +
         NUM_NAS_5GS_COMMON_ELEM +
         NUM_NAS_5GS_MM_MSG + NUM_NAS_5GS_MM_ELEM +
@@ -7386,6 +7924,9 @@ proto_register_nas_5gs(void)
     ett[14] = &ett_nas_5gs_sm_pkt_filter_components;
     ett[15] = &ett_nas_5gs_updp_ue_policy_section_mgm_lst;
     ett[16] = &ett_nas_5gs_updp_ue_policy_section_mgm_sublst;
+    ett[17] = &ett_nas_5gs_ue_policies_ursp;
+    ett[18] = &ett_nas_5gs_ursp_traff_desc;
+    ett[19] = &ett_nas_5gs_ursp_r_sel_desc_cont;
 
     last_offset = NUM_INDIVIDUAL_ELEMS;
 
@@ -7479,6 +8020,7 @@ proto_reg_handoff_nas_5gs(void)
     nas_eps_handle = find_dissector("nas-eps");
     nas_eps_plain_handle = find_dissector("nas-eps_plain");
     lpp_handle = find_dissector("lpp");
+    gsm_a_dtap_handle = find_dissector("gsm_a_dtap");
     dissector_add_string("media_type", "application/vnd.3gpp.5gnas", create_dissector_handle(dissect_nas_5gs_media_type, proto_nas_5gs));
     proto_json = proto_get_id_by_filter_name("json");
 }

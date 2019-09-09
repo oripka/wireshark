@@ -12,9 +12,18 @@
 
 /*
  * See https://quicwg.org
- * https://tools.ietf.org/html/draft-ietf-quic-transport-20
- * https://tools.ietf.org/html/draft-ietf-quic-tls-20
- * https://tools.ietf.org/html/draft-ietf-quic-invariants-04
+ * https://tools.ietf.org/html/draft-ietf-quic-transport-22
+ * https://tools.ietf.org/html/draft-ietf-quic-tls-22
+ * https://tools.ietf.org/html/draft-ietf-quic-invariants-06
+ *
+ * Currently supported QUIC version(s): draft -21, draft -22.
+ * For a table of supported QUIC versions per Wireshark version, see
+ * https://github.com/quicwg/base-drafts/wiki/Tools#wireshark
+ *
+ * Decryption is supported via TLS 1.3 secrets in the "TLS Key Log File",
+ * configured either at the TLS Protocol preferences, or embedded in a pcapng
+ * file. Sample captures and secrets can be found at:
+ * https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=13881
  */
 
 #include <config.h>
@@ -44,6 +53,7 @@ void proto_register_quic(void);
 /* Initialize the protocol and registered fields */
 static int proto_quic = -1;
 static int hf_quic_connection_number = -1;
+static int hf_quic_packet_length = -1;
 static int hf_quic_header_form = -1;
 static int hf_quic_long_packet_type = -1;
 static int hf_quic_long_reserved = -1;
@@ -108,6 +118,7 @@ static int hf_quic_db_stream_data_limit = -1;
 static int hf_quic_sdb_stream_id = -1;
 static int hf_quic_sdb_stream_data_limit = -1;
 static int hf_quic_sb_stream_limit = -1;
+static int hf_quic_nci_retire_prior_to = -1;
 static int hf_quic_nci_sequence = -1;
 static int hf_quic_nci_connection_id_length = -1;
 static int hf_quic_nci_connection_id = -1;
@@ -176,9 +187,15 @@ typedef struct quic_decrypt_result {
     guint           data_len;   /**< Size of decrypted data. */
 } quic_decrypt_result_t;
 
+/*
+ * Although the QUIC SCID/DCID length field can store at most 255, v1 limits the
+ * CID length to 20.
+ */
+#define QUIC_MAX_CID_LENGTH  20
+
 typedef struct quic_cid {
     guint8      len;
-    guint8      cid[18];
+    guint8      cid[QUIC_MAX_CID_LENGTH];
 } quic_cid_t;
 
 /** QUIC decryption context. */
@@ -186,7 +203,7 @@ typedef struct quic_cipher {
     // TODO hp_cipher does not change after KeyUpdate, but is still tied to the
     //      current encryption level (initial, 0rtt, handshake, appdata).
     //      Maybe move this into quic_info_data (2x) and quic_pp_state?
-    //      See https://tools.ietf.org/html/draft-ietf-quic-tls-17#section-5.4
+    //      See https://tools.ietf.org/html/draft-ietf-quic-tls-22#section-5.4
     gcry_cipher_hd_t    hp_cipher;  /**< Header protection cipher. */
     gcry_cipher_hd_t    pp_cipher;  /**< Packet protection cipher. */
     guint8              pp_iv[TLS13_AEAD_NONCE_LENGTH];
@@ -304,6 +321,8 @@ const value_string quic_version_vals[] = {
     { 0xff000012, "draft-18" },
     { 0xff000013, "draft-19" },
     { 0xff000014, "draft-20" },
+    { 0xff000015, "draft-21" },
+    { 0xff000016, "draft-22" },
     { 0, NULL }
 };
 
@@ -314,26 +333,6 @@ static const value_string quic_short_long_header_vals[] = {
 };
 
 #define SH_KP       0x04
-
-static const value_string quic_cid_len_vals[] = {
-    { 0,    "0 octets" },
-    { 1,    "4 octets" },
-    { 2,    "5 octets" },
-    { 3,    "6 octets" },
-    { 4,    "7 octets" },
-    { 5,    "8 octets" },
-    { 6,    "9 octets" },
-    { 7,    "10 octets" },
-    { 8,    "11 octets" },
-    { 9,    "12 octets" },
-    { 10,   "13 octets" },
-    { 11,   "14 octets" },
-    { 12,   "15 octets" },
-    { 13,   "16 octets" },
-    { 14,   "17 octets" },
-    { 15,   "18 octets" },
-    { 0, NULL }
-};
 
 #define QUIC_LPT_INITIAL    0x0
 #define QUIC_LPT_0RTT       0x1
@@ -413,6 +412,7 @@ static const range_string quic_frame_type_vals[] = {
 #define FTFLAGS_STREAM_OFF 0x04
 
 static const range_string quic_transport_error_code_vals[] = {
+    /* 0x00 - 0x3f Assigned via Standards Action or IESG Review policies. */
     { 0x0000, 0x0000, "NO_ERROR" },
     { 0x0001, 0x0001, "INTERNAL_ERROR" },
     { 0x0002, 0x0002, "SERVER_BUSY" },
@@ -422,17 +422,12 @@ static const range_string quic_transport_error_code_vals[] = {
     { 0x0006, 0x0006, "FINAL_SIZE_ERROR" },
     { 0x0007, 0x0007, "FRAME_ENCODING_ERROR" },
     { 0x0008, 0x0008, "TRANSPORT_PARAMETER_ERROR" },
-    { 0x0009, 0x0009, "VERSION_NEGOTIATION_ERROR" }, // removed in draft -19
     { 0x000A, 0x000A, "PROTOCOL_VIOLATION" },
     { 0x000C, 0x000C, "INVALID_MIGRATION" },
     { 0x000D, 0x000D, "CRYPTO_BUFFER_EXCEEDED" },
     { 0x0100, 0x01FF, "CRYPTO_ERROR" },
+    /* 0x40 - 0x3fff Assigned via Specification Required policy. */
     { 0, 0, NULL }
-};
-
-static const value_string quic_application_error_code_vals[] = {
-    { 0x0000, "STOPPING" },
-    { 0, NULL }
 };
 
 static const value_string quic_packet_number_lengths[] = {
@@ -489,7 +484,7 @@ quic_decrypt_header(tvbuff_t *tvb, guint pn_offset, gcry_cipher_hd_t hp_cipher, 
     }
 
     // Sample is always 16 bytes and starts after PKN (assuming length 4).
-    // https://tools.ietf.org/html/draft-ietf-quic-tls-17#section-5.4.2
+    // https://tools.ietf.org/html/draft-ietf-quic-tls-22#section-5.4.2
     guint8 sample[16];
     tvb_memcpy(tvb, sample, pn_offset + 4, 16);
 
@@ -520,7 +515,7 @@ quic_decrypt_header(tvbuff_t *tvb, guint pn_offset, gcry_cipher_hd_t hp_cipher, 
         return FALSE;
     }
 
-    // https://tools.ietf.org/html/draft-ietf-quic-tls-17#section-5.4.1
+    // https://tools.ietf.org/html/draft-ietf-quic-tls-22#section-5.4.1
     guint8 packet0 = tvb_get_guint8(tvb, 0);
     if ((packet0 & 0x80) == 0x80) {
         // Long header: 4 bits masked
@@ -636,13 +631,14 @@ quic_cids_insert(quic_cid_t *cid, quic_info_data_t *conn, gboolean from_server)
     // Replace any previous CID key with the new one.
     wmem_map_remove(connections, cid);
     wmem_map_insert(connections, cid, conn);
-    quic_cid_lengths |= (1 << cid->len);
+    G_STATIC_ASSERT(QUIC_MAX_CID_LENGTH <= 8 * sizeof(quic_cid_lengths));
+    quic_cid_lengths |= (1ULL << cid->len);
 }
 
 static inline gboolean
 quic_cids_is_known_length(const quic_cid_t *cid)
 {
-    return (quic_cid_lengths & (1 << cid->len)) != 0;
+    return (quic_cid_lengths & (1ULL << cid->len)) != 0;
 }
 
 /**
@@ -652,7 +648,7 @@ quic_cids_is_known_length(const quic_cid_t *cid)
 static quic_info_data_t *
 quic_connection_find_dcid(packet_info *pinfo, const quic_cid_t *dcid, gboolean *from_server)
 {
-    /* https://tools.ietf.org/html/draft-ietf-quic-transport-13#section-6.2
+    /* https://tools.ietf.org/html/draft-ietf-quic-transport-22#section-5.2
      *
      * "If the packet has a Destination Connection ID corresponding to an
      * existing connection, QUIC processes that packet accordingly."
@@ -969,35 +965,37 @@ dissect_quic_frame_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *quic_tree
         }
         break;
         case FT_RESET_STREAM:{
-            guint64 stream_id;
-            guint32 error_code, len_streamid = 0, len_finalsize = 0;
+            guint64 stream_id, error_code;
+            guint32 len_streamid = 0, len_finalsize = 0, len_error_code = 0;
 
             col_append_fstr(pinfo->cinfo, COL_INFO, ", RS");
 
             proto_tree_add_item_ret_varint(ft_tree, hf_quic_rsts_stream_id, tvb, offset, -1, ENC_VARINT_QUIC, &stream_id, &len_streamid);
             offset += len_streamid;
 
-            proto_tree_add_item_ret_uint(ft_tree, hf_quic_rsts_application_error_code, tvb, offset, 2, ENC_BIG_ENDIAN, &error_code);
-            offset += 2;
+            proto_tree_add_item_ret_varint(ft_tree, hf_quic_rsts_application_error_code, tvb, offset, -1, ENC_VARINT_QUIC, &error_code, &len_error_code);
+            offset += len_error_code;
 
             proto_tree_add_item_ret_varint(ft_tree, hf_quic_rsts_final_size, tvb, offset, -1, ENC_VARINT_QUIC, NULL, &len_finalsize);
             offset += len_finalsize;
 
-            proto_item_append_text(ti_ft, " Stream ID: %" G_GINT64_MODIFIER "u, Error code: %s", stream_id, val_to_str(error_code, quic_application_error_code_vals, "0x%04x"));
+            proto_item_append_text(ti_ft, " Stream ID: %" G_GINT64_MODIFIER "u, Error code: %#" G_GINT64_MODIFIER "x", stream_id, error_code);
         }
         break;
         case FT_STOP_SENDING:{
-            guint32 len_streamid, error_code;
+            guint32 len_streamid;
+            guint64 error_code;
+            guint32 len_error_code = 0;
 
             col_append_fstr(pinfo->cinfo, COL_INFO, ", SS");
 
             proto_tree_add_item_ret_varint(ft_tree, hf_quic_ss_stream_id, tvb, offset, -1, ENC_VARINT_QUIC, NULL, &len_streamid);
             offset += len_streamid;
 
-            proto_tree_add_item_ret_uint(ft_tree, hf_quic_ss_application_error_code, tvb, offset, 2, ENC_BIG_ENDIAN, &error_code);
-            offset += 2;
+            proto_tree_add_item_ret_varint(ft_tree, hf_quic_ss_application_error_code, tvb, offset, -1, ENC_VARINT_QUIC, &error_code, &len_error_code);
+            offset += len_error_code;
 
-            proto_item_append_text(ti_ft, " Error code: 0x%04x", error_code);
+            proto_item_append_text(ti_ft, " Error code: %#" G_GINT64_MODIFIER "x", error_code);
         }
         break;
         case FT_CRYPTO: {
@@ -1146,6 +1144,7 @@ dissect_quic_frame_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *quic_tree
         break;
         case FT_NEW_CONNECTION_ID:{
             guint32 len_sequence;
+            guint32 len_retire_prior_to;
             guint32 nci_length;
             gboolean valid_cid = FALSE;
 
@@ -1154,13 +1153,16 @@ dissect_quic_frame_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *quic_tree
             proto_tree_add_item_ret_varint(ft_tree, hf_quic_nci_sequence, tvb, offset, -1, ENC_VARINT_QUIC, NULL, &len_sequence);
             offset += len_sequence;
 
+            proto_tree_add_item_ret_varint(ft_tree, hf_quic_nci_retire_prior_to, tvb, offset, -1, ENC_VARINT_QUIC, NULL, &len_retire_prior_to);
+            offset += len_retire_prior_to;
+
             ti = proto_tree_add_item_ret_uint(ft_tree, hf_quic_nci_connection_id_length, tvb, offset, 1, ENC_BIG_ENDIAN, &nci_length);
             offset++;
 
-            valid_cid = nci_length >= 4 && nci_length <= 18;
+            valid_cid = nci_length >= 1 && nci_length <= QUIC_MAX_CID_LENGTH;
             if (!valid_cid) {
                 expert_add_info_format(pinfo, ti, &ei_quic_protocol_violation,
-                            "Connection ID Length must be between 4 and 18 bytes");
+                            "Connection ID Length must be between 1 and %d bytes", QUIC_MAX_CID_LENGTH);
             }
 
             proto_tree_add_item(ft_tree, hf_quic_nci_connection_id, tvb, offset, nci_length, ENC_NA);
@@ -1198,27 +1200,28 @@ dissect_quic_frame_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *quic_tree
         break;
         case FT_CONNECTION_CLOSE_TPT:
         case FT_CONNECTION_CLOSE_APP:{
-            guint32 len_reasonphrase, len_frametype, error_code;
+            guint32 len_reasonphrase, len_frametype, len_error_code;
             guint64 len_reason = 0;
+            guint64 error_code;
             const char *tls_alert = NULL;
 
             col_append_fstr(pinfo->cinfo, COL_INFO, ", CC");
 
             if (frame_type == FT_CONNECTION_CLOSE_TPT) {
-                proto_tree_add_item_ret_uint(ft_tree, hf_quic_cc_error_code, tvb, offset, 2, ENC_BIG_ENDIAN, &error_code);
-                if ((error_code & 0xff00) == 0x0100) {  // CRYPTO_ERROR
+                proto_tree_add_item_ret_varint(ft_tree, hf_quic_cc_error_code, tvb, offset, -1, ENC_VARINT_QUIC, &error_code, &len_error_code);
+                if ((error_code >> 8) == 1) {  // CRYPTO_ERROR (0x1XX)
                     tls_alert = try_val_to_str(error_code & 0xff, ssl_31_alert_description);
                     if (tls_alert) {
-                        proto_tree_add_item(ft_tree, hf_quic_cc_error_code_tls_alert, tvb, offset + 1, 1, ENC_BIG_ENDIAN);
+                        proto_tree_add_item(ft_tree, hf_quic_cc_error_code_tls_alert, tvb, offset + len_error_code - 1, 1, ENC_BIG_ENDIAN);
                     }
                 }
-                offset += 2;
+                offset += len_error_code;
 
                 proto_tree_add_item_ret_varint(ft_tree, hf_quic_cc_frame_type, tvb, offset, -1, ENC_VARINT_QUIC, NULL, &len_frametype);
                 offset += len_frametype;
             } else { /* FT_CONNECTION_CLOSE_APP) */
-                proto_tree_add_item_ret_uint(ft_tree, hf_quic_cc_error_code_app, tvb, offset, 2, ENC_BIG_ENDIAN, &error_code);
-                offset += 2;
+                proto_tree_add_item_ret_varint(ft_tree, hf_quic_cc_error_code_app, tvb, offset, -1, ENC_VARINT_QUIC, &error_code, &len_error_code);
+                offset += len_error_code;
             }
 
 
@@ -1228,7 +1231,12 @@ dissect_quic_frame_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *quic_tree
             proto_tree_add_item(ft_tree, hf_quic_cc_reason_phrase, tvb, offset, (guint32)len_reason, ENC_ASCII|ENC_NA);
             offset += (guint32)len_reason;
 
-            proto_item_append_text(ti_ft, " Error code: %s", rval_to_str(error_code, quic_transport_error_code_vals, "Unknown (%d)"));
+            // Transport Error codes higher than 0x3fff are for Private Use.
+            if (frame_type == FT_CONNECTION_CLOSE_TPT && error_code <= 0x3fff) {
+                proto_item_append_text(ti_ft, " Error code: %s", rval_to_str((guint32)error_code, quic_transport_error_code_vals, "Unknown (%d)"));
+            } else {
+                proto_item_append_text(ti_ft, " Error code: %#" G_GINT64_MODIFIER "x", error_code);
+            }
             if (tls_alert) {
                 proto_item_append_text(ti_ft, " (%s)", tls_alert);
             }
@@ -1257,7 +1265,7 @@ quic_cipher_init(quic_cipher *cipher, int hash_algo, guint8 key_length, guint8 *
  * the (encrypted) packet number length is also included.
  *
  * The actual packet number must be constructed according to
- * https://tools.ietf.org/html/draft-ietf-quic-transport-13#section-4.8
+ * https://tools.ietf.org/html/draft-ietf-quic-transport-22#section-12.3
  */
 static void
 quic_decrypt_message(quic_cipher *cipher, tvbuff_t *head, guint header_length,
@@ -1353,9 +1361,9 @@ quic_derive_initial_secrets(const quic_cid_t *cid,
                             const gchar **error)
 {
     /*
-     * https://tools.ietf.org/html/draft-ietf-quic-tls-17#section-5.2
+     * https://tools.ietf.org/html/draft-ietf-quic-tls-22#section-5.2
      *
-     * initial_salt = 0xef4fb0abb47470c41befcf8031334fae485e09a0
+     * initial_salt = 0x7fbcdb0e7c66bbe9193a96cd21519ebd7a02644a
      * initial_secret = HKDF-Extract(initial_salt, client_dst_connection_id)
      *
      * client_initial_secret = HKDF-Expand-Label(initial_secret,
@@ -1366,8 +1374,8 @@ quic_derive_initial_secrets(const quic_cid_t *cid,
      * Hash for handshake packets is SHA-256 (output size 32).
      */
     static const guint8 handshake_salt[20] = {
-        0xef, 0x4f, 0xb0, 0xab, 0xb4, 0x74, 0x70, 0xc4, 0x1b, 0xef,
-        0xcf, 0x80, 0x31, 0x33, 0x4f, 0xae, 0x48, 0x5e, 0x09, 0xa0
+        0x7f, 0xbc, 0xdb, 0x0e, 0x7c, 0x66, 0xbb, 0xe9, 0x19, 0x3a,
+        0x96, 0xcd, 0x21, 0x51, 0x9e, 0xbd, 0x7a, 0x02, 0x64, 0x4a
     };
     gcry_error_t    err;
     guint8          secret[HASH_SHA2_256_LENGTH];
@@ -1397,7 +1405,7 @@ quic_derive_initial_secrets(const quic_cid_t *cid,
 
 /**
  * Maps a Packet Protection cipher to the Packet Number protection cipher.
- * See https://tools.ietf.org/html/draft-ietf-quic-tls-17#section-5.4.3
+ * See https://tools.ietf.org/html/draft-ietf-quic-tls-22#section-5.4.3
  */
 static gboolean
 quic_get_pn_cipher_algo(int cipher_algo, int *hp_cipher_mode)
@@ -1790,24 +1798,26 @@ dissect_quic_long_header_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *q
     offset += 4;
 
     proto_tree_add_item_ret_uint(quic_tree, hf_quic_dcil, tvb, offset, 1, ENC_BIG_ENDIAN, &dcil);
-    proto_tree_add_item_ret_uint(quic_tree, hf_quic_scil, tvb, offset, 1, ENC_BIG_ENDIAN, &scil);
     offset++;
-
     if (dcil) {
-        dcil += 3;
         proto_tree_add_item(quic_tree, hf_quic_dcid, tvb, offset, dcil, ENC_NA);
         // TODO expert info on CID mismatch with connection
-        tvb_memcpy(tvb, dcid->cid, offset, dcil);
-        dcid->len = dcil;
+        if (dcil <= QUIC_MAX_CID_LENGTH) {
+            tvb_memcpy(tvb, dcid->cid, offset, dcil);
+            dcid->len = dcil;
+        }
         offset += dcil;
     }
 
+    proto_tree_add_item_ret_uint(quic_tree, hf_quic_scil, tvb, offset, 1, ENC_BIG_ENDIAN, &scil);
+    offset++;
     if (scil) {
-        scil += 3;
         proto_tree_add_item(quic_tree, hf_quic_scid, tvb, offset, scil, ENC_NA);
         // TODO expert info on CID mismatch with connection
-        tvb_memcpy(tvb, scid->cid, offset, scil);
-        scid->len = scil;
+        if (scil <= QUIC_MAX_CID_LENGTH) {
+            tvb_memcpy(tvb, scid->cid, offset, scil);
+            scid->len = scil;
+        }
         offset += scil;
     }
 
@@ -1832,15 +1842,13 @@ dissect_quic_retry_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *quic_tr
     guint       retry_token_len;
 
     proto_tree_add_item(quic_tree, hf_quic_long_packet_type, tvb, offset, 1, ENC_NA);
-    proto_tree_add_item_ret_uint(quic_tree, hf_quic_odcil, tvb, offset, 1, ENC_NA, &odcil);
-    if (odcil) {
-        odcil += 3;
-    }
     offset += 1;
     col_set_str(pinfo->cinfo, COL_INFO, "Retry");
 
     offset = dissect_quic_long_header_common(tvb, pinfo, quic_tree, offset, quic_packet, &version, &dcid, &scid);
 
+    proto_tree_add_item_ret_uint(quic_tree, hf_quic_odcil, tvb, offset, 1, ENC_NA, &odcil);
+    offset++;
     proto_tree_add_item(quic_tree, hf_quic_odcid, tvb, offset, odcil, ENC_NA);
     offset += odcil;
     retry_token_len = tvb_reported_length_remaining(tvb, offset);
@@ -1903,7 +1911,8 @@ dissect_quic_long_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *quic_tre
         if (!error) {
             guint32 pkn32 = 0;
             int hp_cipher_algo = long_packet_type != QUIC_LPT_INITIAL && conn ? conn->cipher_algo : GCRY_CIPHER_AES128;
-            guint pn_offset = 6 + dcid.len + scid.len;
+            // PKN is after type(1) + version(4) + DCIL+DCID + SCIL+SCID
+            guint pn_offset = 1 + 4 + 1 + dcid.len + 1 + scid.len;
             if (long_packet_type == QUIC_LPT_INITIAL) {
                 pn_offset += tvb_get_varint(tvb, pn_offset, 8, &token_length, ENC_VARINT_QUIC);
                 pn_offset += (guint)token_length;
@@ -2117,16 +2126,9 @@ quic_get_message_tvb(tvbuff_t *tvb, const guint offset)
         // If this is not a VN packet but a valid long form, extract a subset.
         // TODO check for valid QUIC versions as future versions might change the format.
         if (version != 0) {
-            guint8 cid_lengths = tvb_get_guint8(tvb, offset + 5);
-            guint8 dcil = cid_lengths >> 4;
-            guint8 scil = cid_lengths & 0xf;
-            guint length = 6;
-            if (dcil) {
-                length += 3 + dcil;
-            }
-            if (scil) {
-                length += 3 + scil;
-            }
+            guint length = 5;   // flag (1 byte) + version (4 bytes)
+            length += 1 + tvb_get_guint8(tvb, offset + length); // DCID
+            length += 1 + tvb_get_guint8(tvb, offset + length); // SCID
             if (long_packet_type == QUIC_LPT_INITIAL) {
                 length += tvb_get_varint(tvb, offset + length, 8, &token_length, ENC_VARINT_QUIC);
                 length += (guint)token_length;
@@ -2172,21 +2174,19 @@ quic_extract_header(tvbuff_t *tvb, guint8 *long_packet_type, guint32 *version,
         // skip version
         offset += 4;
 
-        // read DCIL/SCIL (Connection ID Lengths).
-        guint8 cid_lengths = tvb_get_guint8(tvb, offset);
-        guint8 dcil = cid_lengths >> 4;
-        guint8 scil = cid_lengths & 0xf;
+        // read DCID and SCID (both are prefixed by a length byte).
+        guint8 dcil = tvb_get_guint8(tvb, offset);
         offset++;
 
-        if (dcil) {
-            dcil += 3;
+        if (dcil && dcil <= QUIC_MAX_CID_LENGTH) {
             tvb_memcpy(tvb, dcid->cid, offset, dcil);
             dcid->len = dcil;
-            offset += dcil;
         }
+        offset += dcil;
 
-        if (scil) {
-            scil += 3;
+        guint8 scil = tvb_get_guint8(tvb, offset);
+        offset++;
+        if (scil && scil <= QUIC_MAX_CID_LENGTH) {
             tvb_memcpy(tvb, scid->cid, offset, scil);
             scid->len = scil;
         }
@@ -2194,10 +2194,10 @@ quic_extract_header(tvbuff_t *tvb, guint8 *long_packet_type, guint32 *version,
         // Definitely not draft -10, set version to dummy value.
         *version = 0;
         // For short headers, the DCID length is unknown and could be 0 or
-        // anything from 4 to 18 bytes. Copy the maximum possible and let the
+        // anything from 1 to 20 bytes. Copy the maximum possible and let the
         // consumer truncate it as necessary.
-        tvb_memcpy(tvb, dcid->cid, offset, 18);
-        dcid->len = 18;
+        tvb_memcpy(tvb, dcid->cid, offset, QUIC_MAX_CID_LENGTH);
+        dcid->len = QUIC_MAX_CID_LENGTH;
     }
 }
 
@@ -2205,7 +2205,7 @@ static int
 dissect_quic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         void *data _U_)
 {
-    proto_item *quic_ti;
+    proto_item *quic_ti, *ti;
     proto_tree *quic_tree;
     guint       offset = 0;
     guint32     header_form;
@@ -2265,6 +2265,8 @@ dissect_quic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
         tvbuff_t *next_tvb = quic_get_message_tvb(tvb, offset);
         proto_item_set_len(quic_ti, tvb_reported_length(next_tvb));
+        ti = proto_tree_add_uint(quic_tree, hf_quic_packet_length, next_tvb, 0, 0, tvb_reported_length(next_tvb));
+        proto_item_set_generated(ti);
         proto_tree_add_item_ret_uint(quic_tree, hf_quic_header_form, next_tvb, 0, 1, ENC_NA, &header_form);
         guint new_offset = 0;
         if (header_form) {
@@ -2300,15 +2302,15 @@ dissect_quic_short_header_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
         return FALSE;
     }
 
-    // Is this a SH packet after connection migration? SH (draft -14):
-    // Flag (1) + DCID (4-18) + PKN (1/2/4) + encrypted payload (>= 16).
-    if (tvb_captured_length(tvb) < 1 + 4 + 1 + 16) {
+    // Is this a SH packet after connection migration? SH (since draft -22):
+    // Flag (1) + DCID (1-20) + PKN (1/2/4) + encrypted payload (>= 16).
+    if (tvb_captured_length(tvb) < 1 + 1 + 1 + 16) {
         return FALSE;
     }
 
     // DCID length is unknown, so extract the maximum and look for a match.
-    quic_cid_t dcid = {.len=18};
-    tvb_memcpy(tvb, dcid.cid, 1, 18);
+    quic_cid_t dcid = {.len=QUIC_MAX_CID_LENGTH};
+    tvb_memcpy(tvb, dcid.cid, 1, QUIC_MAX_CID_LENGTH);
     gboolean from_server;
     if (!quic_connection_find(pinfo, QUIC_SHORT_PACKET, &dcid, &from_server)) {
         return FALSE;
@@ -2323,12 +2325,12 @@ dissect_quic_short_header_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 static gboolean dissect_quic_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     /*
-     * Since draft -12:
-     * Flag (1 byte) + Version (4 bytes) + DCIL/SCIL (1 byte) +
-     * Destination Connection ID (0/4..18 based on DCIL) +
-     * Source Connection ID (0/4..18 based on SCIL) +
+     * Since draft -22:
+     * Flag (1 byte) + Version (4 bytes) +
+     * Length (1 byte) + Destination Connection ID (0..255) +
+     * Length (1 byte) + Source Connection ID (0..255) +
      * Payload length (1/2/4/8) + Packet number (1/2/4 bytes) + Payload.
-     * (absolute minimum: 8 + payload)
+     * (absolute minimum: 9 + payload)
      * (for Version Negotiation, payload len + PKN + payload is replaced by
      * Supported Version (multiple of 4 bytes.)
      */
@@ -2399,6 +2401,12 @@ proto_register_quic(void)
             "Connection identifier within this capture file", HFILL }
         },
 
+        { &hf_quic_packet_length,
+          { "Packet Length", "quic.packet_length",
+            FT_UINT32, BASE_DEC, NULL, 0x0,
+            "Size of the QUIC packet", HFILL }
+        },
+
         { &hf_quic_header_form,
           { "Header Form", "quic.header_form",
             FT_UINT8, BASE_DEC, VALS(quic_short_long_header_vals), 0x80,
@@ -2432,13 +2440,13 @@ proto_register_quic(void)
         },
         { &hf_quic_dcil,
           { "Destination Connection ID Length", "quic.dcil",
-            FT_UINT8, BASE_DEC, VALS(quic_cid_len_vals), 0xf0,
-            "Destination Connection ID Length (for non-zero lengths, add 3 for actual length)", HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
         },
         { &hf_quic_scil,
           { "Source Connection ID Length", "quic.scil",
-            FT_UINT8, BASE_DEC, VALS(quic_cid_len_vals), 0x0f,
-            "Source Connection ID Length (for non-zero lengths, add 3 for actual length)", HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
         },
         { &hf_quic_token_length,
           { "Token Length", "quic.token_length",
@@ -2471,7 +2479,7 @@ proto_register_quic(void)
             FT_UINT32, BASE_HEX, VALS(quic_version_vals), 0x0,
             NULL, HFILL }
         },
-        { &hf_quic_vn_unused, /* <= draft-07 */
+        { &hf_quic_vn_unused,
           { "Unused", "quic.vn.unused",
             FT_UINT8, BASE_HEX, NULL, 0x7F,
             NULL, HFILL }
@@ -2515,7 +2523,7 @@ proto_register_quic(void)
 
         { &hf_quic_odcil,
           { "Original Destination Connection ID Length", "quic.odcil",
-            FT_UINT8, BASE_DEC, VALS(quic_cid_len_vals), 0x0f,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_quic_odcid,
@@ -2600,7 +2608,7 @@ proto_register_quic(void)
         },
         { &hf_quic_rsts_application_error_code,
             { "Application Error code", "quic.rsts.application_error_code",
-              FT_UINT16, BASE_DEC, VALS(quic_application_error_code_vals), 0x0,
+              FT_UINT64, BASE_DEC, NULL, 0x0,
               "Indicates why the stream is being closed", HFILL }
         },
         { &hf_quic_rsts_final_size,
@@ -2616,7 +2624,7 @@ proto_register_quic(void)
         },
         { &hf_quic_ss_application_error_code,
             { "Application Error code", "quic.ss.application_error_code",
-              FT_UINT16, BASE_DEC, NULL, 0x0,
+              FT_UINT64, BASE_DEC, NULL, 0x0,
               "Indicates why the sender is ignoring the stream", HFILL }
         },
         /* CRYPTO */
@@ -2729,6 +2737,11 @@ proto_register_quic(void)
               "Indicating the stream limit at the time the frame was sent", HFILL }
         },
         /* NEW_CONNECTION_ID */
+        { &hf_quic_nci_retire_prior_to,
+            { "Retire Prior To", "quic.nci.retire_prior_to",
+              FT_UINT64, BASE_DEC, NULL, 0x0,
+              "A variable-length integer indicating which connection IDs should be retired", HFILL }
+        },
         { &hf_quic_nci_sequence,
             { "Sequence", "quic.nci.sequence",
               FT_UINT64, BASE_DEC, NULL, 0x0,
@@ -2770,12 +2783,12 @@ proto_register_quic(void)
         /* CONNECTION_CLOSE */
         { &hf_quic_cc_error_code,
             { "Error code", "quic.cc.error_code",
-              FT_UINT16, BASE_DEC|BASE_RANGE_STRING, RVALS(quic_transport_error_code_vals), 0x0,
+              FT_UINT64, BASE_DEC|BASE_RANGE_STRING, RVALS(quic_transport_error_code_vals), 0x0,
               "Indicates the reason for closing this connection", HFILL }
         },
         { &hf_quic_cc_error_code_app,
             { "Application Error code", "quic.cc.error_code.app",
-              FT_UINT16, BASE_DEC, VALS(quic_application_error_code_vals), 0x0,
+              FT_UINT64, BASE_DEC, NULL, 0x0,
               "Indicates the reason for closing this application", HFILL }
         },
         { &hf_quic_cc_error_code_tls_alert,

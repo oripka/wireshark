@@ -76,8 +76,10 @@ ADDITIONAL_LIST="libnl-3-dev \
 	libcap-dev \
 	liblz4-dev \
 	libsnappy-dev \
+	libzstd-dev \
 	libspandsp-dev \
 	libxml2-dev \
+	libminizip-dev \
 	git \
 	ninja-build \
 	doxygen \
@@ -91,7 +93,8 @@ DEBDEPS_LIST="debhelper \
 	docbook-xsl \
 	docbook-xml \
 	libxml2-utils \
-	quilt"
+	quilt \
+	lsb-release"
 
 TESTDEPS_LIST=
 
@@ -114,6 +117,10 @@ add_package() {
 	# package is found, append it to list
 	eval "${list}=\"\${${list}} \${pkgname}\""
 }
+
+# apt-get update must be called before calling add_package
+# otherwise available packages appear as unavailable
+apt-get update || exit 2
 
 # cmake3 3.5.1: Ubuntu 14.04
 # cmake >= 3.5: Debian >= jessie-backports, Ubuntu >= 16.04
@@ -178,7 +185,6 @@ then
 	ACTUAL_LIST="$ACTUAL_LIST $TESTDEPS_LIST"
 fi
 
-apt-get update || exit 2
 # shellcheck disable=SC2086
 apt-get install $ACTUAL_LIST $OPTIONS || exit 2
 

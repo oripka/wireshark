@@ -19,6 +19,8 @@
 #include <wsutil/strtoi.h>
 #include "packet-tls.h"
 #include "packet-tls-utils.h"
+#include <ui/tap-credentials.h>
+#include <tap.h>
 
 void proto_register_imap(void);
 void proto_reg_handoff_imap(void);
@@ -36,6 +38,8 @@ static int hf_imap_tag = -1;
 static int hf_imap_command = -1;
 static int hf_imap_response_status = -1;
 static int hf_imap_request_folder = -1;
+static int hf_imap_request_username = -1;
+static int hf_imap_request_password = -1;
 static int hf_imap_request_uid = -1;
 static int hf_imap_response_in = -1;
 static int hf_imap_response_to = -1;
@@ -43,6 +47,8 @@ static int hf_imap_time = -1;
 
 static gint ett_imap = -1;
 static gint ett_imap_reqresp = -1;
+
+static int credentials_tap = -1;
 
 static dissector_handle_t imap_handle;
 static dissector_handle_t tls_handle;
@@ -71,7 +77,7 @@ typedef struct imap_state {
 } imap_state_t;
 
 typedef struct imap_request_key {
-  guint8* tag;
+  gchar* tag;
   guint32 conversation;
 } imap_request_key_t;
 
@@ -449,8 +455,15 @@ dissect_imap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
       reqresp_tree = proto_item_add_subtree(ti, ett_imap_reqresp);
 
       /*
-       * Show each line as tags + requests or replies.
+       * Show each line as requests or replies + tags.
        */
+
+      /*
+       * Add the line as request or reply data.
+       */
+      if (linelen != 0) {
+        proto_tree_add_item(reqresp_tree, (is_request) ? hf_imap_request : hf_imap_response, tvb, offset, linelen, ENC_ASCII|ENC_NA);
+      }
 
       /*
        * Extract the first token, and, if there is a first
@@ -561,6 +574,27 @@ dissect_imap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
             /* If next response is OK, then TLS should be commenced. */
             session_state->ssl_requested = TRUE;
           }
+          else if (strncmp(command_token, "login", commandlen) == 0) {
+            int usernamelen = linelen - (next_token - offset);
+            int username_offset = next_token;
+            int username_next_token;
+            int username_tokenlen = tvb_get_token_len(tvb, next_token, usernamelen, &username_next_token, FALSE);
+            guint8* username = tvb_get_string_enc(wmem_packet_scope(), tvb, username_offset + 1, username_tokenlen - 2, ENC_ASCII | ENC_NA);
+            proto_tree_add_string(reqresp_tree, hf_imap_request_username, tvb, username_offset, username_tokenlen, username);
+
+            int passwordlen = linelen - (username_next_token - offset);
+            int password_offset = username_next_token;
+            int password_tokenlen = tvb_get_token_len(tvb, username_next_token, passwordlen, NULL, FALSE);
+            guint8* password = tvb_get_string_enc(wmem_packet_scope(), tvb, password_offset + 1, password_tokenlen - 2, ENC_ASCII | ENC_NA);
+            proto_tree_add_string(reqresp_tree, hf_imap_request_password, tvb, password_offset, password_tokenlen, password);
+
+            tap_credential_t* auth = wmem_new0(wmem_packet_scope(), tap_credential_t);
+            auth->num = auth->username_num = pinfo->num;
+            auth->password_hf_id = hf_imap_request_password;
+            auth->username = username;
+            auth->proto = "IMAP";
+            tap_queue_packet(credentials_tap, pinfo, auth);
+          }
         }
 
         if (!is_request) {
@@ -587,13 +621,6 @@ dissect_imap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
           }
           session_state->ssl_requested = FALSE;
         }
-      }
-
-      /*
-       * Add the rest of the line as request or reply data.
-       */
-      if (linelen != 0) {
-        proto_tree_add_item(reqresp_tree, (is_request) ? hf_imap_request : hf_imap_response, tvb, offset, linelen, ENC_ASCII|ENC_NA);
       }
 
       /* Add request/response statistics */
@@ -684,6 +711,16 @@ proto_register_imap(void)
       FT_BOOLEAN, BASE_NONE, NULL, 0x0,
       "Request command uid", HFILL }
     },
+    { &hf_imap_request_username,
+      { "Request Username", "imap.request.username",
+      FT_STRINGZ, BASE_NONE, NULL, 0x0,
+      "Request command username", HFILL }
+    },
+    { &hf_imap_request_password,
+      { "Request Password", "imap.request.password",
+      FT_STRINGZ, BASE_NONE, NULL, 0x0,
+      "Request command password", HFILL }
+    },
 
     /* Request/Response Matching */
     { &hf_imap_response_in,
@@ -727,6 +764,8 @@ proto_register_imap(void)
 
   /* compile patterns */
   ws_mempbrk_compile(&pbrk_whitespace, " \t\r\n");
+
+  credentials_tap = register_tap("credentials");
 }
 
 void
@@ -738,7 +777,7 @@ proto_reg_handoff_imap(void)
   imf_handle = find_dissector("imf");
 }
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2

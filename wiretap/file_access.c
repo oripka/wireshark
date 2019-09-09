@@ -76,6 +76,10 @@
 #include "rfc7468.h"
 #include "ruby_marshal.h"
 #include "systemd_journal.h"
+#include "log3gpp.h"
+#include "candump.h"
+#include "busmaster.h"
+
 
 /*
  * Add an extension, and all compressed versions thereof if requested,
@@ -414,6 +418,8 @@ static const struct open_info open_info_base[] = {
 	{ "NetScaler",                              OPEN_INFO_HEURISTIC, nstrace_open,             "cap",      NULL, NULL },
 	{ "Android Logcat Binary format",           OPEN_INFO_HEURISTIC, logcat_open,              "logcat",   NULL, NULL },
 	{ "Android Logcat Text formats",            OPEN_INFO_HEURISTIC, logcat_text_open,         "txt",      NULL, NULL },
+	{ "Candump log",                            OPEN_INFO_HEURISTIC, candump_open,             NULL,       NULL, NULL },
+	{ "Busmaster log",                          OPEN_INFO_HEURISTIC, busmaster_open,           NULL,       NULL, NULL },
 	/* ASCII trace files from Telnet sessions. */
 	{ "Lucent/Ascend access server trace",      OPEN_INFO_HEURISTIC, ascend_open,              "txt",      NULL, NULL },
 	{ "Toshiba Compact ISDN Router snoop",      OPEN_INFO_HEURISTIC, toshiba_open,             "txt",      NULL, NULL },
@@ -421,8 +427,10 @@ static const struct open_info open_info_base[] = {
 	{ "Ixia IxVeriWave .vwr Raw Capture",       OPEN_INFO_HEURISTIC, vwr_open,                 "vwr",      NULL, NULL },
 	{ "CAM Inspector file",                     OPEN_INFO_HEURISTIC, camins_open,              "camins",   NULL, NULL },
 	{ "JavaScript Object Notation",             OPEN_INFO_HEURISTIC, json_open,                "json",     NULL, NULL },
-	{ "Ruby Marshal Object",                    OPEN_INFO_HEURISTIC, ruby_marshal_open,        "",  NULL, NULL },
-	{ "Systemd Journal",                        OPEN_INFO_HEURISTIC, systemd_journal_open,        "log;jnl;journal",      NULL, NULL }
+	{ "Ruby Marshal Object",                    OPEN_INFO_HEURISTIC, ruby_marshal_open,        "",         NULL, NULL },
+	{ "Systemd Journal",                        OPEN_INFO_HEURISTIC, systemd_journal_open,     "log;jnl;journal",      NULL, NULL },
+	{ "3gpp phone log",                         OPEN_INFO_MAGIC,     log3gpp_open,             "log",      NULL, NULL },
+
 };
 
 /* this is only used to build the dynamic array on load, do NOT use this
@@ -1652,6 +1660,11 @@ static const struct file_type_subtype_info dump_open_table_base[] = {
 	/* WTAP_FILE_TYPE_SUBTYPE_SYSTEMD_JOURNAL */
 	{ "systemd journal export", "systemd journal", NULL, NULL,
 	  FALSE, FALSE, 0,
+	  NULL, NULL, NULL },
+
+	/* WTAP_FILE_TYPE_SUBTYPE_LOG_3GPP */
+	{ "3GPP Log", "3gpp_log", "*.log", NULL,
+	  TRUE, FALSE, 0,
 	  NULL, NULL, NULL }
 };
 
@@ -2437,7 +2450,7 @@ wtap_dump_open_tempfile(char **filenamep, const char *pfx,
 		g_free(wdh);
 		return NULL;	/* can't create file */
 	}
-	*filenamep = tmpname;
+	*filenamep = g_strdup(tmpname);
 
 	/* In case "fopen()" fails but doesn't set "errno", set "errno"
 	   to a generic "the open failed" error. */
@@ -2884,7 +2897,7 @@ cleanup_open_routines(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

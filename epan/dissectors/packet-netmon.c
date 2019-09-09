@@ -9,7 +9,7 @@
  *
  * Network Event Tracing event taken from:
  *
- * http://msdn.microsoft.com/en-us/library/aa363759(VS.85).aspx
+ * https://docs.microsoft.com/en-us/windows/win32/api/evntcons/ns-evntcons-event_header
  */
 
 #include "config.h"
@@ -2894,7 +2894,7 @@ void proto_reg_handoff_netmon(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

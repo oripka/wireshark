@@ -7,8 +7,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 
-include(UseABICheck)
-
 set(WIRETAP_PUBLIC_HEADERS
 	file_wrappers.h
 	merge.h
@@ -26,7 +24,9 @@ set(WIRETAP_NONGENERATED_FILES
 	atm.c
 	ber.c
 	btsnoop.c
+	busmaster.c
 	camins.c
+	candump.c
 	capsa.c
 	catapult_dct2000.c
 	commview.c
@@ -49,6 +49,7 @@ set(WIRETAP_NONGENERATED_FILES
 	k12.c
 	lanalyzer.c
 	libpcap.c
+	log3gpp.c
 	logcat.c
 	logcat_text.c
 	merge.c
@@ -89,11 +90,18 @@ set(WIRETAP_FILES ${WIRETAP_NONGENERATED_FILES})
 
 add_lex_files(LEX_FILES WIRETAP_FILES
 	ascend_scanner.l
+	busmaster_scanner.l
+	candump_scanner.l
 	k12text.l
 )
 
 add_yacc_files(YACC_FILES WIRETAP_FILES
 	ascend.y
+)
+
+add_lemon_files(LEMON_FILES WIRETAP_FILES
+	busmaster_parser.lemon
+	candump_parser.lemon
 )
 
 #
@@ -118,18 +126,6 @@ set_target_properties(wiretap PROPERTIES
 	FOLDER "DLLs"
 	INSTALL_RPATH "${LIBRARY_INSTALL_RPATH}"
 )
-
-ABICHECK(libwiretap)
-
-add_custom_command(OUTPUT libwiretap.abi.tar.gz
-	COMMAND ${CMAKE_COMMAND} -E remove_directory ${ABICHECK_TMPDIR}
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}
-	COMMAND ${ABI_COPY_COMMAND} ../config.h ${ABICHECK_TMPDIR}/ ${ABI_COPY_FLAGS}
-	COMMAND ${ABI_COPY_COMMAND} ${ABICHECK_HEADERS} ${ABICHECK_TMPDIR}/ ${ABI_COPY_FLAGS}
-	COMMAND ${ABICHECK_COMMAND}
-	COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/abi_dumps/libwiretap/libwiretap_* ${CMAKE_CURRENT_BINARY_DIR}/libwiretap.abi.tar.gz
-	COMMAND rm -rf ${ABICHECK_TMPDIR} ${CMAKE_CURRENT_BINARY_DIR}/abi_dumps
-	DEPENDS ${HEADERS} wiretap)
 
 target_link_libraries(wiretap
 	PUBLIC
@@ -167,10 +163,11 @@ CHECKAPI(
 # LEX files commented out due to use of malloc, free etc.
 #	  ${LEX_FILES}
 	  ${YACC_FILES}
+	  ${LEMON_FILES}
 )
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 8

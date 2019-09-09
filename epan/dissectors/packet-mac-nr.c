@@ -26,7 +26,7 @@ void proto_register_mac_nr(void);
 void proto_reg_handoff_mac_nr(void);
 
 /* Described in:
- * 3GPP TS 38.321 NR; Medium Access Control (MAC) protocol specification v15.3.0
+ * 3GPP TS 38.321 NR; Medium Access Control (MAC) protocol specification v15.6.0
  */
 
 /* Initialize the protocol and registered fields. */
@@ -41,6 +41,8 @@ static int hf_mac_nr_context_direction = -1;
 static int hf_mac_nr_context_rnti = -1;
 static int hf_mac_nr_context_rnti_type = -1;
 static int hf_mac_nr_context_ueid = -1;
+static int hf_mac_nr_context_sysframe_number = -1;
+static int hf_mac_nr_context_slot_number = -1;
 static int hf_mac_nr_context_harqid = -1;
 static int hf_mac_nr_context_bcch_transport_channel = -1;
 static int hf_mac_nr_context_phr_type2_othercell = -1;
@@ -155,6 +157,7 @@ static int hf_mac_nr_control_pucch_spatial_rel_act_deact_reserved = -1;
 static int hf_mac_nr_control_pucch_spatial_rel_act_deact_serving_cell_id = -1;
 static int hf_mac_nr_control_pucch_spatial_rel_act_deact_bwp_id = -1;
 static int hf_mac_nr_control_pucch_spatial_rel_act_deact_pucch_resource_id = -1;
+static int hf_mac_nr_control_pucch_spatial_rel_act_deact_s8 = -1;
 static int hf_mac_nr_control_pucch_spatial_rel_act_deact_s7 = -1;
 static int hf_mac_nr_control_pucch_spatial_rel_act_deact_s6 = -1;
 static int hf_mac_nr_control_pucch_spatial_rel_act_deact_s5 = -1;
@@ -162,7 +165,6 @@ static int hf_mac_nr_control_pucch_spatial_rel_act_deact_s4 = -1;
 static int hf_mac_nr_control_pucch_spatial_rel_act_deact_s3 = -1;
 static int hf_mac_nr_control_pucch_spatial_rel_act_deact_s2 = -1;
 static int hf_mac_nr_control_pucch_spatial_rel_act_deact_s1 = -1;
-static int hf_mac_nr_control_pucch_spatial_rel_act_deact_s0 = -1;
 static int hf_mac_nr_control_sp_srs_act_deact_ad = -1;
 static int hf_mac_nr_control_sp_srs_act_deact_srs_resource_set_cell_id = -1;
 static int hf_mac_nr_control_sp_srs_act_deact_srs_resource_set_bwp_id = -1;
@@ -172,6 +174,7 @@ static int hf_mac_nr_control_sp_srs_act_deact_sul = -1;
 static int hf_mac_nr_control_sp_srs_act_deact_sp_srs_resource_set_id = -1;
 static int hf_mac_nr_control_sp_srs_act_deact_f = -1;
 static int hf_mac_nr_control_sp_srs_act_deact_resource_id = -1;
+static int hf_mac_nr_control_sp_srs_act_deact_resource_id_ssb = -1;
 static int hf_mac_nr_control_sp_srs_act_deact_resource_serving_cell_id = -1;
 static int hf_mac_nr_control_sp_srs_act_deact_resource_bwp_id = -1;
 static int hf_mac_nr_control_sp_csi_report_on_pucch_act_deact_reserved = -1;
@@ -338,6 +341,9 @@ static dissector_handle_t nr_rrc_ul_ccch1_handle;
 
 /* By default try to decode transparent data (BCCH, PCCH and CCCH) data using NR RRC dissector */
 static gboolean global_mac_nr_attempt_rrc_decode = TRUE;
+
+/* Whether should attempt to decode lcid 1-3 SDUs as srb1-3 (i.e. AM RLC) */
+static gboolean global_mac_nr_attempt_srb_decode = TRUE;
 
 /* Which layer info to show in the info column */
 enum layer_to_show {
@@ -1158,7 +1164,7 @@ static void dissect_bcch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     proto_item *ti;
 
     write_pdu_label_and_info(pdu_ti, NULL, pinfo,
-                             "BCCH PDU (%u bytes, on %s transport)  ",
+                             "BCCH PDU (%u bytes, on %s transport) ",
                              tvb_reported_length_remaining(tvb, offset),
                              val_to_str_const(p_mac_nr_info->rntiType,
                                               bcch_transport_channel_vals,
@@ -1201,7 +1207,7 @@ static void dissect_pcch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     proto_item *ti;
 
     write_pdu_label_and_info(pdu_ti, NULL, pinfo,
-                             "PCCH PDU (%u bytes)  ",
+                             "PCCH PDU (%u bytes) ",
                              tvb_reported_length_remaining(tvb, offset));
 
     /****************************************/
@@ -1229,8 +1235,8 @@ static void dissect_rar(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
                         mac_nr_info *p_mac_nr_info _U_)
 {
     write_pdu_label_and_info(pdu_ti, NULL, pinfo,
-                             "RAR (RA-RNTI=%u, SFN=%-4u, SF=%u) ",
-                             p_mac_nr_info->rnti, p_mac_nr_info->sysframeNumber, p_mac_nr_info->subframeNumber);
+                             "RAR (RA-RNTI=%u) ",
+                             p_mac_nr_info->rnti);
 
     /* Create hidden 'virtual root' so can filter on mac-nr.rar */
     proto_item *ti = proto_tree_add_item(tree, hf_mac_nr_rar, tvb, offset, -1, ENC_NA);
@@ -1261,7 +1267,7 @@ static void dissect_rar(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
             offset++;
 
             write_pdu_label_and_info(pdu_ti, subheader_ti, pinfo,
-                                     "BI=%u ", BI);
+                                     "(BI=%u) ", BI);
         }
         else {
             /* RAPID */
@@ -1578,6 +1584,10 @@ static void dissect_ulsch_or_dlsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     gboolean ces_seen = FALSE;
     gboolean data_seen = FALSE;
 
+    write_pdu_label_and_info(pdu_ti, NULL, pinfo,
+                             "%s ",
+                             (p_mac_nr_info->direction == DIRECTION_UPLINK) ? "UL-SCH" : "DL-SCH");
+
     /************************************************************************/
     /* Dissect each sub-pdu.                                             */
     do {
@@ -1690,8 +1700,16 @@ static void dissect_ulsch_or_dlsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
                         /* Nothing to do! */
                         break;
                 }
-            } else if (lcid == 1 || lcid == 2) {
-                /* SRB, TODO: call RLC dissector */
+            } else if (lcid >= 1 && lcid <= 3) {
+                if (global_mac_nr_attempt_srb_decode) {
+                    /* SRB, call RLC dissector */
+                    /* These are defaults (38.331, 9.2.1) - only priority may be overridden, but not passing in yet. */
+                    call_rlc_dissector(tvb, pinfo, tree, pdu_ti, offset, SDU_length,
+                                       RLC_AM_MODE, p_mac_nr_info->direction, p_mac_nr_info->ueid,
+                                       BEARER_TYPE_SRB, lcid, 12,
+                                       (lcid == 2) ? 3 : 1);
+                    dissected_by_upper_layer = TRUE;
+                }
             } else if (global_mac_nr_attempt_rrc_decode) {
                 dissector_handle_t protocol_handle;
                 tvbuff_t *rrc_tvb = tvb_new_subset_remaining(tvb, offset);
@@ -2086,6 +2104,7 @@ static void dissect_ulsch_or_dlsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
                     case PUCCH_SPATIAL_REL_ACT_DEACT_LCID:
                         {
                             static const int * pucch_spatial_rel_act_deact_flags[] = {
+                                &hf_mac_nr_control_pucch_spatial_rel_act_deact_s8,
                                 &hf_mac_nr_control_pucch_spatial_rel_act_deact_s7,
                                 &hf_mac_nr_control_pucch_spatial_rel_act_deact_s6,
                                 &hf_mac_nr_control_pucch_spatial_rel_act_deact_s5,
@@ -2093,7 +2112,6 @@ static void dissect_ulsch_or_dlsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
                                 &hf_mac_nr_control_pucch_spatial_rel_act_deact_s3,
                                 &hf_mac_nr_control_pucch_spatial_rel_act_deact_s2,
                                 &hf_mac_nr_control_pucch_spatial_rel_act_deact_s1,
-                                &hf_mac_nr_control_pucch_spatial_rel_act_deact_s0,
                                 NULL
                             };
                             proto_tree_add_item(subheader_tree, hf_mac_nr_control_pucch_spatial_rel_act_deact_reserved,
@@ -2118,6 +2136,9 @@ static void dissect_ulsch_or_dlsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
                         {
                             gboolean ad, c;
                             guint32 start_offset = offset;
+                            guint resources = 0;
+
+                            /* Header */
                             proto_tree_add_item_ret_boolean(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_ad,
                                                             tvb, offset, 1, ENC_NA, &ad);
                             proto_tree_add_item(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_srs_resource_set_cell_id,
@@ -2125,6 +2146,7 @@ static void dissect_ulsch_or_dlsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
                             proto_tree_add_item(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_srs_resource_set_bwp_id,
                                                 tvb, offset, 1, ENC_NA);
                             offset++;
+
                             proto_tree_add_bits_item(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_reserved,
                                                      tvb, offset<<3, 2, ENC_NA);
                             proto_tree_add_item_ret_boolean(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_c,
@@ -2134,18 +2156,39 @@ static void dissect_ulsch_or_dlsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
                             proto_tree_add_item(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_sp_srs_resource_set_id,
                                                 tvb, offset, 1, ENC_NA);
                             offset++;
+
                             if (ad) {
+                                /* Activating - show info for resources */
                                 guint length = c ? (SDU_length-2) / 2 + 2: SDU_length;
                                 while (offset - start_offset < length) {
-                                    proto_tree_add_item(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_f,
-                                                        tvb, offset, 1, ENC_NA);
-                                    proto_tree_add_item(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_resource_id,
-                                                        tvb, offset, 1, ENC_NA);
+                                    gboolean f;
+                                    proto_tree_add_item_ret_boolean(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_f,
+                                                        tvb, offset, 1, ENC_NA, &f);
+                                    guint32 resource_id = tvb_get_guint8(tvb, offset) & 0x7f;
+                                    proto_item *resource_id_ti;
+                                    if (!f && (resource_id & 0x40)) {
+                                        /* SSB case - first bit just indicates type */
+                                        resource_id_ti = proto_tree_add_item(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_resource_id_ssb,
+                                                                             tvb, offset, 1, ENC_NA);
+                                        proto_item_append_text(resource_id_ti, " (SSB)");
+                                    }
+                                    else {
+                                        resource_id_ti = proto_tree_add_item(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_resource_id,
+                                                                             tvb, offset, 1, ENC_NA);
+                                        if (f) {
+                                            proto_item_append_text(resource_id_ti, " (NZP-CSI-RS)");
+                                        }
+                                        else {
+                                            proto_item_append_text(resource_id_ti, " (SRS)");
+                                        }
+                                    }
                                     offset++;
+                                    resources++;
                                 }
 
                             }
                             if (c) {
+                                /* Deactivating (no resources) */
                                 while (offset - start_offset < SDU_length) {
                                     proto_tree_add_bits_item(subheader_tree, hf_mac_nr_control_sp_srs_act_deact_reserved,
                                                              tvb, offset<<3, 1, ENC_NA);
@@ -2156,8 +2199,14 @@ static void dissect_ulsch_or_dlsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
                                     offset++;
                                 }
                             }
-                            write_pdu_label_and_info_literal(pdu_ti, subheader_ti, pinfo,
-                                                             "(SP SRS Act/Deact) ");
+
+                            /* Add summary to Info column */
+                            if (ad) {
+                                write_pdu_label_and_info(pdu_ti, subheader_ti, pinfo, "(SP SRS Act/Deact Activate %d resources)", resources);
+                            }
+                            else {
+                                write_pdu_label_and_info(pdu_ti, subheader_ti, pinfo, "(SP SRS Act/Deact Deactivate)");
+                            }
                         }
                         break;
                     case SP_CSI_REPORT_ON_PUCCH_ACT_DEACT_LCID:
@@ -2514,6 +2563,15 @@ static int dissect_mac_nr(tvbuff_t *tvb, packet_info *pinfo,
         proto_item_set_generated(ti);
     }
 
+    if (p_mac_nr_info->sfnSlotInfoPresent) {
+        ti = proto_tree_add_uint(context_tree, hf_mac_nr_context_sysframe_number,
+                                 tvb, 0, 0, p_mac_nr_info->sysframeNumber);
+        proto_item_set_generated(ti);
+        ti = proto_tree_add_uint(context_tree, hf_mac_nr_context_slot_number,
+                                 tvb, 0, 0, p_mac_nr_info->slotNumber);
+        proto_item_set_generated(ti);
+    }
+
     if (p_mac_nr_info->rntiType == C_RNTI || p_mac_nr_info->rntiType == CS_RNTI) {
         /* Harqid */
         ti = proto_tree_add_uint(context_tree, hf_mac_nr_context_harqid,
@@ -2621,13 +2679,18 @@ static gboolean dissect_mac_nr_heur(tvbuff_t *tvb, packet_info *pinfo,
                     offset++;
                     break;
                 case MAC_NR_FRAME_SUBFRAME_TAG:
-                    p_mac_nr_info->sysframeNumber = tvb_get_bits16(tvb, offset<<3, 12, ENC_BIG_ENDIAN);
-                    p_mac_nr_info->subframeNumber = tvb_get_bits8(tvb, ((offset+1)<<3)+4, 4);
+                    /* deprecated */
                     offset += 2;
                     break;
                 case MAC_NR_PHR_TYPE2_OTHERCELL_TAG:
                     p_mac_nr_info->phr_type2_othercell = tvb_get_guint8(tvb, offset);
                     offset++;
+                    break;
+                case MAC_NR_FRAME_SLOT_TAG:
+                    p_mac_nr_info->sfnSlotInfoPresent = TRUE;
+                    p_mac_nr_info->sysframeNumber = tvb_get_ntohs(tvb, offset);
+                    p_mac_nr_info->slotNumber = tvb_get_ntohs(tvb, offset+2);
+                    offset += 4;
                     break;
                 case MAC_NR_PAYLOAD_TAG:
                     /* Have reached data, so set payload length and get out of loop */
@@ -2844,6 +2907,18 @@ void proto_register_mac_nr(void)
             { "UEId",
               "mac-nr.ueid", FT_UINT16, BASE_DEC, NULL, 0x0,
               "User Equipment Identifier associated with message", HFILL
+            }
+        },
+        { &hf_mac_nr_context_sysframe_number,
+            { "System Frame Number",
+              "mac-nr.sfn", FT_UINT16, BASE_DEC, NULL, 0x0,
+              "System Frame Number associated with message", HFILL
+            }
+        },
+        { &hf_mac_nr_context_slot_number,
+            { "Slot",
+              "mac-nr.slot", FT_UINT16, BASE_DEC, NULL, 0x0,
+              "Slot number associated with message", HFILL
             }
         },
         { &hf_mac_nr_context_harqid,
@@ -3629,51 +3704,51 @@ void proto_register_mac_nr(void)
               NULL, HFILL
             }
         },
+        { &hf_mac_nr_control_pucch_spatial_rel_act_deact_s8,
+            { "PUCCH Spatial Relation Info 8",
+              "mac-nr.control.pucch-spatial-rel-act-deact.s8", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x80,
+              NULL, HFILL
+            }
+        },
         { &hf_mac_nr_control_pucch_spatial_rel_act_deact_s7,
             { "PUCCH Spatial Relation Info 7",
-              "mac-nr.control.pucch-spatial-rel-act-deact.s7", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x80,
+              "mac-nr.control.pucch-spatial-rel-act-deact.s7", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x40,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_pucch_spatial_rel_act_deact_s6,
             { "PUCCH Spatial Relation Info 6",
-              "mac-nr.control.pucch-spatial-rel-act-deact.s6", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x40,
+              "mac-nr.control.pucch-spatial-rel-act-deact.s6", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x20,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_pucch_spatial_rel_act_deact_s5,
             { "PUCCH Spatial Relation Info 5",
-              "mac-nr.control.pucch-spatial-rel-act-deact.s5", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x20,
+              "mac-nr.control.pucch-spatial-rel-act-deact.s5", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x10,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_pucch_spatial_rel_act_deact_s4,
             { "PUCCH Spatial Relation Info 4",
-              "mac-nr.control.pucch-spatial-rel-act-deact.s4", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x10,
+              "mac-nr.control.pucch-spatial-rel-act-deact.s4", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x08,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_pucch_spatial_rel_act_deact_s3,
             { "PUCCH Spatial Relation Info 3",
-              "mac-nr.control.pucch-spatial-rel-act-deact.s3", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x08,
+              "mac-nr.control.pucch-spatial-rel-act-deact.s3", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x04,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_pucch_spatial_rel_act_deact_s2,
             { "PUCCH Spatial Relation Info 2",
-              "mac-nr.control.pucch-spatial-rel-act-deact.s2", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x04,
+              "mac-nr.control.pucch-spatial-rel-act-deact.s2", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x02,
               NULL, HFILL
             }
         },
         { &hf_mac_nr_control_pucch_spatial_rel_act_deact_s1,
             { "PUCCH Spatial Relation Info 1",
-              "mac-nr.control.pucch-spatial-rel-act-deact.s1", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x02,
-              NULL, HFILL
-            }
-        },
-        { &hf_mac_nr_control_pucch_spatial_rel_act_deact_s0,
-            { "PUCCH Spatial Relation Info 0",
-              "mac-nr.control.pucch-spatial-rel-act-deact.s0", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x01,
+              "mac-nr.control.pucch-spatial-rel-act-deact.s1", FT_BOOLEAN, 8, TFS(&tfs_activated_deactivated), 0x01,
               NULL, HFILL
             }
         },
@@ -3727,10 +3802,17 @@ void proto_register_mac_nr(void)
         },
         { &hf_mac_nr_control_sp_srs_act_deact_resource_id,
             { "Resource ID",
-              "mac-nr.control.sp-srs-act-deact.sp-srs-resource-set-id", FT_UINT8, BASE_DEC, NULL, 0x7f,
+              "mac-nr.control.sp-srs-act-deact.resource-id", FT_UINT8, BASE_DEC, NULL, 0x7f,
               NULL, HFILL
             }
         },
+        { &hf_mac_nr_control_sp_srs_act_deact_resource_id_ssb,
+            { "Resource ID",
+              "mac-nr.control.sp-srs-act-deact.resource-id", FT_UINT8, BASE_DEC, NULL, 0x3f,
+              NULL, HFILL
+            }
+        },
+
         { &hf_mac_nr_control_sp_srs_act_deact_resource_serving_cell_id,
             { "Resource Serving Cell ID",
               "mac-nr.control.sp-srs-act-deact.resource-serving-cell-id", FT_UINT8, BASE_DEC, NULL, 0x7c,
@@ -4471,6 +4553,11 @@ void proto_register_mac_nr(void)
         "Attempt to decode BCCH, PCCH and CCCH data using NR RRC dissector",
         &global_mac_nr_attempt_rrc_decode);
 
+    prefs_register_bool_preference(mac_nr_module, "attempt_to_dissect_srb_sdus",
+        "Attempt to dissect LCID 1-3 as srb1-3",
+        "Will call NR RLC dissector with standard settings as per RRC spec",
+        &global_mac_nr_attempt_srb_decode);
+
     prefs_register_enum_preference(mac_nr_module, "lcid_to_drb_mapping_source",
         "Source of LCID -> drb channel settings",
         "Set whether LCID -> drb Table is taken from static table (below) or from "
@@ -4518,7 +4605,7 @@ void proto_reg_handoff_mac_nr(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -14,8 +14,10 @@
  *
  * See
  *
- *      http://www.endace.com/support/EndaceRecordFormat.pdf
- *      (mirror: https://bugs.wireshark.org/bugzilla/attachment.cgi?id=4333) (bug #4484)
+ *      https://www.endace.com/erf-extensible-record-format-types.pdf
+ *
+ *  Version 8:
+ *      https://bugs.wireshark.org/bugzilla/attachment.cgi?id=4333 (bug #4484)
  */
 
 #include "config.h"
@@ -3416,7 +3418,7 @@ static void erf_close(wtap *wth)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

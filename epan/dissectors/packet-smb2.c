@@ -51,8 +51,13 @@
 void proto_register_smb2(void);
 void proto_reg_handoff_smb2(void);
 
+#define SMB2_NORM_HEADER 0xFE
+#define SMB2_ENCR_HEADER 0xFD
+#define SMB2_COMP_HEADER 0xFC
 static const char smb_header_label[] = "SMB2 Header";
 static const char smb_transform_header_label[] = "SMB2 Transform Header";
+static const char smb_comp_transform_header_label[] = "SMB2 Compression Transform Header";
+static const char smb_bad_header_label[] = "Bad SMB2 Header";
 
 static int proto_smb2 = -1;
 static int hf_smb2_cmd = -1;
@@ -174,6 +179,10 @@ static int hf_smb2_write_count = -1;
 static int hf_smb2_write_remaining = -1;
 static int hf_smb2_read_length = -1;
 static int hf_smb2_read_remaining = -1;
+static int hf_smb2_read_padding = -1;
+static int hf_smb2_read_flags = -1;
+static int hf_smb2_read_flags_unbuffered = -1;
+static int hf_smb2_read_flags_compressed = -1;
 static int hf_smb2_file_offset = -1;
 static int hf_smb2_qfr_length = -1;
 static int hf_smb2_qfr_usage = -1;
@@ -201,6 +210,9 @@ static int hf_smb2_salt_length = -1;
 static int hf_smb2_salt = -1;
 static int hf_smb2_cipher_count = -1;
 static int hf_smb2_cipher_id = -1;
+static int hf_smb2_comp_alg_count = -1;
+static int hf_smb2_comp_alg_id = -1;
+static int hf_smb2_netname_neg_id = -1;
 static int hf_smb2_ea_size = -1;
 static int hf_smb2_ea_flags = -1;
 static int hf_smb2_ea_name_len = -1;
@@ -478,11 +490,14 @@ static int hf_smb2_transform_signature = -1;
 static int hf_smb2_transform_nonce = -1;
 static int hf_smb2_transform_msg_size = -1;
 static int hf_smb2_transform_reserved = -1;
-static int hf_smb2_encryption_aes128_ccm = -1;
 static int hf_smb2_transform_enc_alg = -1;
 static int hf_smb2_transform_encrypted_data = -1;
-static int hf_smb2_server_component_smb2 = -1;
-static int hf_smb2_server_component_smb2_transform = -1;
+static int hf_smb2_protocol_id = -1;
+static int hf_smb2_comp_transform_orig_size = -1;
+static int hf_smb2_comp_transform_comp_alg = -1;
+static int hf_smb2_comp_transform_reserved = -1;
+static int hf_smb2_comp_transform_offset = -1;
+static int hf_smb2_comp_transform_data = -1;
 static int hf_smb2_truncated = -1;
 static int hf_smb2_pipe_fragments = -1;
 static int hf_smb2_pipe_fragment = -1;
@@ -526,6 +541,7 @@ static gint ett_smb2_olb = -1;
 static gint ett_smb2_ea = -1;
 static gint ett_smb2_header = -1;
 static gint ett_smb2_encrypted = -1;
+static gint ett_smb2_compressed = -1;
 static gint ett_smb2_command = -1;
 static gint ett_smb2_secblob = -1;
 static gint ett_smb2_negotiate_context_element = -1;
@@ -609,7 +625,6 @@ static gint ett_smb2_full_directory_info = -1;
 static gint ett_smb2_file_name_info = -1;
 static gint ett_smb2_lock_info = -1;
 static gint ett_smb2_lock_flags = -1;
-static gint ett_smb2_transform_enc_alg = -1;
 static gint ett_smb2_buffercode = -1;
 static gint ett_smb2_ioctl_network_interface_capabilities = -1;
 static gint ett_qfr_entry = -1;
@@ -623,6 +638,7 @@ static gint ett_smb2_error_data = -1;
 static gint ett_smb2_error_context = -1;
 static gint ett_smb2_error_redir_context = -1;
 static gint ett_smb2_error_redir_ip_list = -1;
+static gint ett_smb2_read_flags = -1;
 
 static expert_field ei_smb2_invalid_length = EI_INIT;
 static expert_field ei_smb2_bad_response = EI_INIT;
@@ -819,9 +835,13 @@ static const value_string smb2_find_info_levels[] = {
 
 #define SMB2_PREAUTH_INTEGRITY_CAPABILITIES 0x0001
 #define SMB2_ENCRYPTION_CAPABILITIES        0x0002
+#define SMB2_COMPRESSION_CAPABILITIES       0x0003
+#define SMB2_NETNAME_NEGOTIATE_CONTEXT_ID   0x0005
 static const value_string smb2_negotiate_context_types[] = {
 	{ SMB2_PREAUTH_INTEGRITY_CAPABILITIES,  "SMB2_PREAUTH_INTEGRITY_CAPABILITIES" },
 	{ SMB2_ENCRYPTION_CAPABILITIES,	"SMB2_ENCRYPTION_CAPABILITIES" },
+	{ SMB2_COMPRESSION_CAPABILITIES, "SMB2_COMPRESSION_CAPABILITIES" },
+	{ SMB2_NETNAME_NEGOTIATE_CONTEXT_ID, "SMB2_NETNAME_NEGOTIATE_CONTEXT_ID" },
 	{ 0, NULL }
 };
 
@@ -836,6 +856,18 @@ static const value_string smb2_hash_algorithm_types[] = {
 static const value_string smb2_cipher_types[] = {
 	{ SMB2_CIPHER_AES_128_CCM, "AES-128-CCM" },
 	{ SMB2_CIPHER_AES_128_GCM, "AES-128-GCM" },
+	{ 0, NULL }
+};
+
+#define SMB2_COMP_ALG_NONE        0x0000
+#define SMB2_COMP_ALG_LZNT1       0x0001
+#define SMB2_COMP_ALG_LZ77        0x0002
+#define SMB2_COMP_ALG_LZ77HUFF    0x0003
+static const value_string smb2_comp_alg_types[] = {
+	{ SMB2_COMP_ALG_NONE, "None" },
+	{ SMB2_COMP_ALG_LZNT1, "LZNT1" },
+	{ SMB2_COMP_ALG_LZ77, "LZ77" },
+	{ SMB2_COMP_ALG_LZ77HUFF, "LZ77+Huffman" },
 	{ 0, NULL }
 };
 
@@ -895,6 +927,7 @@ static const val64_string nfs_type_vals[] = {
 };
 
 #define SMB2_NUM_PROCEDURES     256
+#define MAX_UNCOMPRESSED_SIZE (1<<24) /* 16MB */
 
 static int dissect_windows_sockaddr_storage(tvbuff_t *, packet_info *, proto_tree *, int, int);
 static void dissect_smb2_error_data(tvbuff_t *, packet_info *, proto_tree *, int, int, smb2_info_t *);
@@ -4560,7 +4593,7 @@ dissect_smb2_negotiate_context(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree
 {
 	guint16 type;
 	const gchar *type_str;
-	guint32 i, data_length, salt_length, hash_count, cipher_count;
+	guint32 i, data_length, salt_length, hash_count, cipher_count, comp_count;
 	proto_item *sub_item;
 	proto_tree *sub_tree;
 
@@ -4608,9 +4641,36 @@ dissect_smb2_negotiate_context(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree
 
 			for (i = 0; i < cipher_count; i ++)
 			{
+				/* in SMB3.1.1 the first cipher returned by the server session encryption algorithm */
+				if (i == 0 && si && si->conv && (si->flags & SMB2_FLAGS_RESPONSE)) {
+					guint16 first_cipher = tvb_get_letohs(tvb, offset);
+					si->conv->enc_alg = first_cipher;
+				}
 				proto_tree_add_item(sub_tree, hf_smb2_cipher_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
 				offset += 2;
 			}
+			break;
+
+		case SMB2_COMPRESSION_CAPABILITIES:
+			proto_tree_add_item_ret_uint(sub_tree, hf_smb2_comp_alg_count, tvb, offset, 2, ENC_LITTLE_ENDIAN, &comp_count);
+			offset += 2;
+
+			/* padding */
+			offset += 2;
+
+			/* reserved */
+			offset += 4;
+
+			for (i = 0; i < comp_count; i ++) {
+				proto_tree_add_item(sub_tree, hf_smb2_comp_alg_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+				offset += 2;
+			}
+			break;
+
+		case SMB2_NETNAME_NEGOTIATE_CONTEXT_ID:
+			proto_tree_add_item(sub_tree, hf_smb2_netname_neg_id, tvb, offset,
+					    data_length, ENC_UTF_16|ENC_LITTLE_ENDIAN);
+			offset += data_length;
 			break;
 
 		default:
@@ -7237,6 +7297,19 @@ dissect_smb2_ioctl_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 }
 
 
+#define SMB2_READFLAG_READ_UNBUFFERED 0x01
+#define SMB2_READFLAG_READ_COMPRESSED 0x02
+
+static const true_false_string tfs_read_unbuffered = {
+	"Client is asking for UNBUFFERED read",
+	"Client is NOT asking for UNBUFFERED read"
+};
+
+static const true_false_string tfs_read_compressed = {
+	"Client is asking for COMPRESSED data",
+	"Client is NOT asking for COMPRESSED data"
+};
+
 static int
 dissect_smb2_read_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, smb2_info_t *si)
 {
@@ -7245,12 +7318,23 @@ dissect_smb2_read_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i
 	guint32 len;
 	guint64 off;
 
+	static const int *flags[] = {
+	     &hf_smb2_read_flags_unbuffered,
+	     &hf_smb2_read_flags_compressed,
+	     NULL
+	};
+
 	/* buffer code */
 	offset = dissect_smb2_buffercode(tree, tvb, offset, NULL);
 
-	/* padding and reserved */
-	proto_tree_add_item(tree, hf_smb2_reserved, tvb, offset, 2, ENC_NA);
-	offset += 2;
+	/* padding */
+	proto_tree_add_item(tree, hf_smb2_read_padding, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+	offset += 1;
+
+	/* flags */
+	proto_tree_add_bitmask(tree, tvb, offset, hf_smb2_read_flags,
+			       ett_smb2_read_flags, flags, ENC_LITTLE_ENDIAN);
+	offset += 1;
 
 	/* length */
 	len = tvb_get_letohl(tvb, offset);
@@ -9226,7 +9310,216 @@ static smb2_function smb2_dissector[256] = {
 };
 
 
-#define ENC_ALG_aes128_ccm	0x0001
+#define SMB3_AES128CCM_NONCE	11
+#define SMB3_AES128GCM_NONCE	12
+
+#if GCRYPT_VERSION_NUMBER >= 0x010600 /* 1.6.0 */
+static guint8*
+decrypt_smb_payload(packet_info *pinfo,
+		    tvbuff_t *tvb, int offset,
+		    int offset_aad,
+		    smb2_transform_info_t *sti)
+{
+	gcry_error_t err;
+	gcry_cipher_hd_t cipher_hd = NULL;
+	const guint8 *aad = NULL;
+	guint8 *data = NULL;
+	guint8 *key = NULL;
+	int mode;
+	int iv_size;
+	int aad_size;
+	guint64 lengths[3];
+
+	/* AAD is the rest of transform header after the ProtocolID and Signature */
+	aad_size = 32;
+
+	if ((unsigned)tvb_captured_length_remaining(tvb, offset) < sti->size)
+		return NULL;
+
+	if (tvb_captured_length_remaining(tvb, offset_aad) < aad_size)
+		return NULL;
+
+	if (pinfo->destport == sti->session->server_port)
+		key = sti->session->server_decryption_key;
+	else
+		key = sti->session->client_decryption_key;
+
+	if (memcmp(key, zeros, NTLMSSP_KEY_LEN) == 0)
+		key = NULL;
+
+	if (!key)
+		return NULL;
+
+	/*
+	 * In SMB3.0 the transform header had a Algorithm field to
+	 * know which type of encryption was used but only CCM was
+	 * supported.
+	 *
+	 * SMB3.1.1 turned that field into a generic "Encrypted" flag
+	 * which cannot be used to determine the encryption
+	 * type. Instead the type is decided in the NegProt response,
+	 * within the Encryption Capability context which should only
+	 * have one element. That element is saved in the conversation
+	 * struct (si->conv) and checked here.
+	 */
+
+	/* g_warning("dialect 0x%x alg 0x%x conv alg 0x%x", sti->conv->dialect, sti->alg, sti->conv->enc_alg); */
+
+	if (sti->conv->dialect == 0x300) {
+		/* If we are decrypting in SMB3.0, it must be CCM */
+		sti->conv->enc_alg = SMB2_CIPHER_AES_128_CCM;
+	}
+
+	switch (sti->conv->enc_alg) {
+	case SMB2_CIPHER_AES_128_CCM:
+		mode = GCRY_CIPHER_MODE_CCM;
+		iv_size = SMB3_AES128CCM_NONCE;
+		break;
+	case SMB2_CIPHER_AES_128_GCM:
+		mode = GCRY_CIPHER_MODE_GCM;
+		iv_size = SMB3_AES128GCM_NONCE;
+		break;
+	default:
+		return NULL;
+	}
+
+	/* Open the cipher */
+	if ((err = gcry_cipher_open(&cipher_hd, GCRY_CIPHER_AES128, mode, 0))) {
+		/* g_warning("GCRY: open %s/%s\n", gcry_strsource(err), gcry_strerror(err)); */
+		return NULL;
+	}
+
+	/* Set the key */
+	if ((err = gcry_cipher_setkey(cipher_hd, key, NTLMSSP_KEY_LEN))) {
+		/* g_warning("GCRY: setkey %s/%s\n", gcry_strsource(err), gcry_strerror(err)); */
+		gcry_cipher_close(cipher_hd);
+		return NULL;
+	}
+
+	/* Set the initial value */
+	if ((err = gcry_cipher_setiv(cipher_hd, sti->nonce, iv_size))) {
+		/* g_warning("GCRY: setiv %s/%s\n", gcry_strsource(err), gcry_strerror(err)); */
+		gcry_cipher_close(cipher_hd);
+		return NULL;
+	}
+
+	aad = tvb_get_ptr(tvb, offset_aad, aad_size);
+
+	lengths[0] = sti->size; /* encrypted length */
+	lengths[1] = aad_size; /* AAD length */
+	lengths[2] = 16; /* tag length (signature size) */
+
+	if (mode == GCRY_CIPHER_MODE_CCM) {
+		if ((err = gcry_cipher_ctl(cipher_hd, GCRYCTL_SET_CCM_LENGTHS, lengths, sizeof(lengths)))) {
+			/* g_warning("GCRY: ctl %s/%s\n", gcry_strsource(err), gcry_strerror(err)); */
+			gcry_cipher_close(cipher_hd);
+			return NULL;
+		}
+	}
+
+	if ((err = gcry_cipher_authenticate(cipher_hd, aad, aad_size))) {
+		/* g_warning("GCRY: auth %s/%s\n", gcry_strsource(err), gcry_strerror(err)); */
+		gcry_cipher_close(cipher_hd);
+		return NULL;
+	}
+
+	data = (guint8 *)tvb_memdup(pinfo->pool, tvb, offset, sti->size);
+
+	if ((err = gcry_cipher_decrypt(cipher_hd, data, sti->size, NULL, 0))) {
+		/* g_warning("GCRY: decrypt %s/%s\n", gcry_strsource(err), gcry_strerror(err)); */
+		gcry_cipher_close(cipher_hd);
+		return NULL;
+	}
+
+	/* Done with the cipher */
+	gcry_cipher_close(cipher_hd);
+	return data;
+}
+#endif
+
+static int
+dissect_smb2_comp_transform_header(packet_info *pinfo, proto_tree *tree,
+				   tvbuff_t *tvb, int offset,
+				   smb2_comp_transform_info_t *scti,
+				   tvbuff_t **comp_tvb,
+				   tvbuff_t **plain_tvb)
+{
+	guint final_size;
+	guint8 *orig_data;
+	gint in_size;
+	tvbuff_t *uncomp_tvb = NULL;
+
+	*comp_tvb = NULL;
+	*plain_tvb = NULL;
+
+	/* SMB2_COMPRESSION_TRANSFORM marker */
+	proto_tree_add_item(tree, hf_smb2_protocol_id, tvb, offset, 4, ENC_BIG_ENDIAN);
+	offset += 4;
+
+	proto_tree_add_item_ret_uint(tree, hf_smb2_comp_transform_orig_size, tvb, offset, 4, ENC_LITTLE_ENDIAN, &scti->orig_size);
+	offset += 4;
+
+	proto_tree_add_item_ret_uint(tree, hf_smb2_comp_transform_comp_alg, tvb, offset, 2, ENC_LITTLE_ENDIAN, &scti->alg);
+	offset += 2;
+
+	proto_tree_add_item(tree, hf_smb2_comp_transform_reserved, tvb, offset, 2, ENC_NA);
+	offset += 2;
+
+	proto_tree_add_item_ret_uint(tree, hf_smb2_comp_transform_offset, tvb, offset, 4, ENC_LITTLE_ENDIAN, &scti->comp_offset);
+	offset += 4;
+
+	*comp_tvb = tvb_new_subset_length(tvb, offset, tvb_reported_length_remaining(tvb, offset));
+
+	if (scti->orig_size > MAX_UNCOMPRESSED_SIZE || scti->comp_offset > MAX_UNCOMPRESSED_SIZE) {
+		col_append_str(pinfo->cinfo, COL_INFO, "Comp. SMB3 (too big)");
+		goto out;
+	}
+
+	/* alloc enough space for partial normal packet + uncompressed segment */
+	final_size = scti->orig_size + scti->comp_offset;
+	orig_data = (guint8*)wmem_alloc0(pinfo->pool, final_size);
+
+	/* copy start of partial packet */
+	tvb_memcpy(tvb, orig_data, offset, scti->comp_offset);
+
+	in_size = tvb_reported_length_remaining(tvb, offset + scti->comp_offset);
+
+	/* decompress compressed segment */
+	switch (scti->alg) {
+	case SMB2_COMP_ALG_LZ77:
+		uncomp_tvb = tvb_uncompress_lz77(tvb, offset + scti->comp_offset, in_size);
+		break;
+	case SMB2_COMP_ALG_LZ77HUFF:
+		uncomp_tvb = tvb_uncompress_lz77huff(tvb, offset + scti->comp_offset, in_size);
+		break;
+	case SMB2_COMP_ALG_LZNT1:
+		uncomp_tvb = tvb_uncompress_lznt1(tvb, offset + scti->comp_offset, in_size);
+		break;
+	case SMB2_COMP_ALG_NONE:
+	default:
+		col_append_str(pinfo->cinfo, COL_INFO, "Comp. SMB3 (unknown)");
+		uncomp_tvb = NULL;
+		goto out;
+	}
+
+	if (!uncomp_tvb || tvb_reported_length(uncomp_tvb) != scti->orig_size) {
+		/* decompression error */
+		col_append_str(pinfo->cinfo, COL_INFO, "Comp. SMB3 (invalid)");
+		goto out;
+	}
+
+	/* write decompressed segment at the end of partial packet */
+
+	tvb_memcpy(uncomp_tvb, orig_data + scti->comp_offset, 0, scti->orig_size);
+	col_append_str(pinfo->cinfo, COL_INFO, "Decomp. SMB3");
+	*plain_tvb = tvb_new_child_real_data(tvb, orig_data, final_size, final_size);
+	add_new_data_source(pinfo, *plain_tvb, "Decomp. SMB3");
+
+ out:
+	if (uncomp_tvb)
+		tvb_free(uncomp_tvb);
+	return offset;
+}
 
 static int
 dissect_smb2_transform_header(packet_info *pinfo, proto_tree *tree,
@@ -9238,12 +9531,7 @@ dissect_smb2_transform_header(packet_info *pinfo, proto_tree *tree,
 	proto_tree        *sesid_tree     = NULL;
 	int                sesid_offset;
 	guint8            *plain_data     = NULL;
-	guint8            *decryption_key = NULL;
-
-	static const int *sf_fields[] = {
-		&hf_smb2_encryption_aes128_ccm,
-		NULL
-	};
+	int                offset_aad;
 
 	*enc_tvb = NULL;
 	*plain_tvb = NULL;
@@ -9251,6 +9539,8 @@ dissect_smb2_transform_header(packet_info *pinfo, proto_tree *tree,
 	/* signature */
 	proto_tree_add_item(tree, hf_smb2_transform_signature, tvb, offset, 16, ENC_NA);
 	offset += 16;
+
+	offset_aad = offset;
 
 	/* nonce */
 	proto_tree_add_item(tree, hf_smb2_transform_nonce, tvb, offset, 16, ENC_NA);
@@ -9267,7 +9557,7 @@ dissect_smb2_transform_header(packet_info *pinfo, proto_tree *tree,
 	offset += 2;
 
 	/* enc algorithm */
-	proto_tree_add_bitmask(tree, tvb, offset, hf_smb2_transform_enc_alg, ett_smb2_transform_enc_alg, sf_fields, ENC_LITTLE_ENDIAN);
+	proto_tree_add_item(tree, hf_smb2_transform_enc_alg, tvb, offset, 2, ENC_LITTLE_ENDIAN);
 	sti->alg = tvb_get_letohs(tvb, offset);
 	offset += 2;
 
@@ -9282,61 +9572,11 @@ dissect_smb2_transform_header(packet_info *pinfo, proto_tree *tree,
 	sti->session = smb2_get_session(sti->conv, sti->sesid, NULL, NULL);
 	smb2_add_session_info(sesid_tree, tvb, sesid_offset, sti->session);
 
-	if (sti->alg == ENC_ALG_aes128_ccm) {
-		if (pinfo->destport == sti->session->server_port) {
-			decryption_key = sti->session->server_decryption_key;
-		} else {
-			decryption_key = sti->session->client_decryption_key;
-		}
-
-		if (memcmp(decryption_key, zeros, NTLMSSP_KEY_LEN) == 0) {
-			decryption_key = NULL;
-		}
-	}
-
-	if (decryption_key != NULL) {
-		gcry_cipher_hd_t cipher_hd = NULL;
-		guint8 A_1[NTLMSSP_KEY_LEN] = {
-			3, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 1
-		};
-
-		memcpy(&A_1[1], sti->nonce, 15 - 4);
-
-		plain_data = (guint8 *)tvb_memdup(pinfo->pool, tvb, offset, sti->size);
-
-		/* Open the cipher. */
-		if (gcry_cipher_open(&cipher_hd, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CTR, 0)) {
-			wmem_free(pinfo->pool, plain_data);
-			plain_data = NULL;
-			goto done_decryption;
-		}
-
-		/* Set the key and initial value. */
-		if (gcry_cipher_setkey(cipher_hd, decryption_key, NTLMSSP_KEY_LEN)) {
-			gcry_cipher_close(cipher_hd);
-			wmem_free(pinfo->pool, plain_data);
-			plain_data = NULL;
-			goto done_decryption;
-		}
-		if (gcry_cipher_setctr(cipher_hd, A_1, NTLMSSP_KEY_LEN)) {
-			gcry_cipher_close(cipher_hd);
-			wmem_free(pinfo->pool, plain_data);
-			plain_data = NULL;
-			goto done_decryption;
-		}
-
-		if (gcry_cipher_encrypt(cipher_hd, plain_data, sti->size, NULL, 0)) {
-			gcry_cipher_close(cipher_hd);
-			wmem_free(pinfo->pool, plain_data);
-			plain_data = NULL;
-			goto done_decryption;
-		}
-
-		/* Done with the cipher. */
-		gcry_cipher_close(cipher_hd);
-	}
-done_decryption:
+#if GCRYPT_VERSION_NUMBER >= 0x010600 /* 1.6.0 */
+	plain_data = decrypt_smb_payload(pinfo, tvb, offset, offset_aad, sti);
+#else
+	(void) offset_aad;
+#endif
 	*enc_tvb = tvb_new_subset_length(tvb, offset, sti->size);
 
 	if (plain_data != NULL) {
@@ -9454,7 +9694,7 @@ dissect_smb2_tid_sesid(packet_info *pinfo _U_, proto_tree *tree, tvbuff_t *tvb, 
 static int
 dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, gboolean first_in_chain)
 {
-	gboolean    smb2_transform_header = FALSE;
+	int msg_type;
 	proto_item *item		  = NULL;
 	proto_tree *tree		  = NULL;
 	proto_item *header_item		  = NULL;
@@ -9466,19 +9706,34 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, gboolea
 	smb2_saved_info_t *ssi          = NULL, ssi_key;
 	smb2_info_t       *si;
 	smb2_transform_info_t *sti;
+	smb2_comp_transform_info_t *scti;
 	char		    *fid_name;
 	guint32		     open_frame,close_frame;
 	smb2_eo_file_info_t *eo_file_info;
 	e_ctx_hnd	    *policy_hnd_hashtablekey;
 
 	sti = wmem_new(wmem_packet_scope(), smb2_transform_info_t);
+	scti = wmem_new(wmem_packet_scope(), smb2_comp_transform_info_t);
 	si  = wmem_new0(wmem_packet_scope(), smb2_info_t);
 	si->top_tree = parent_tree;
 
-	if (tvb_get_guint8(tvb, 0) == 0xfd) {
-		smb2_transform_header = TRUE;
+	msg_type = tvb_get_guint8(tvb, 0);
+
+	switch (msg_type) {
+	case SMB2_COMP_HEADER:
+		label = smb_comp_transform_header_label;
+		break;
+	case SMB2_ENCR_HEADER:
 		label = smb_transform_header_label;
+		break;
+	case SMB2_NORM_HEADER:
+		label = smb_header_label;
+		break;
+	default:
+		label = smb_bad_header_label;
+		break;
 	}
+
 	/* find which conversation we are part of and get the data for that
 	 * conversation
 	 */
@@ -9512,6 +9767,7 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, gboolea
 	}
 
 	sti->conv = si->conv;
+	scti->conv = si->conv;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "SMB2");
 	if (first_in_chain) {
@@ -9528,9 +9784,9 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, gboolea
 
 	/* Decode the header */
 
-	if (!smb2_transform_header) {
+	if (msg_type == SMB2_NORM_HEADER) {
 		/* SMB2 marker */
-		proto_tree_add_item(header_tree, hf_smb2_server_component_smb2, tvb, offset, 4, ENC_NA);
+		proto_tree_add_item(header_tree, hf_smb2_protocol_id, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
 
 		/* we need the flags before we know how to parse the credits field */
@@ -9722,13 +9978,13 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, gboolea
 
 		/* Decode the payload */
 		offset                = dissect_smb2_command(pinfo, tree, tvb, offset, si);
-	} else {
+	} else if (msg_type == SMB2_ENCR_HEADER) {
 		proto_tree *enc_tree;
 		tvbuff_t   *enc_tvb   = NULL;
 		tvbuff_t   *plain_tvb = NULL;
 
 		/* SMB2_TRANSFORM marker */
-		proto_tree_add_item(header_tree, hf_smb2_server_component_smb2_transform, tvb, offset, 4, ENC_NA);
+		proto_tree_add_item(header_tree, hf_smb2_protocol_id, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
 
 		offset = dissect_smb2_transform_header(pinfo, header_tree, tvb, offset, sti,
@@ -9747,6 +10003,38 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, gboolea
 		if (tvb_reported_length_remaining(tvb, offset) > 0) {
 			chain_offset = offset;
 		}
+	} else if (msg_type == SMB2_COMP_HEADER) {
+		proto_tree *comp_tree;
+		tvbuff_t   *plain_tvb = NULL;
+		tvbuff_t   *comp_tvb = NULL;
+
+		offset = dissect_smb2_comp_transform_header(pinfo, tree, tvb, offset,
+							    scti, &comp_tvb, &plain_tvb);
+
+		if (plain_tvb) {
+			comp_tree = proto_tree_add_subtree(tree, plain_tvb, 0,
+							   tvb_reported_length_remaining(plain_tvb, 0),
+							   ett_smb2_compressed, NULL,
+							   "Compressed SMB3 data");
+			dissect_smb2(plain_tvb, pinfo, comp_tree, FALSE);
+		} else {
+			comp_tree = proto_tree_add_subtree(tree, tvb, offset,
+							   tvb_reported_length_remaining(tvb, offset),
+							   ett_smb2_compressed, NULL,
+							   "Compressed SMB3 data");
+			/* show the compressed payload only if we cant uncompress it */
+			proto_tree_add_item(comp_tree, hf_smb2_comp_transform_data,
+					    tvb, offset,
+					    tvb_reported_length_remaining(tvb, offset),
+					    ENC_NA);
+		}
+
+		offset += tvb_reported_length_remaining(tvb, offset);
+	} else {
+		col_append_str(pinfo->cinfo, COL_INFO, "Invalid header");
+
+		/* bad packet after decompressing/decrypting */
+		offset += tvb_reported_length_remaining(tvb, offset);
 	}
 
 	if (chain_offset > 0) {
@@ -9764,12 +10052,14 @@ dissect_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, gboolea
 static gboolean
 dissect_smb2_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *data _U_)
 {
+	guint8 b;
 
 	/* must check that this really is a smb2 packet */
 	if (tvb_captured_length(tvb) < 4)
 		return FALSE;
 
-	if (((tvb_get_guint8(tvb, 0) != 0xfe) && (tvb_get_guint8(tvb, 0) != 0xfd))
+	b = tvb_get_guint8(tvb, 0);
+	if (((b != SMB2_COMP_HEADER) && (b != SMB2_ENCR_HEADER) && (b != SMB2_NORM_HEADER))
 	    || (tvb_get_guint8(tvb, 1) != 'S')
 	    || (tvb_get_guint8(tvb, 2) != 'M')
 	    || (tvb_get_guint8(tvb, 3) != 'B') ) {
@@ -10104,6 +10394,26 @@ proto_register_smb2(void)
 		{ &hf_smb2_read_remaining,
 			{ "Read Remaining", "smb2.read_remaining", FT_UINT32, BASE_DEC,
 			NULL, 0, NULL, HFILL }
+		},
+
+		{ &hf_smb2_read_padding,
+			{ "Padding", "smb2.read_padding", FT_UINT8, BASE_HEX,
+			NULL, 0, NULL, HFILL }
+		},
+
+		{ &hf_smb2_read_flags,
+			{ "Flags", "smb2.read_flags", FT_UINT8, BASE_HEX,
+			NULL, 0, NULL, HFILL }
+		},
+
+		{ &hf_smb2_read_flags_unbuffered,
+			{ "Unbuffered", "smb2.read_flags.unbuffered", FT_BOOLEAN, 8,
+			TFS(&tfs_read_unbuffered), SMB2_READFLAG_READ_UNBUFFERED, "If client requests unbuffered read", HFILL }
+		},
+
+		{ &hf_smb2_read_flags_compressed,
+			{ "Compressed", "smb2.read_flags.compressed", FT_BOOLEAN, 8,
+			TFS(&tfs_read_compressed), SMB2_READFLAG_READ_COMPRESSED, "If client requests compressed response", HFILL }
 		},
 
 		{ &hf_smb2_create_flags,
@@ -10601,6 +10911,19 @@ proto_register_smb2(void)
 			{ "CipherId", "smb2.negotiate_context.cipher_id", FT_UINT16, BASE_HEX,
 			VALS(smb2_cipher_types), 0, NULL, HFILL }},
 
+		{ &hf_smb2_comp_alg_count,
+			{ "CompressionAlgorithmCount", "smb2.negotiate_context.comp_alg_count", FT_UINT16, BASE_DEC,
+			NULL, 0, NULL, HFILL }},
+
+		{ &hf_smb2_comp_alg_id,
+			{ "CompressionAlgorithmId", "smb2.negotiate_context.comp_alg_id", FT_UINT16, BASE_HEX,
+			VALS(smb2_comp_alg_types), 0, NULL, HFILL }},
+
+		{ &hf_smb2_netname_neg_id,
+			{ "Netname", "smb2.negotiate_context.netname", FT_STRING,
+			STR_UNICODE, NULL, 0x0, NULL, HFILL }
+		},
+
 		{ &hf_smb2_current_time,
 			{ "Current Time", "smb2.current_time", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_LOCAL,
 			NULL, 0, "Current Time at server", HFILL }
@@ -10989,7 +11312,7 @@ proto_register_smb2(void)
 
 		{ &hf_smb2_ioctl_network_interface_capabilities,
 			{ "Interface Cababilities", "smb2.ioctl.network_interfaces.capabilities", FT_UINT32, BASE_HEX,
-			NULL, 0, "The RSS queue count", HFILL }
+			NULL, 0, "The capabilities of the network interface", HFILL }
 		},
 
 		{ &hf_smb2_ioctl_network_interface_capability_rss,
@@ -11889,12 +12212,7 @@ proto_register_smb2(void)
 
 		{ &hf_smb2_transform_enc_alg,
 			{ "Encryption ALG", "smb2.header.transform.encryption_alg", FT_UINT16, BASE_HEX,
-			NULL, 0, NULL, HFILL }
-		},
-
-		{ &hf_smb2_encryption_aes128_ccm,
-			{ "SMB2_ENCRYPTION_AES128_CCM", "smb2.header.transform.enc_aes128_ccm", FT_BOOLEAN, 16,
-			NULL, ENC_ALG_aes128_ccm, NULL, HFILL }
+			  VALS(smb2_cipher_types), 0, NULL, HFILL }
 		},
 
 		{ &hf_smb2_transform_encrypted_data,
@@ -11902,13 +12220,33 @@ proto_register_smb2(void)
 			NULL, 0, NULL, HFILL }
 		},
 
-		{ &hf_smb2_server_component_smb2,
-			{ "Server Component: SMB2", "smb2.server_component_smb2", FT_NONE, BASE_NONE,
+		{ &hf_smb2_comp_transform_orig_size,
+			{ "OriginalSize", "smb2.header.comp_transform.original_size", FT_UINT32, BASE_DEC,
 			NULL, 0, NULL, HFILL }
 		},
 
-		{ &hf_smb2_server_component_smb2_transform,
-			{ "Server Component: SMB2_TRANSFORM", "smb2.server_component_smb2_transform", FT_NONE, BASE_NONE,
+		{ &hf_smb2_comp_transform_comp_alg,
+			{ "CompressionAlgorithm", "smb2.header.comp_transform.comp_alg", FT_UINT16, BASE_HEX,
+			VALS(smb2_comp_alg_types), 0, NULL, HFILL }
+		},
+
+		{ &hf_smb2_comp_transform_reserved,
+			{ "Reserved", "smb2.header.comp_transform.reserved", FT_BYTES, BASE_NONE,
+			NULL, 0, NULL, HFILL }
+		},
+
+		{ &hf_smb2_comp_transform_offset,
+			{ "Offset", "smb2.header.comp_transform.offset", FT_UINT32, BASE_HEX,
+			NULL, 0, NULL, HFILL }
+		},
+
+		{ &hf_smb2_comp_transform_data,
+		  { "CompressedData", "smb2.header.comp_transform.data", FT_BYTES, BASE_NONE,
+		    NULL, 0, NULL, HFILL }
+		},
+
+		{ &hf_smb2_protocol_id,
+			{ "ProtocolId", "smb2.protocol_id", FT_UINT32, BASE_HEX,
 			NULL, 0, NULL, HFILL }
 		},
 
@@ -12087,6 +12425,7 @@ proto_register_smb2(void)
 		&ett_smb2_olb,
 		&ett_smb2_header,
 		&ett_smb2_encrypted,
+		&ett_smb2_compressed,
 		&ett_smb2_command,
 		&ett_smb2_secblob,
 		&ett_smb2_negotiate_context_element,
@@ -12170,7 +12509,6 @@ proto_register_smb2(void)
 		&ett_smb2_aapl_create_context_response,
 		&ett_smb2_aapl_server_query_volume_caps,
 		&ett_smb2_integrity_flags,
-		&ett_smb2_transform_enc_alg,
 		&ett_smb2_buffercode,
 		&ett_smb2_ioctl_network_interface_capabilities,
 		&ett_qfr_entry,
@@ -12184,6 +12522,7 @@ proto_register_smb2(void)
 		&ett_smb2_error_context,
 		&ett_smb2_error_redir_context,
 		&ett_smb2_error_redir_ip_list,
+		&ett_smb2_read_flags,
 	};
 
 	static ei_register_info ei[] = {
@@ -12272,7 +12611,7 @@ proto_reg_handoff_smb2(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -66,7 +66,9 @@ static gboolean dct3trace_seek_read(wtap *wth, gint64 seek_off,
 	wtap_rec *rec, Buffer *buf, int *err, gchar **err_info);
 
 /*
- * Following 3 functions taken from gsmdecode-0.7bis, with permission - http://wiki.thc.org/gsm
+ * Following 3 functions taken from gsmdecode-0.7bis, with permission:
+ *
+ *   https://web.archive.org/web/20091218112927/http://wiki.thc.org/gsm
  */
 
 static int
@@ -389,7 +391,7 @@ static gboolean dct3trace_seek_read(wtap *wth, gint64 seek_off,
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

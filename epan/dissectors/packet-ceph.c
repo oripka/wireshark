@@ -6707,10 +6707,8 @@ guint c_dissect_new(proto_tree *tree,
 		Since the packet is larger than the max banner length we can read it
 		all in safely.
 	*/
-#ifdef G_STATIC_ASSERT
 	G_STATIC_ASSERT(C_BANNER_SIZE+1 <= C_BANNER_SIZE_MIN+C_SIZE_HELLO_C);
 	G_STATIC_ASSERT(C_BANNER_SIZE+1 <= C_BANNER_SIZE_MIN+C_SIZE_HELLO_S);
-#endif
 
 	if (tvb_memeql(tvb, off, C_BANNER, C_BANNER_SIZE_MIN) != 0)
 		return C_INVALID;
@@ -10519,7 +10517,7 @@ proto_reg_handoff_ceph(void)
 }
 
 /*
- * Editor modelines  -	http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -	https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

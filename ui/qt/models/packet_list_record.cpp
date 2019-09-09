@@ -21,55 +21,45 @@
 
 #include "frame_tvbuff.h"
 
+#include <ui/qt/utils/qt_ui_utils.h>
+
 #include <QStringList>
-
-class ColumnTextList : public QList<const char *> {
-public:
-    // Allocate our records using wmem.
-    static void *operator new(size_t size) {
-        return wmem_alloc(wmem_file_scope(), size);
-    }
-
-    static void operator delete(void *) {}
-};
 
 QMap<int, int> PacketListRecord::cinfo_column_;
 unsigned PacketListRecord::col_data_ver_ = 1;
 
-PacketListRecord::PacketListRecord(frame_data *frameData, struct _GStringChunk *string_cache_pool) :
-    col_text_(0),
+PacketListRecord::PacketListRecord(frame_data *frameData) :
     fdata_(frameData),
     lines_(1),
     line_count_changed_(false),
     data_ver_(0),
     colorized_(false),
-    conv_(NULL),
-    string_cache_pool_(string_cache_pool)
+    conv_index_(0)
 {
 }
 
-void *PacketListRecord::operator new(size_t size)
+PacketListRecord::~PacketListRecord()
 {
-    return wmem_alloc(wmem_file_scope(), size);
+    col_text_.clear();
 }
 
 // We might want to return a const char * instead. This would keep us from
 // creating excessive QByteArrays, e.g. in PacketListModel::recordLessThan.
-const QByteArray PacketListRecord::columnString(capture_file *cap_file, int column, bool colorized)
+const QString PacketListRecord::columnString(capture_file *cap_file, int column, bool colorized)
 {
     // packet_list_store.c:packet_list_get_value
-    g_assert(fdata_);
+    Q_ASSERT(fdata_);
 
     if (!cap_file || column < 0 || column > cap_file->cinfo.num_cols) {
-        return QByteArray();
+        return QString();
     }
 
     bool dissect_color = colorized && !colorized_;
-    if (!col_text_ || column >= col_text_->size() || !col_text_->at(column) || data_ver_ != col_data_ver_ || dissect_color) {
+    if (column >= col_text_.count() || col_text_.at(column).isNull() || data_ver_ != col_data_ver_ || dissect_color) {
         dissect(cap_file, dissect_color);
     }
 
-    return col_text_->value(column, QByteArray());
+    return col_text_.at(column);
 }
 
 void PacketListRecord::resetColumns(column_info *cinfo)
@@ -104,13 +94,11 @@ void PacketListRecord::dissect(capture_file *cap_file, bool dissect_color)
     wtap_rec rec; /* Record metadata */
     Buffer buf;   /* Record data */
 
-    if (!col_text_) col_text_ = new ColumnTextList;
-    gboolean dissect_columns = col_text_->isEmpty() || data_ver_ != col_data_ver_;
+    gboolean dissect_columns = col_text_.isEmpty() || data_ver_ != col_data_ver_;
 
     if (!cap_file) {
         return;
     }
-
 
     if (dissect_columns) {
         cinfo = &cap_file->cinfo;
@@ -190,8 +178,8 @@ void PacketListRecord::dissect(capture_file *cap_file, bool dissect_color)
     }
     data_ver_ = col_data_ver_;
 
-    packet_info *pi = &edt.pi;
-    conv_ = find_conversation_pinfo(pi, 0);
+    struct conversation * conv = find_conversation_pinfo(&edt.pi, 0);
+    conv_index_ = ! conv ? 0 : conv->conv_index;
 
     epan_dissect_cleanup(&edt);
     ws_buffer_free(&buf);
@@ -206,11 +194,7 @@ void PacketListRecord::cacheColumnStrings(column_info *cinfo)
         return;
     }
 
-    if (col_text_) {
-        col_text_->clear();
-    } else {
-        col_text_ = new ColumnTextList;
-    }
+    col_text_.clear();
     lines_ = 1;
     line_count_changed_ = false;
 
@@ -223,7 +207,7 @@ void PacketListRecord::cacheColumnStrings(column_info *cinfo)
         /* Column based on frame_data or it already contains a value */
         if (text_col < 0) {
             col_fill_in_frame_data(fdata_, cinfo, column, FALSE);
-            col_text_->append(cinfo->columns[column].col_data);
+            col_text_ << QString(cinfo->columns[column].col_data);
             continue;
         }
 
@@ -240,7 +224,7 @@ void PacketListRecord::cacheColumnStrings(column_info *cinfo)
                 // XXX - ui/gtk/packet_list_store.c uses G_MAXUSHORT. We don't do proper UTF8
                 // truncation in either case.
                 int col_text_len = MIN(qstrlen(cinfo->col_data[column]) + 1, COL_MAX_INFO_LEN);
-                col_text_->append(QByteArray::fromRawData(cinfo->columns[column].col_data, col_text_len));
+                col_text_ << QString(QByteArray::fromRawData(cinfo->columns[column].col_data, col_text_len));
                 break;
             }
             /* !! FALL-THROUGH!! */
@@ -267,34 +251,28 @@ void PacketListRecord::cacheColumnStrings(column_info *cinfo)
             if (!get_column_resolved(column) && cinfo->col_expr.col_expr_val[column]) {
                 /* Use the unresolved value in col_expr_val */
                 // XXX Use QContiguousCache?
-                col_text_->append(cinfo->col_expr.col_expr_val[column]);
+                col_text_ << QString(cinfo->col_expr.col_expr_val[column]);
             } else {
-                col_text_->append(cinfo->columns[column].col_data);
+                col_text_ << QString(cinfo->columns[column].col_data);
             }
             break;
         }
 #else // MINIMIZE_STRING_COPYING
-        const char *col_str;
+        QString col_str;
         if (!get_column_resolved(column) && cinfo->col_expr.col_expr_val[column]) {
             /* Use the unresolved value in col_expr_val */
-            col_str = cinfo->col_expr.col_expr_val[column];
+            col_str = QString(cinfo->col_expr.col_expr_val[column]);
         } else {
             int text_col = cinfo_column_.value(column, -1);
 
             if (text_col < 0) {
                 col_fill_in_frame_data(fdata_, cinfo, column, FALSE);
             }
-            col_str = cinfo->columns[column].col_data;
+            col_str = QString(cinfo->columns[column].col_data);
         }
-        // g_string_chunk_insert_const manages a hash table of pointers to
-        // strings:
-        // https://git.gnome.org/browse/glib/tree/glib/gstringchunk.c
-        // We might be better off adding the equivalent functionality to
-        // wmem_tree.
-        col_text_->append(g_string_chunk_insert_const(string_cache_pool_, col_str));
-        for (int i = 0; col_str[i]; i++) {
-            if (col_str[i] == '\n') col_lines++;
-        }
+
+        col_text_ << col_str;
+        col_lines = col_str.count('\n');
         if (col_lines > lines_) {
             lines_ = col_lines;
             line_count_changed_ = true;

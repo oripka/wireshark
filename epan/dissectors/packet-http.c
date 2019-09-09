@@ -3166,11 +3166,11 @@ process_header(tvbuff_t *tvb, int offset, int next_offset,
 				break; /* dissected citrix basic auth */
 			if (check_auth_kerberos(hdr_item, tvb, pinfo, value))
 				break;
-			auth = wmem_new0(wmem_file_scope(), tap_credential_t);
+			auth = wmem_new0(wmem_packet_scope(), tap_credential_t);
 			auth->num = pinfo->num;
 			auth->password_hf_id = *headers[hf_index].hf;
-			auth->proto = wmem_strdup(wmem_file_scope(), "HTTP header auth");
-			auth->username = wmem_strdup(wmem_file_scope(), TAP_CREDENTIALS_PLACEHOLDER);
+			auth->proto = "HTTP header auth";
+			auth->username = wmem_strdup(wmem_packet_scope(), TAP_CREDENTIALS_PLACEHOLDER);
 			tap_queue_packet(credentials_tap, pinfo, auth);
 			break;
 
@@ -3388,13 +3388,17 @@ basic_auth_credentials(gchar* str)
 {
 	gchar **tokens = g_strsplit(str, ":", -1);
 
-	if (!tokens || !tokens[0] || !tokens[1])
+	if (!tokens || !tokens[0] || !tokens[1]) {
+		g_strfreev(tokens);
 		return NULL;
+	}
 
-	tap_credential_t* auth = wmem_new0(wmem_file_scope(), tap_credential_t);
+	tap_credential_t* auth = wmem_new0(wmem_packet_scope(), tap_credential_t);
 
-	auth->username = tokens[0];
+	auth->username = wmem_strdup(wmem_packet_scope(), tokens[0]);
 	auth->proto = "HTTP basic auth";
+
+	g_strfreev(tokens);
 
 	return auth;
 }
@@ -3431,9 +3435,11 @@ check_auth_basic(proto_item *hdr_item, tvbuff_t *tvb, packet_info *pinfo, gchar 
 			proto_tree_add_string(hdr_tree, hf_http_basic, tvb,
 			    0, 0, value);
 			tap_credential_t* auth = basic_auth_credentials(value);
-			auth->num = auth->username_num = pinfo->num;
-			auth->password_hf_id = hf_http_basic;
-			tap_queue_packet(credentials_tap, pinfo, auth);
+			if (auth) {
+				auth->num = auth->username_num = pinfo->num;
+				auth->password_hf_id = hf_http_basic;
+				tap_queue_packet(credentials_tap, pinfo, auth);
+			}
 
 			return TRUE;
 		}
@@ -4339,7 +4345,7 @@ proto_reg_handoff_message_http(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

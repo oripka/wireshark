@@ -3050,7 +3050,10 @@ static int parse_guid(tvbuff_t *tvb, int offset, proto_tree *tree, e_guid_t *gui
 	return offset;
 }
 
-/*Language Code ID: http://msdn.microsoft.com/en-us/library/cc233968(v=prot.20).aspx */
+/* Language Code ID - MS-LCID section 2.2 "LCID Structure":
+ *
+ *  https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/63d3d639-7fd2-4afb-abbe-0d5b5551eef8
+ */
 static int parse_lcid(tvbuff_t *tvb, int offset, proto_tree *parent_tree, const char *text)
 {
 	proto_item *item;
@@ -8016,7 +8019,7 @@ static int dissect_mswsp_smb2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 		dcerpc_fetch_polhnd_data(&si->saved->policy_hnd, &fid_name, NULL, &open_frame, &close_frame, pinfo->num);
 	}
 
-	if (!fid_name || strcmp(fid_name, "File: MsFteWds") != 0) {
+	if (!fid_name || g_ascii_strcasecmp(fid_name, "File: MsFteWds") != 0) {
 		return 0;
 	}
 
@@ -8034,7 +8037,7 @@ proto_reg_handoff_mswsp(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

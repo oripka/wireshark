@@ -300,7 +300,7 @@ if_info_get(const char *name)
 		 */
 		for (;;) {
 			g_free(description);
-			if ((description = g_malloc(descrlen)) != NULL) {
+			if ((description = (char*)g_malloc(descrlen)) != NULL) {
 				ifrdesc.ifr_buffer.buffer = description;
 				ifrdesc.ifr_buffer.length = descrlen;
 				if (ioctl(s, SIOCGIFDESCR, &ifrdesc) == 0) {
@@ -327,7 +327,7 @@ if_info_get(const char *name)
 		 * to get the description length - it's clamped
 		 * to a maximum of IFDESCRSIZE.
 		 */
-		if ((description = g_malloc(descrlen)) != NULL) {
+		if ((description = (char*)g_malloc(descrlen)) != NULL) {
 			ifrdesc.ifr_data = (caddr_t)description;
 			if (ioctl(s, SIOCGIFDESCR, &ifrdesc) != 0) {
 				/*
@@ -428,7 +428,7 @@ if_info_new(const char *name, const char *description, gboolean loopback)
 	 * Much digging failed to reveal any obvious way to get something
 	 * such as the SNMP MIB-II ifType value for an interface:
 	 *
-	 *    http://www.iana.org/assignments/ianaiftype-mib
+	 *    https://www.iana.org/assignments/ianaiftype-mib/ianaiftype-mib
 	 *
 	 * by making some NDIS request.  And even if there were such
 	 * a way, there's no guarantee that the ifType reflects an
@@ -1608,7 +1608,7 @@ open_capture_device(capture_options *capture_opts,
 #endif /* HAVE_LIBPCAP */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

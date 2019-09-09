@@ -1596,7 +1596,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Copy from</source>
-        <translation>复制自</translation>
+        <translation type="vanished">复制自</translation>
     </message>
     <message>
         <source>Copy coloring rules from another profile.</source>
@@ -1758,6 +1758,63 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
 </context>
 <context>
+    <name>CopyFromProfileButton</name>
+    <message>
+        <source>Copy from</source>
+        <translation type="unfinished">复制自</translation>
+    </message>
+    <message>
+        <source>Copy entries from another profile.</source>
+        <translation type="unfinished">从其他配置文件复制条目。</translation>
+    </message>
+    <message>
+        <source>System default</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CredentialsDialog</name>
+    <message>
+        <source>Wireshark - Credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Credentials</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CredentialsModel</name>
+    <message>
+        <source>Click to select the packet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to select the packet with username</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Packet No.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Protocol</source>
+        <translation type="unfinished">协议</translation>
+    </message>
+    <message>
+        <source>Username</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional Info</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DataPrinter</name>
     <message>
         <source>Copy Bytes as Hex + ASCII Dump</source>
@@ -1896,6 +1953,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>管理保存的书签。</translation>
     </message>
     <message>
+        <source>Clear display filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Apply this filter string to the display.</source>
         <translation>将此过滤字符串应用于显示。</translation>
     </message>
@@ -1930,14 +1991,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Manage Filter Expressions</source>
         <translation>管理过滤器表达式</translation>
-    </message>
-    <message>
-        <source>Selected</source>
-        <translation type="unfinished">选中</translation>
-    </message>
-    <message>
-        <source>Not Selected</source>
-        <translation type="unfinished">非选中</translation>
     </message>
 </context>
 <context>
@@ -2096,6 +2149,18 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Enabled Protocols</source>
         <translation>已启用的协议</translation>
+    </message>
+    <message>
+        <source>Everywhere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only Protocols</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Only Description</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2427,8 +2492,8 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>无法找到 extcap接口 %1 的帮助。文件：%2</translation>
     </message>
     <message>
-        <source>Save parameter on capture start</source>
-        <translation>捕获开始时保存参数</translation>
+        <source>Save parameter(s) on capture start</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2493,6 +2558,17 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Size</source>
         <translation>大小</translation>
+    </message>
+</context>
+<context>
+    <name>FilterAction</name>
+    <message>
+        <source>Selected</source>
+        <translation type="unfinished">选中</translation>
+    </message>
+    <message>
+        <source>Not Selected</source>
+        <translation type="unfinished">非选中</translation>
     </message>
 </context>
 <context>
@@ -3539,8 +3615,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>I/O Graphs</source>
-        <oldsource>IO Graphs</oldsource>
-        <translation type="unfinished">IO 图表</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy</source>
@@ -3548,7 +3623,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Copy from</source>
-        <translation>复制自</translation>
+        <translation type="vanished">复制自</translation>
     </message>
     <message>
         <source>Copy graphs from another profile.</source>
@@ -3569,10 +3644,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>100 ms</source>
         <translation>100毫秒</translation>
-    </message>
-    <message>
-        <source>Wireshark IO Graphs: %1</source>
-        <translation type="vanished">Wireshark IO 图表: %1</translation>
     </message>
     <message>
         <source>Wireshark I/O Graphs: %1</source>
@@ -4195,6 +4266,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>External capture interfaces disabled.</source>
         <translation>已禁用外部捕获接口。</translation>
+    </message>
+    <message>
+        <source>Start capture</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5616,19 +5691,20 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>配置：%1</translation>
     </message>
     <message>
-        <source>Manage Profiles</source>
-        <oldsource>Manage Profiles...</oldsource>
-        <translation>管理配置文件</translation>
+        <source>Import</source>
+        <translation type="unfinished">导入</translation>
     </message>
     <message>
-        <source>New</source>
-        <oldsource>New...</oldsource>
-        <translation>新建</translation>
+        <source>from zip file</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Edit</source>
-        <oldsource>Edit...</oldsource>
-        <translation>编辑</translation>
+        <source>from directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished">导出</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -5664,13 +5740,12 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <oldsource>No expert info</oldsource>
         <translation>无专家信息</translation>
     </message>
-    <message>
-        <source>, 1 byte</source>
-        <translation>, 1 字节</translation>
-    </message>
-    <message>
-        <source>, %1 bytes</source>
-        <translation>, %1 字节</translation>
+    <message numerus="yes">
+        <source>%Ln byte(s)</source>
+        <oldsource>, %1 bytes</oldsource>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
     </message>
     <message>
         <source>Byte %1</source>
@@ -5709,6 +5784,26 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>No Packets</source>
         <translation>无分组</translation>
+    </message>
+    <message>
+        <source>Manage Profiles</source>
+        <translation>管理配置文件</translation>
+    </message>
+    <message>
+        <source>New</source>
+        <translation>新建</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>编辑</translation>
+    </message>
+    <message>
+        <source>selected personal profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>all personal profiles</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Packets: %1</source>
@@ -6117,15 +6212,15 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>&amp;Selected</source>
-        <translation>选中(&amp;S)</translation>
+        <translation type="vanished">选中(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Not Selected</source>
-        <translation>非选中(&amp;N)</translation>
+        <translation type="vanished">非选中(&amp;N)</translation>
     </message>
     <message>
         <source>Not Selected</source>
-        <translation>非选中</translation>
+        <translation type="vanished">非选中</translation>
     </message>
     <message>
         <source>Close this capture file</source>
@@ -6829,10 +6924,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>显示 IEEE 802.11 无线 LAN 统计。</translation>
     </message>
     <message>
-        <source>Add a filter button</source>
-        <translation type="vanished">添加一个过滤器按钮</translation>
-    </message>
-    <message>
         <source>Add a display filter button.</source>
         <translation>添加一个显示过滤器按钮。</translation>
     </message>
@@ -6847,6 +6938,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>&amp;Full Screen</source>
         <translation>全屏(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Credentials</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Options…</source>
@@ -6874,35 +6969,35 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>…&amp;and Selected</source>
-        <translation>…与选中(&amp;A)</translation>
+        <translation type="vanished">…与选中(&amp;A)</translation>
     </message>
     <message>
         <source>…and Selected</source>
-        <translation>…与选中</translation>
+        <translation type="vanished">…与选中</translation>
     </message>
     <message>
         <source>…&amp;or Selected</source>
-        <translation>…或选中(&amp;O)</translation>
+        <translation type="vanished">…或选中(&amp;O)</translation>
     </message>
     <message>
         <source>…or Selected</source>
-        <translation>…或选中</translation>
+        <translation type="vanished">…或选中</translation>
     </message>
     <message>
         <source>…a&amp;nd not Selected</source>
-        <translation>…与非选中(&amp;N)</translation>
+        <translation type="vanished">…与非选中(&amp;N)</translation>
     </message>
     <message>
         <source>…and not Selected</source>
-        <translation>…与非选中</translation>
+        <translation type="vanished">…与非选中</translation>
     </message>
     <message>
         <source>…o&amp;r not Selected</source>
-        <translation>…或非选中(&amp;R)</translation>
+        <translation type="vanished">…或非选中(&amp;R)</translation>
     </message>
     <message>
         <source>…or not Selected</source>
-        <translation>…或非选中</translation>
+        <translation type="vanished">…或非选中</translation>
     </message>
     <message>
         <source>Display Filter &amp;Macros…</source>
@@ -8385,7 +8480,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <name>PrefsModel</name>
     <message>
         <source>Advanced</source>
-        <extracomment>Names of special preferences handled by the GUI</extracomment>
         <translation>高级</translation>
     </message>
     <message>
@@ -8471,17 +8565,16 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
 <context>
     <name>ProfileDialog</name>
     <message>
-        <source>Name</source>
-        <translation>名称</translation>
+        <source>Search for profile …</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create a new profile using default settings.</source>
         <translation>用默认设置创建新的配置文件。</translation>
     </message>
     <message>
-        <source>Remove this profile. System provided profiles cannot be removed.</source>
-        <oldsource>Remove this profile. The Default profile and system provided profiles cannot be removed.</oldsource>
-        <translation>移除此配置文件。默认配置和系统提供的配置不能移除。</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove this profile. System provided profiles cannot be removed. The default profile will be resetted upon deletion.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy this profile.</source>
@@ -8492,52 +8585,243 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>配置文件</translation>
     </message>
     <message>
-        <source>Will be reset to default values</source>
-        <translation>将重置为默认值</translation>
+        <source>Import</source>
+        <comment>noun</comment>
+        <translation type="unfinished">导入</translation>
     </message>
     <message>
-        <source>Created from %1</source>
-        <translation>创建自 %1</translation>
+        <source>Export</source>
+        <comment>noun</comment>
+        <translation type="unfinished">导出</translation>
     </message>
     <message>
-        <source>(system provided)</source>
-        <translation>(系统提供)</translation>
-    </message>
-    <message>
-        <source>(deleted)</source>
+        <source>New profile</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Created from default settings</source>
-        <translation>根据默认设置创建</translation>
-    </message>
-    <message>
-        <source>Renamed from %1</source>
-        <translation>重命名自 %1</translation>
-    </message>
-    <message>
-        <source>Go to %1</source>
-        <translation>转到 %1</translation>
-    </message>
-    <message>
-        <source>This is a system provided profile.</source>
-        <translation>这是一个系统提供的配置文件。</translation>
-    </message>
-    <message>
-        <source>A profile already exists with this name.</source>
-        <translation>已存在该名称的配置文件。</translation>
-    </message>
-    <message>
-        <source>A profile already exists with this name</source>
-        <translation>已存在该名称的配置文件。</translation>
-    </message>
-    <message>
-        <source>The profile will be reset to default values.</source>
-        <translation>此配置文件将重置为默认值。</translation>
     </message>
     <message>
         <source>Profile Error</source>
         <translation>配置文件错误</translation>
+    </message>
+    <message>
+        <source>Exporting profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No profiles found for export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select zip file for export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln selected personal profile(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>An import of profiles is not allowed, while changes are pending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An import is pending to be saved. Additional imports are not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An export of profiles is only allowed for personal profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An export of profiles is not allowed, while changes are pending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln profile(s) exported</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Select zip file for import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select directory for import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Zip File (*.zip)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>from zip file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>from directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>all personal profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation type="unfinished">错误</translation>
+    </message>
+    <message>
+        <source>An error has occurred while exporting profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No profiles found for import in %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln profile(s) imported</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>, %Ln profile(s) skipped</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Importing profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>%Ln profile(s) selected</source>
+        <translation type="obsolete">
+            <numerusform>%Ln profile selected</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>ProfileModel</name>
+    <message>
+        <source>Resetting to default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Imported profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is a system provided profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile change for this name is pending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> (See: %1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This is an invalid profile definition</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile already exists with this name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile with this name is being deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Created from default settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>system provided</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>deleted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>copy</source>
+        <comment>noun</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exporting profiles while changes are pending is not allowed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No profiles found to export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t delete profile directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile name cannot contain the following characters: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile name cannot contain the &apos;/&apos; character</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A profile cannot start or end with a period (.)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation type="unfinished">默认</translation>
+    </message>
+    <message>
+        <source>Global</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Personal</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renamed from: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copied from: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>renamed to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation type="unfinished">类型</translation>
+    </message>
+</context>
+<context>
+    <name>ProfileSortModel</name>
+    <message>
+        <source>All profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Personal profiles</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Global profiles</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8552,6 +8836,66 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Packet details</source>
         <translation>分组详情</translation>
+    </message>
+    <message>
+        <source>Expand Subtrees</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse Subtrees</source>
+        <translation type="unfinished">折叠子树</translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished">全部展开</translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished">全部折叠</translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">复制</translation>
+    </message>
+    <message>
+        <source>All Visible Items</source>
+        <translation type="unfinished">所有可见项目</translation>
+    </message>
+    <message>
+        <source>All Visible Selected Tree Items</source>
+        <translation type="unfinished">选中树的所有可见项目</translation>
+    </message>
+    <message>
+        <source>Desription</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Field Name</source>
+        <translation type="unfinished">字段名称</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation type="unfinished">值</translation>
+    </message>
+    <message>
+        <source>As Filter</source>
+        <translation type="unfinished">作为过滤器</translation>
+    </message>
+    <message>
+        <source>Wiki Protocol Page</source>
+        <translation type="unfinished">Wiki 协议页面</translation>
+    </message>
+    <message>
+        <source>Filter Field Reference</source>
+        <translation type="unfinished">过滤器字段参考</translation>
+    </message>
+    <message>
+        <source>Wiki Page for %1</source>
+        <translation type="unfinished">%1 的 Wiki 页面</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Wireshark Wiki is maintained by the community.&lt;/p&gt;&lt;p&gt;The page you are about to load might be wonderful, incomplete, wrong, or nonexistent.&lt;/p&gt;&lt;p&gt;Proceed to the wiki?&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Wireshark Wiki 由社区进行维护。&lt;/p&gt;&lt;p&gt;您即将加载的页面可能是良好的、不完整的、有错误的，甚至不存在的。&lt;/p&gt;&lt;p&gt;继续访问该 Wiki？&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Colorize with Filter</source>
@@ -8761,6 +9105,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Any </source>
         <translation>任何</translation>
+    </message>
+    <message>
+        <source>Prepare as Filter</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Don&apos;t show this message again.</source>
@@ -11341,10 +11689,6 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
         <translation>网络</translation>
     </message>
     <message>
-        <source>Reset</source>
-        <translation>复位</translation>
-    </message>
-    <message>
         <source>Reset Diagram</source>
         <translation>复位图表</translation>
     </message>
@@ -12562,11 +12906,11 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
     <message>
         <source>Copy from</source>
-        <translation>复制自</translation>
+        <translation type="vanished">复制自</translation>
     </message>
     <message>
         <source>Copy entries from another profile.</source>
-        <translation>从其他配置文件复制条目。</translation>
+        <translation type="vanished">从其他配置文件复制条目。</translation>
     </message>
     <message>
         <source>Open </source>
@@ -12637,6 +12981,10 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     <message>
         <source>Select all calls</source>
         <translation>选择所有呼叫</translation>
+    </message>
+    <message>
+        <source>Display time as time of day</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Copy as CSV</source>

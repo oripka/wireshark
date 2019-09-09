@@ -16,7 +16,7 @@ class QListWidget;
 class QListWidgetItem;
 class QMenu;
 
-#include "splash_overlay.h"
+#include <ui/qt/widgets/splash_overlay.h>
 #include "interface_frame.h"
 
 namespace Ui {
@@ -57,9 +57,6 @@ private:
     // QListWidget doesn't activate items when the return or enter keys are pressed on macOS.
     // We may want to subclass it at some point.
     QListWidget *recent_files_;
-//    MWOverlay *overlay;
-    QMenu *recent_ctx_menu_;
-
 
 signals:
     void startCapture();

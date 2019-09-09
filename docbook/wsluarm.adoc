@@ -51,12 +51,8 @@ and then opens a text window with the output.
 
 [source,lua]
 ----
-if gui_enabled() then
-   local splash = TextWindow.new("Hello!");
-   splash:set("This time wireshark has been enhanced with a useless feature.\n")
-   splash:append("Go to 'Tools->Lua Dialog Test' and check it out!")
-end
 
+-- Define the menu entry's callback
 local function dialog_menu()
     local function dialog_func(person,eyes,hair)
         local window = TextWindow.new("Person Info");
@@ -67,7 +63,16 @@ local function dialog_menu()
     new_dialog("Dialog Test",dialog_func,"A Person","Eyes","Hair")
 end
 
+-- Create the menu entry
 register_menu("Lua Dialog Test",dialog_menu,MENU_TOOLS_UNSORTED)
+
+-- Notify the user that the menu was created
+if gui_enabled() then
+   local splash = TextWindow.new("Hello!");
+   splash:set("Wireshark has been enhanced with a useless feature.\n")
+   splash:append("Go to 'Tools->Lua Dialog Test' and check it out!")
+end
+
 ----
 
 [[wslua_dissector_example]]
@@ -283,11 +288,11 @@ Lrexlib PCRE implementation, with a few differences as follows:
 Since: 1.11.3
 
 This page is based on the full documentation for Lrexlib at
-link:http://rrthomas.github.io/lrexlib/manual.html[http://rrthomas.github.io/lrexlib/manual.html]
+https://rrthomas.github.io/lrexlib/manual.html[]
 
 The GLib Regular expression syntax (which is essentially PCRE syntax) can be
 found at
-link:https://developer.gnome.org/glib/2.38/glib-regex-syntax.html[https://developer.gnome.org/glib/2.38/glib-regex-syntax.html]
+https://developer.gnome.org/glib/2.38/glib-regex-syntax.html[]
 
 [[lua_class_GRegex]]
 
@@ -541,7 +546,7 @@ GRegex object previously compiled with GRegex.new().
 Since: 1.11.3
 
 For details see:
-link:http://rrthomas.github.io/lrexlib/manual.html#gsub[http://rrthomas.github.io/lrexlib/manual.html#gsub]
+https://rrthomas.github.io/lrexlib/manual.html#gsub[]
 
 [float]
 ===== Arguments

@@ -1023,7 +1023,7 @@ dissector_add_uint(const char *name, const guint32 pattern, dissector_handle_t h
 	if (handle == NULL) {
 		fprintf(stderr, "OOPS: handle to register \"%s\" to doesn't exist\n",
 		    name);
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -1032,7 +1032,7 @@ dissector_add_uint(const char *name, const guint32 pattern, dissector_handle_t h
 		    name);
 		fprintf(stderr, "Protocol being registered is \"%s\"\n",
 		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -1506,7 +1506,7 @@ dissector_add_string(const char *name, const gchar *pattern,
 	if (handle == NULL) {
 		fprintf(stderr, "OOPS: handle to register \"%s\" to doesn't exist\n",
 		    name);
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -1515,7 +1515,7 @@ dissector_add_string(const char *name, const gchar *pattern,
 		    name);
 		fprintf(stderr, "Protocol being registered is \"%s\"\n",
 		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -1768,7 +1768,7 @@ void dissector_add_custom_table_handle(const char *name, void *pattern, dissecto
 	if (handle == NULL) {
 		fprintf(stderr, "OOPS: handle to register \"%s\" to doesn't exist\n",
 		    name);
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -1777,7 +1777,7 @@ void dissector_add_custom_table_handle(const char *name, void *pattern, dissecto
 		    name);
 		fprintf(stderr, "Protocol being registered is \"%s\"\n",
 		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -1824,7 +1824,7 @@ void dissector_add_guid(const char *name, guid_key* guid_val, dissector_handle_t
 	if (handle == NULL) {
 		fprintf(stderr, "OOPS: handle to register \"%s\" to doesn't exist\n",
 		    name);
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -1833,7 +1833,7 @@ void dissector_add_guid(const char *name, guid_key* guid_val, dissector_handle_t
 		    name);
 		fprintf(stderr, "Protocol being registered is \"%s\"\n",
 		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -1919,7 +1919,7 @@ int dissector_try_guid(dissector_table_t sub_dissectors,
  * return the current dissector handle for that value.
  *
  * @param[in] sub_dissectors Dissector table to search.
- * @param[in] uint_val Value to match, e.g. the port number for the TCP dissector.
+ * @param[in] guid_val Value to match.
  * @return The matching dissector handle on success, NULL if no match is found.
  */
 dissector_handle_t dissector_get_guid_handle(
@@ -1963,6 +1963,15 @@ void dissector_change_payload(const char *name, dissector_handle_t handle)
 void dissector_reset_payload(const char *name)
 {
 	dissector_reset_uint(name, 0);
+}
+
+/* Given a payload dissector table (type FT_NONE), return the handle of
+   the dissector that is currently active, i.e. that was selected via
+   Decode As. */
+dissector_handle_t
+dissector_get_payload_handle(dissector_table_t const dissector_table)
+{
+	return dissector_get_uint_handle(dissector_table, 0);
 }
 
 dissector_handle_t
@@ -2010,7 +2019,7 @@ dissector_add_for_decode_as(const char *name, dissector_handle_t handle)
 		    name);
 		fprintf(stderr, "Protocol being registered is \"%s\"\n",
 		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -2028,7 +2037,7 @@ dissector_add_for_decode_as(const char *name, dissector_handle_t handle)
 				    dissector_name,
 				    proto_get_protocol_short_name(handle->protocol),
 				    name);
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -2072,7 +2081,7 @@ dissector_add_for_decode_as(const char *name, dissector_handle_t handle)
 				    dissector_name, dup_dissector_name,
 				    proto_get_protocol_short_name(handle->protocol),
 				    name);
-				if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+				if (wireshark_abort_on_dissector_bug)
 					abort();
 			}
 		}
@@ -2612,7 +2621,7 @@ heur_dissector_add(const char *name, heur_dissector_t dissector, const char *dis
 			fprintf(stderr, "Protocol being registered is \"%s\"\n",
 			    proto_name);
 		}
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
@@ -2631,7 +2640,7 @@ heur_dissector_add(const char *name, heur_dissector_t dissector, const char *dis
 				fprintf(stderr, "Protocol %s is already registered in \"%s\" table\n",
 				    proto_name, name);
 			}
-			if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+			if (wireshark_abort_on_dissector_bug)
 				abort();
 			return;
 		}
@@ -3584,7 +3593,7 @@ prime_epan_dissect_with_postdissector_wanted_hfids(epan_dissect_t *edt)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

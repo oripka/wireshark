@@ -26,7 +26,6 @@
 #include "packet-gtpv2.h"
 #include "packet-e164.h"
 #include "packet-e212.h"
-#include "packet-ntp.h"
 #include "packet-s1ap.h"
 #include "packet-sip.h"
 #include "packet-lcsap.h"
@@ -223,6 +222,7 @@ static int hf_diameter_3gpp_ulr_flags_bit4 = -1;
 static int hf_diameter_3gpp_ulr_flags_bit5 = -1;
 static int hf_diameter_3gpp_ulr_flags_bit6 = -1;
 static int hf_diameter_3gpp_ulr_flags_bit7 = -1;
+static int hf_diameter_3gpp_ulr_flags_bit8 = -1;
 static int hf_diameter_3gpp_ula_flags = -1;
 static int hf_diameter_3gpp_ula_flags_bit0 = -1;
 static int hf_diameter_3gpp_ula_flags_bit1 = -1;
@@ -258,6 +258,7 @@ static int hf_diameter_3gpp_dsr_flags_bit27 = -1;
 static int hf_diameter_3gpp_dsr_flags_bit28 = -1;
 static int hf_diameter_3gpp_dsr_flags_bit29 = -1;
 static int hf_diameter_3gpp_dsr_flags_bit30 = -1;
+static int hf_diameter_3gpp_dsr_flags_bit31 = -1;
 static int hf_diameter_3gpp_dsa_flags = -1;
 static int hf_diameter_3gpp_dsa_flags_bit0 = -1;
 static int hf_diameter_3gpp_ida_flags = -1;
@@ -388,7 +389,6 @@ static int hf_diameter_3gpp_feature_list2_s6a_flags_spare_bits = -1;
 static int hf_diameter_3gpp_cms_spare_bits = -1;
 static int hf_diameter_3gpp_ulr_flags_spare_bits = -1;
 static int hf_diameter_3gpp_ula_flags_spare_bits = -1;
-static int hf_diameter_3gpp_dsr_flags_spare_bits = -1;
 static int hf_diameter_3gpp_dsa_flags_spare_bits = -1;
 static int hf_diameter_3gpp_acc_res_dat_flags = -1;
 static int hf_diameter_3gpp_acc_res_dat_flags_bit0 = -1;
@@ -639,6 +639,9 @@ static const value_string diameter_3gpp_rat_type_vals[] = {
     { 6, "EUTRAN (WB-E-UTRAN)" },
     { 7, "Virtual" },
     { 8, "EUTRAN-NB-IoT" },
+    { 9, "LTE-MT" },
+    { 10, "NR" },
+    { 51, "NG-RAN" },
     { 101, "IEEE 802.16e" },
     { 102, "3GPP2 eHRPD" },
     { 103, "3GPP2 HRPD" },
@@ -1413,10 +1416,8 @@ static int
 dissect_diameter_3gpp_mbms_abs_time_ofmbms_data_tfer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
     int offset = 0;
-    const gchar *time_str;
 
-    time_str = tvb_ntp_fmt_ts(tvb, offset);
-    proto_tree_add_string(tree, hf_diameter_3gpp_mbms_abs_time_ofmbms_data_tfer, tvb, offset, 8, time_str);
+    proto_tree_add_item(tree, hf_diameter_3gpp_mbms_abs_time_ofmbms_data_tfer, tvb, offset, 8, ENC_TIME_NTP | ENC_BIG_ENDIAN);
     offset+=8;
 
     return offset;
@@ -1832,6 +1833,7 @@ dissect_diameter_3gpp_ulr_flags(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
 {
     static const int *flags[] = {
         &hf_diameter_3gpp_ulr_flags_spare_bits,
+        &hf_diameter_3gpp_ulr_flags_bit8,
         &hf_diameter_3gpp_ulr_flags_bit7,
         &hf_diameter_3gpp_ulr_flags_bit6,
         &hf_diameter_3gpp_ulr_flags_bit5,
@@ -1896,7 +1898,7 @@ static int
 dissect_diameter_3gpp_dsr_flags(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 {
     static const int *flags[] = {
-        &hf_diameter_3gpp_dsr_flags_spare_bits,
+        &hf_diameter_3gpp_dsr_flags_bit31,
         &hf_diameter_3gpp_dsr_flags_bit30,
         &hf_diameter_3gpp_dsr_flags_bit29,
         &hf_diameter_3gpp_dsr_flags_bit28,
@@ -4117,9 +4119,14 @@ proto_register_diameter_3gpp(void)
             FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000080,
             NULL, HFILL }
         },
+        { &hf_diameter_3gpp_ulr_flags_bit8,
+            { "Dual-Registration-5G-Indicator", "diameter.3gpp.ulr_flags_bit8",
+            FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000100,
+            NULL, HFILL }
+        },
         { &hf_diameter_3gpp_ulr_flags_spare_bits,
             { "Spare", "diameter.3gpp.ulr_flags_spare",
-            FT_UINT32, BASE_HEX, NULL, 0xFFFFFF00,
+            FT_UINT32, BASE_HEX, NULL, 0xFFFFFE00,
             NULL, HFILL }
         },
         { &hf_diameter_3gpp_ula_flags,
@@ -4302,9 +4309,9 @@ proto_register_diameter_3gpp(void)
             FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x40000000,
             NULL, HFILL }
         },
-        { &hf_diameter_3gpp_dsr_flags_spare_bits,
-            { "Spare", "diameter.3gpp.dsr_flags_spare",
-            FT_UINT32, BASE_HEX, NULL, 0x80000000,
+        { &hf_diameter_3gpp_dsr_flags_bit31,
+            { "Service-Gap-Time-Withdrawal", "diameter.3gpp.dsr_flags_bit31",
+            FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x80000000,
             NULL, HFILL }
         },
         { &hf_diameter_3gpp_dsa_flags,
@@ -4665,7 +4672,7 @@ proto_register_diameter_3gpp(void)
         },
         { &hf_diameter_3gpp_mbms_abs_time_ofmbms_data_tfer,
             { "Absolute Time of MBMS Data Transfer", "diameter.3gpp.mbms_abs_time_ofmbms_data_tfer",
-            FT_STRING, BASE_NONE, NULL, 0x0,
+            FT_ABSOLUTE_TIME, ABSOLUTE_TIME_NTP_UTC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_diameter_3gpp_udp_port ,
@@ -5604,7 +5611,7 @@ proto_register_diameter_3gpp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

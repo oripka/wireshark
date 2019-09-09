@@ -2485,7 +2485,7 @@ tvb_format_stringzpad_wsp(wmem_allocator_t* allocator, tvbuff_t *tvb, const gint
  */
 
 /*
- * Given a wmem scope, tvbuff, an offset, and a length, treat the string
+ * Given a wmem scope, a tvbuff, an offset, and a length, treat the string
  * of bytes referred to by the tvbuff, offset, and length as an ASCII string,
  * with all bytes with the high-order bit set being invalid, and return a
  * pointer to a UTF-8 string, allocated using the wmem scope.
@@ -2500,6 +2500,28 @@ tvb_get_ascii_string(wmem_allocator_t *scope, tvbuff_t *tvb, gint offset, gint l
 
 	ptr = ensure_contiguous(tvb, offset, length);
 	return get_ascii_string(scope, ptr, length);
+}
+
+/*
+ * Given a wmem scope, a tvbuff, an offset, a length, and a translation table,
+ * treat the string of bytes referred to by the tvbuff, offset, and length
+ * as a string encoded using one octet per character, with octets with the
+ * high-order bit clear being mapped by the translation table to 2-byte
+ * Unicode Basic Multilingual Plane characters (including REPLACEMENT
+ * CHARACTER) and octets with the high-order bit set being mapped to
+ * REPLACEMENT CHARACTER, and return a pointer to a UTF-8 string,
+ * allocated using the wmem scope.
+ *
+ * Octets with the highest bit set will be converted to the Unicode
+ * REPLACEMENT CHARACTER.
+ */
+static guint8 *
+tvb_get_iso_646_string(wmem_allocator_t *scope, tvbuff_t *tvb, gint offset, gint length, const gunichar2 table[0x80])
+{
+	const guint8  *ptr;
+
+	ptr = ensure_contiguous(tvb, offset, length);
+	return get_iso_646_string(scope, ptr, length, table);
 }
 
 /*
@@ -2522,7 +2544,7 @@ tvb_get_utf_8_string(wmem_allocator_t *scope, tvbuff_t *tvb, const gint offset, 
 }
 
 /*
- * Given a wmem scope, tvbuff, an offset, and a length, treat the string
+ * Given a wmem scope, a tvbuff, an offset, and a length, treat the string
  * of bytes referred to by the tvbuff, the offset, and the length as a
  * raw string, and return a pointer to that string, allocated using the
  * wmem scope. This means a null is appended at the end, but no replacement
@@ -2870,6 +2892,10 @@ tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const gint offset,
 		strptr = tvb_get_string_unichar2(scope, tvb, offset, length, charset_table_cp866);
 		break;
 
+	case ENC_ISO_646_BASIC:
+		strptr = tvb_get_iso_646_string(scope, tvb, offset, length, charset_table_iso_646_basic);
+		break;
+
 	case ENC_3GPP_TS_23_038_7BITS:
 		{
 			gint bit_offset  = offset << 3;
@@ -2948,6 +2974,20 @@ tvb_get_ascii_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, gint offset, gint 
 	if (lengthp)
 		*lengthp = size;
 	return get_ascii_string(scope, ptr, size);
+}
+
+static guint8 *
+tvb_get_iso_646_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, gint offset, gint *lengthp, const gunichar2 table[0x80])
+{
+	guint	       size;
+	const guint8  *ptr;
+
+	size = tvb_strsize(tvb, offset);
+	ptr  = ensure_contiguous(tvb, offset, size);
+	/* XXX, conversion between signed/unsigned integer */
+	if (lengthp)
+		*lengthp = size;
+	return get_iso_646_string(scope, ptr, size, table);
 }
 
 static guint8 *
@@ -3228,6 +3268,18 @@ tvb_get_stringz_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const gint offset, g
 		strptr = tvb_get_stringz_unichar2(scope, tvb, offset, lengthp, charset_table_cp437);
 		break;
 
+	case ENC_CP855:
+		strptr = tvb_get_stringz_unichar2(scope, tvb, offset, lengthp, charset_table_cp855);
+		break;
+
+	case ENC_CP866:
+		strptr = tvb_get_stringz_unichar2(scope, tvb, offset, lengthp, charset_table_cp866);
+		break;
+
+	case ENC_ISO_646_BASIC:
+		strptr = tvb_get_iso_646_stringz(scope, tvb, offset, lengthp, charset_table_iso_646_basic);
+		break;
+
 	case ENC_3GPP_TS_23_038_7BITS:
 		REPORT_DISSECTOR_BUG("TS 23.038 7bits has no null character and doesn't support null-terminated strings");
 		break;
@@ -3389,6 +3441,38 @@ tvb_get_nstringz0(tvbuff_t *tvb, const gint offset, const guint bufsize, guint8*
 	else {
 		return len;
 	}
+}
+
+/*
+ * Given a tvbuff, an offset into the tvbuff, a buffer, and a buffer size,
+ * extract as many raw bytes from the tvbuff, starting at the offset,
+ * as 1) are available in the tvbuff and 2) will fit in the buffer, leaving
+ * room for a terminating NUL.
+ */
+gint
+tvb_get_raw_bytes_as_string(tvbuff_t *tvb, const gint offset, char *buffer, size_t bufsize)
+{
+	gint     len = 0;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	/* There must be room for the string and the terminating NUL. */
+	DISSECTOR_ASSERT(bufsize > 0);
+
+	DISSECTOR_ASSERT(bufsize - 1 < G_MAXINT);
+
+	len = tvb_captured_length_remaining(tvb, offset);
+	if (len <= 0) {
+		buffer[0] = '\0';
+		return 0;
+	}
+	if (len > (gint)(bufsize - 1))
+		len = (gint)(bufsize - 1);
+
+	/* Copy the string to buffer */
+	tvb_memcpy(tvb, buffer, offset, len);
+	buffer[len] = '\0';
+	return len;
 }
 
 gboolean tvb_ascii_isprint(tvbuff_t *tvb, const gint offset, const gint length)
@@ -4026,7 +4110,7 @@ tvb_get_varint(tvbuff_t *tvb, guint offset, guint maxlen, guint64 *value, const 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

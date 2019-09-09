@@ -4,7 +4,7 @@
 # service names, e.g. TCP port 80 -> http.
 #
 # It is subject to copyright and being used with IANA's permission:
-# http://www.wireshark.org/lists/wireshark-dev/200708/msg00160.html
+# https://www.wireshark.org/lists/wireshark-dev/200708/msg00160.html
 #
 # The original file can be found at:
 # http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.csv
@@ -1913,7 +1913,6 @@ drwcs		2193/tcp/udp	# Dr.Web Enterprise Management Service
 mnp-exchange	2197/tcp/udp	# MNP data exchange
 onehome-remote	2198/tcp/udp	# OneHome Remote Access
 onehome-help	2199/tcp/udp	# OneHome Service Port
-ici		2200/tcp/udp	# ICI
 ats		2201/tcp/udp	# Advanced Training System Program
 imtc-map	2202/tcp/udp	# Int. Multimedia Teleconferencing Cosortium
 b2-runtime	2203/tcp/udp	# b2 Runtime Protocol
@@ -2170,7 +2169,7 @@ wago-io-system	2455/tcp/udp	# WAGO-IO-SYSTEM
 altav-remmgt	2456/tcp/udp
 rapido-ip	2457/tcp/udp	# Rapido_IP
 griffin		2458/tcp/udp
-community	2459/tcp/udp	# Community
+xrpl		2459/tcp/udp	# Community
 ms-theater	2460/tcp/udp
 qadmifoper	2461/tcp/udp
 qadmifevent	2462/tcp/udp
@@ -5183,6 +5182,7 @@ http-alt	8080/tcp/udp	# HTTP Alternate (see port 80)
 sunproxyadmin	8081/tcp/udp	# Sun Proxy Admin Service
 us-cli		8082/tcp/udp	# Utilistor (Client)
 us-srv		8083/tcp/udp	# Utilistor (Server)
+websnp		8084/tcp	# Snarl Network Protocol over HTTP
 d-s-n		8086/tcp/udp	# Distributed SCADA Networking Rendezvous Port
 simplifymedia	8087/tcp/udp	# Simplify Media SPP Protocol
 radan-http	8088/tcp/udp	# Radan HTTP
@@ -5310,6 +5310,7 @@ mc-appserver	8763/tcp/udp	# MC-APPSERVER
 openqueue	8764/tcp/udp	# OPENQUEUE
 ultraseek-http	8765/tcp/udp	# Ultraseek HTTP
 amcs		8766/tcp/udp	# Agilent Connectivity Service
+core-of-source	8767/tcp	# Online mobile multiplayer game
 dpap		8770/tcp/udp	# Digital Photo Access Protocol (iPhoto)
 uec		8778/tcp	# Stonebranch Universal Enterprise Controller
 msgclnt		8786/tcp/udp	# Message Client
@@ -5849,6 +5850,7 @@ athand-mmp	20999/tcp/udp	# At Hand MMP
 irtrans		21000/tcp/udp	# IRTrans Control
 notezilla-lan	21010/tcp	# Notezilla.Lan Server
 trinket-agent	21212/tcp	# Distributed artificial intelligence
+cohesity-agent	21213/tcp	# Cohesity backup agents
 aigairserver	21221/tcp	# Services for Air Server
 rdm-tfs		21553/tcp	# Raima RDM TFS
 dfserver	21554/tcp/udp	# MineScape Design File Server

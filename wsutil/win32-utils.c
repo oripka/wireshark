@@ -190,7 +190,7 @@ win32strexception(DWORD exception)
 }
 
 // This appears to be the closest equivalent to SIGPIPE on Windows.
-// https://blogs.msdn.microsoft.com/oldnewthing/20131209-00/?p=2433
+// https://devblogs.microsoft.com/oldnewthing/?p=2433
 // https://stackoverflow.com/a/53214/82195
 
 static void win32_kill_child_on_exit(HANDLE child_handle) {
@@ -261,7 +261,7 @@ BOOL win32_create_process(const char *application_name, const char *command_line
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 4

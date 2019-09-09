@@ -7133,6 +7133,8 @@ dissect_dtap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
         (*dtap_msg_fcn)(tvb, dtap_tree, pinfo, offset, len - offset);
     }
 
+    sccp_assoc = NULL;
+
     return len;
 }
 
@@ -8518,7 +8520,7 @@ proto_reg_handoff_gsm_a_dtap(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

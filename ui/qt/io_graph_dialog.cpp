@@ -29,7 +29,7 @@
 #include <wsutil/report_message.h>
 
 #include <ui/qt/utils/tango_colors.h> //provides some default colors
-#include <ui/qt/widgets/copy_from_profile_menu.h>
+#include <ui/qt/widgets/copy_from_profile_button.h>
 #include "ui/qt/widgets/wireshark_file_dialog.h"
 
 #include <QClipboard>
@@ -47,7 +47,7 @@
 // Bugs and uncertainties:
 // - Regular (non-stacked) bar graphs are drawn on top of each other on the Z axis.
 //   The QCP forum suggests drawing them side by side:
-//   http://www.qcustomplot.com/index.php/support/forum/62
+//   https://www.qcustomplot.com/index.php/support/forum/62
 // - We retap and redraw more than we should.
 // - Smoothing doesn't seem to match GTK+
 // - Closing the color picker on macOS sends the dialog to the background.
@@ -326,12 +326,9 @@ IOGraphDialog::IOGraphDialog(QWidget &parent, CaptureFile &cf) :
     QPushButton *copy_bt = ui->buttonBox->addButton(tr("Copy"), QDialogButtonBox::ActionRole);
     connect (copy_bt, SIGNAL(clicked()), this, SLOT(copyAsCsvClicked()));
 
-    QPushButton *copy_from_bt = ui->buttonBox->addButton(tr("Copy from"), QDialogButtonBox::ActionRole);
-    CopyFromProfileMenu *copy_from_menu = new CopyFromProfileMenu("io_graphs", copy_from_bt);
-    copy_from_bt->setMenu(copy_from_menu);
-    copy_from_bt->setToolTip(tr("Copy graphs from another profile."));
-    copy_from_bt->setEnabled(copy_from_menu->haveProfiles());
-    connect(copy_from_menu, SIGNAL(triggered(QAction *)), this, SLOT(copyFromProfile(QAction *)));
+    CopyFromProfileButton * copy_button = new CopyFromProfileButton(this, "io_graphs", tr("Copy graphs from another profile."));
+    ui->buttonBox->addButton(copy_button, QDialogButtonBox::ActionRole);
+    connect(copy_button, &CopyFromProfileButton::copyProfile, this, &IOGraphDialog::copyFromProfile);
 
     QPushButton *close_bt = ui->buttonBox->button(QDialogButtonBox::Close);
     if (close_bt) {
@@ -430,9 +427,8 @@ IOGraphDialog::~IOGraphDialog()
     ui = NULL;
 }
 
-void IOGraphDialog::copyFromProfile(QAction *action)
+void IOGraphDialog::copyFromProfile(QString filename)
 {
-    QString filename = action->data().toString();
     guint orig_data_len = iog_uat_->raw_data->len;
 
     gchar *err = NULL;
@@ -860,7 +856,7 @@ void IOGraphDialog::getGraphInfo()
                     bars->moveBelow(prev_bars);
                     prev_bars = bars;
                 }
-                if (iog->visible()) {
+                if (iog->visible() && iog->maxInterval() >= 0) {
                     double iog_start = iog->startOffset();
                     if (start_time_ == 0.0 || iog_start < start_time_) {
                         start_time_ = iog_start;
@@ -911,7 +907,7 @@ void IOGraphDialog::updateLegend()
     }
 
     // Differing labels. Create a legend with a Title label at top.
-    // Legend Title thanks to: http://www.qcustomplot.com/index.php/support/forum/443
+    // Legend Title thanks to: https://www.qcustomplot.com/index.php/support/forum/443
     QCPStringLegendItem* legendTitle = qobject_cast<QCPStringLegendItem*>(iop->legend->elementAt(0));
     if (legendTitle == NULL) {
         legendTitle = new QCPStringLegendItem(iop->legend, QString(""));

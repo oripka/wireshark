@@ -24,14 +24,14 @@
 #define UNREPL 0xFFFD
 
 /*
- * Wikipedia's "Character encoding" template, giving a pile of character encodings and
- * Wikipedia pages for them:
+ * Wikipedia's "Character encoding" template, giving a pile of character
+ * encodings and Wikipedia pages for them:
  *
  *    http://en.wikipedia.org/wiki/Template:Character_encoding
  *
  * Unicode character encoding model:
  *
- *    http://www.unicode.org/reports/tr17/
+ *    https://www.unicode.org/reports/tr17/
  *
  * International Components for Unicode character set mapping tables:
  *
@@ -39,7 +39,7 @@
  *
  * MSDN information on code pages:
  *
- *    http://msdn.microsoft.com/en-us/library/dd317752(v=VS.85).aspx
+ *    https://docs.microsoft.com/en-us/windows/win32/intl/code-pages
  *
  * ASCII-based code pages, from IBM:
  *
@@ -48,6 +48,10 @@
  * EBCDIC code pages, from IBM:
  *
  *    http://www-03.ibm.com/systems/i/software/globalization/codepages.html
+ *
+ * The IBM pages are no longer available; the versions archived on the
+ * Wayback Machine are, but the links to the PDF and text versions of
+ * the code pages don't all work (do *any* work?).
  */
 
 /*
@@ -71,6 +75,59 @@ get_ascii_string(wmem_allocator_t *scope, const guint8 *ptr, gint length)
 
         if (ch < 0x80)
             wmem_strbuf_append_c(str, ch);
+        else
+            wmem_strbuf_append_unichar(str, UNREPL);
+        ptr++;
+        length--;
+    }
+
+    return (guint8 *) wmem_strbuf_finalize(str);
+}
+
+/*
+ * ISO 646 "Basic code table".
+ */
+const gunichar2 charset_table_iso_646_basic[0x80] = {
+    0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,        /* 0x00 -      */
+    0x0008, 0x0009, 0x000a, 0x000b, 0x000c, 0x000d, 0x000e, 0x000f,        /*      - 0x0F */
+    0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017,        /* 0x10 -      */
+    0x0018, 0x0019, 0x001a, 0x001b, 0x001c, 0x001d, 0x001e, 0x001f,        /*      - 0x1F */
+    0x0020, 0x0021, 0x0022, UNREPL, UNREPL, 0x0025, 0x0026, 0x0027,        /* 0x20 -      */
+    0x0028, 0x0029, 0x002a, 0x002b, 0x002c, 0x002d, 0x002e, 0x002f,        /*      - 0x2F */
+    0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037,        /* 0x30 -      */
+    0x0038, 0x0039, 0x003a, 0x003b, 0x003c, 0x003d, 0x003e, 0x003f,        /*      - 0x3F */
+    UNREPL, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047,        /* 0x40 -      */
+    0x0048, 0x0049, 0x004a, 0x004b, 0x004c, 0x004d, 0x004e, 0x004f,        /*      - 0x4F */
+    0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057,        /* 0x50 -      */
+    0x0058, 0x0059, 0x005a, UNREPL, UNREPL, UNREPL, UNREPL, 0x005f,        /*      - 0x5F */
+    UNREPL, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067,        /* 0x60 -      */
+    0x0068, 0x0069, 0x006a, 0x006b, 0x006c, 0x006d, 0x006e, 0x006f,        /*      - 0x6F */
+    0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077,        /* 0x70 -      */
+    0x0078, 0x0079, 0x007a, UNREPL, UNREPL, UNREPL, UNREPL, 0x007f,        /*      - 0x7F */
+};
+
+/*
+ * Given a wmem scope, a pointer, a length, and a translation table,
+ * treat the string of bytes referred to by the pointer and length as a
+ * string encoded using one octet per character, with octets with the
+ * high-order bit clear being mapped by the translation table to 2-byte
+ * Unicode Basic Multilingual Plane characters (including REPLACEMENT
+ * CHARACTER) and octets with the high-order bit set being mapped to
+ * REPLACEMENT CHARACTER, and return a pointer to a UTF-8 string,
+ * allocated using the wmem scope.
+ */
+guint8 *
+get_iso_646_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const gunichar2 table[0x80])
+{
+    wmem_strbuf_t *str;
+
+    str = wmem_strbuf_sized_new(scope, length+1, 0);
+
+    while (length > 0) {
+        guint8 ch = *ptr;
+
+        if (ch < 0x80)
+            wmem_strbuf_append_unichar(str, table[ch]);
         else
             wmem_strbuf_append_unichar(str, UNREPL);
         ptr++;
@@ -119,7 +176,7 @@ get_8859_1_string(wmem_allocator_t *scope, const guint8 *ptr, gint length)
  * Basic Multilingual Plane.
  */
 
-/* ISO-8859-2 (http://en.wikipedia.org/wiki/ISO/IEC_8859-2#Code_page_layout) */
+/* ISO-8859-2 (https://en.wikipedia.org/wiki/ISO/IEC_8859-2#Code_page_layout) */
 const gunichar2 charset_table_iso_8859_2[0x80] = {
     0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x0085, 0x0086, 0x0087,        /* 0x80 -      */
     0x0088, 0x0089, 0x008a, 0x008b, 0x008c, 0x008d, 0x008e, 0x008f,        /*      - 0x8F */
@@ -179,7 +236,7 @@ const gunichar2 charset_table_iso_8859_4[0x80] = {
     0x00f8, 0x0173, 0x00fa, 0x00fb, 0x00fc, 0x0169, 0x016b, 0x02d9,        /*      - 0xFF */
 };
 
-/* ISO-8859-5 (http://en.wikipedia.org/wiki/ISO/IEC_8859-5#Code_page_layout) */
+/* ISO-8859-5 (https://en.wikipedia.org/wiki/ISO/IEC_8859-5#Code_page_layout) */
 const gunichar2 charset_table_iso_8859_5[0x80] = {
     0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x0085, 0x0086, 0x0087,        /* 0x80 -      */
     0x0088, 0x0089, 0x008a, 0x008b, 0x008c, 0x008d, 0x008e, 0x008f,        /*      - 0x8F */
@@ -259,7 +316,7 @@ const gunichar2 charset_table_iso_8859_8[0x80] = {
     0x05e8, 0x05e9, 0x05ea, UNREPL, UNREPL, 0x200e, 0x200f, UNREPL,        /*      - 0xFF */
 };
 
-/* ISO-8859-9 (http://en.wikipedia.org/wiki/ISO/IEC_8859-9#Code_page_layout) */
+/* ISO-8859-9 (https://en.wikipedia.org/wiki/ISO/IEC_8859-9#Code_page_layout) */
 const gunichar2 charset_table_iso_8859_9[0x80] = {
     0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x0085, 0x0086, 0x0087,        /* 0x80 -      */
     0x0088, 0x0089, 0x008a, 0x008b, 0x008c, 0x008d, 0x008e, 0x008f,        /*      - 0x8F */
@@ -403,7 +460,7 @@ const gunichar2 charset_table_iso_8859_16[0x80] = {
  * Windows-1250
  *
  * See:
- *     https://en.wikipedia.org/wiki/Windows-1250)
+ *     httpss://en.wikipedia.org/wiki/Windows-1250)
  *     https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1250.TXT
  */
 const gunichar2 charset_table_cp1250[0x80] = {
@@ -577,11 +634,11 @@ const gunichar2 charset_table_cp866[0x80] = {
 };
 
 /*
- * Given a wmem scope, a pointer, a length, and a translation table,
- * treat the string of bytes referred to by the pointer and length as a
- * string encoded using one octet per character, with octets with the
- * high-order bit clear being ASCII and octets with the high-order bit
- * set being mapped by the translation table to 2-byte Unicode Basic
+ * Given a wmem scope, a pointer, a length, and a translation table with
+ * 128 entries, treat the string of bytes referred to by the pointer and
+ * length as a string encoded using one octet per character, with octets
+ * with the high-order bit clear being ASCII and octets with the high-order
+ * bit set being mapped by the translation table to 2-byte Unicode Basic
  * Multilingual Plane characters (including REPLACEMENT CHARACTER), and
  * return a pointer to a UTF-8 string, allocated using the wmem scope.
  */
@@ -658,10 +715,7 @@ get_ucs_2_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const 
  *
  * Specify length in bytes.
  *
- * XXX - should map surrogate errors to REPLACEMENT CHARACTERs (0xFFFD).
- * XXX - should map code points > 10FFFF to REPLACEMENT CHARACTERs.
- * XXX - if there are an odd number of bytes, should put a
- * REPLACEMENT CHARACTER at the end.
+ * XXX - should map invalid Unicode characters to REPLACEMENT CHARACTERs.
  */
 guint8 *
 get_utf_16_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const guint encoding)
@@ -688,11 +742,11 @@ get_utf_16_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const
             if (i + 1 >= length) {
                 /*
                  * Oops, string ends with a lead surrogate.
-                 * Ignore this for now.
-                 * XXX - insert "substitute" character?
-                 * Report the error in some other
-                 * fashion?
+                 *
+                 * Insert a REPLACEMENT CHARACTER to mark the error,
+                 * and quit.
                  */
+                wmem_strbuf_append_unichar(strbuf, UNREPL);
                 break;
             }
             lead_surrogate = uchar2;
@@ -707,23 +761,22 @@ get_utf_16_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const
             } else {
                 /*
                  * Not a trail surrogate.
-                 * Ignore the entire pair.
-                 * XXX - insert "substitute" character?
-                 * Report the error in some other
-                 * fashion?
+                 *
+                 * Insert a REPLACEMENT CHARACTER to mark the error,
+                 * and continue;
                  */
-                 ;
+                wmem_strbuf_append_unichar(strbuf, UNREPL);
             }
         } else {
             if (IS_TRAIL_SURROGATE(uchar2)) {
                 /*
                  * Trail surrogate without a preceding
-                 * lead surrogate.  Ignore it.
-                 * XXX - insert "substitute" character?
-                 * Report the error in some other
-                 * fashion?
+                 * lead surrogate.
+                 *
+                 * Insert a REPLACEMENT CHARACTER to mark the error,
+                 * and continue;
                  */
-                ;
+                wmem_strbuf_append_unichar(strbuf, UNREPL);
             } else {
                 /*
                  * Non-surrogate; just append it.
@@ -734,9 +787,12 @@ get_utf_16_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const
     }
 
     /*
-     * XXX - if i < length, this means we were handed an odd
-     * number of bytes, so we're not a valid UTF-16 string.
+     * If i < length, this means we were handed an odd number of bytes,
+     * so we're not a valid UTF-16 string; insert a REPLACEMENT CHARACTER
+     * to mark the error.
      */
+    if (i < length)
+        wmem_strbuf_append_unichar(strbuf, UNREPL);
     return (guint8 *) wmem_strbuf_finalize(strbuf);
 }
 
@@ -778,7 +834,7 @@ get_ucs_4_string(wmem_allocator_t *scope, const guint8 *ptr, gint length, const 
      * of bytes that's not a multiple of 4, so we're not a valid
      * UCS-4 string.
      */
-    return (gchar *)wmem_strbuf_finalize(strbuf);
+    return (guint8 *)wmem_strbuf_finalize(strbuf);
 }
 
 /*
@@ -1006,7 +1062,7 @@ get_ascii_7bits_string(wmem_allocator_t *scope, const guint8 *ptr,
 }
 
 /* ASCII/EBCDIC conversion tables from
- * http://www.room42.com/store/computer_center/code_tables.shtml
+ * https://web.archive.org/web/20060813174742/http://www.room42.com/store/computer_center/code_tables.shtml
  */
 #if 0
 static const guint8 ASCII_translate_EBCDIC [ 256 ] = {
@@ -1196,10 +1252,10 @@ const gunichar2 charset_table_ebcdic_cp037[256] = {
 };
 
 /*
- * Given a wmem scope, a pointer, a length, and a translation table,
- * treat the string of bytes referred to by the pointer and length as a
- * string encoded using one octet per character, with octets being
- * mapped by the translation table to 2-byte Unicode Basic Multilingual
+ * Given a wmem scope, a pointer, a length, and a translation table with
+ * 256 entries, treat the string of bytes referred to by the pointer and
+ * length as a string encoded using one octet per character, with octets
+ * being mapped by the translation table to 2-byte Unicode Basic Multilingual
  * Plane characters (including REPLACEMENT CHARACTER), and return a
  * pointer to a UTF-8 string, allocated using the wmem scope.
  */
@@ -1222,7 +1278,7 @@ get_nonascii_unichar2_string(wmem_allocator_t *scope, const guint8 *ptr, gint le
 }
 
 /* T.61 to UTF-8 conversion table from OpenLDAP project
- * http://www.openldap.org/devel/gitweb.cgi?p=openldap.git;a=blob;f=libraries/libldap/t61.c;hb=HEAD
+ * https://www.openldap.org/devel/gitweb.cgi?p=openldap.git;a=blob;f=libraries/libldap/t61.c;hb=HEAD
  */
 static const gunichar2 t61_tab[] = {
     0x000, 0x001, 0x002, 0x003, 0x004, 0x005, 0x006, 0x007,
@@ -1516,7 +1572,7 @@ get_t61_string(wmem_allocator_t *scope, const guint8 *ptr, gint length)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

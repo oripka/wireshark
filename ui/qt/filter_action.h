@@ -15,6 +15,7 @@
 #include <wsutil/utf8_entities.h>
 
 #include <QAction>
+#include <QActionGroup>
 
 class FilterAction : public QAction
 {
@@ -29,6 +30,7 @@ public:
         ActionPrepare,
         ActionWebLookup
     };
+    Q_ENUM(Action)
 
     /* Action type - says what to do with the filter */
     enum ActionType {
@@ -39,6 +41,7 @@ public:
         ActionTypeAndNot,
         ActionTypeOrNot
     };
+    Q_ENUM(ActionType)
 
     /* Action direction */
     enum ActionDirection {
@@ -69,6 +72,10 @@ public:
     static const QList<ActionDirection> actionDirections();
     static const QString actionDirectionName(ActionDirection direction);
 
+    static QActionGroup * createFilterGroup(QString filter, bool prepare, bool enabled, QWidget * parent);
+    static QMenu * createFilterMenu(FilterAction::Action act, QString filter, bool enabled, QWidget * parent);
+    static QAction * copyFilterAction(QString filter, QWidget *par);
+
 signals:
 
 public slots:
@@ -77,6 +84,10 @@ private:
     Action action_;
     ActionType type_;
     ActionDirection direction_;
+
+private slots:
+    void groupTriggered(QAction *);
+    void copyActionTriggered();
 
 };
 

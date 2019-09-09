@@ -27,8 +27,9 @@ S<[ B<-g> ]>
 S<[ B<-h> ]>
 S<[ B<-H> E<lt>input hosts fileE<gt> ]>
 S<[ B<-i> E<lt>capture interfaceE<gt>|- ]>
-S<[ B<-j> E<lt>protocol match filterE<gt> ]>
 S<[ B<-I> ]>
+S<[ B<-j> E<lt>protocol match filterE<gt> ]>
+S<[ B<-J> E<lt>protocol match filterE<gt> ]>
 S<[ B<-K> E<lt>keytabE<gt> ]>
 S<[ B<-l> ]>
 S<[ B<-L> ]>
@@ -567,7 +568,7 @@ Read a list of entries from a "hosts" file, which will then be written
 to a capture file.  Implies B<-W n>. Can be called multiple times.
 
 The "hosts" file format is documented at
-L<http://en.wikipedia.org/wiki/Hosts_(file)>.
+L<https://en.wikipedia.org/wiki/Hosts_(file)>.
 
 =item -i  E<lt>capture interfaceE<gt> | -
 
@@ -1310,10 +1311,11 @@ on those calls that match that filter.
 Example: B<-z "h225,srt,ip.addr==1.2.3.4"> will only collect stats for
 ITU-T H.225 RAS packets exchanged by the host at IP address 1.2.3.4 .
 
-=item B<-z> hosts[,ipv4][,ipv6]
+=item B<-z> hosts[,ip][,ipv4][,ipv6]
 
 Dump any collected IPv4 and/or IPv6 addresses in "hosts" format.  Both IPv4
-and IPv6 addresses are dumped by default.
+and IPv6 addresses are dumped by default. "ip" argument will dump only ipv4
+addresses.
 
 Addresses are collected from a number of sources, including standard "hosts"
 files and captured traffic.
@@ -2015,11 +2017,12 @@ encoded as UTF-16LE.
 
 =over 4
 
-=item WIRESHARK_APPDATA
+=item WIRESHARK_CONFIG_DIR
 
-On Windows, Wireshark normally stores all application data in %APPDATA% or
-%USERPROFILE%.  You can override the default location by exporting this
-environment variable to specify an alternate location.
+This environment variable overrides the location of personal configuration
+files. It defaults to F<$XDG_CONFIG_HOME/wireshark> (or F<$HOME/.wireshark> if
+the former is missing while the latter exists). On Windows,
+F<%APPDATA%\Wireshark> is used instead. Available since Wireshark 3.0.
 
 =item WIRESHARK_DEBUG_WMEM_OVERRIDE
 

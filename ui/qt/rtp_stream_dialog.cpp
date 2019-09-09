@@ -110,9 +110,15 @@ public:
         if (calc.problem) {
             setText(status_col_, UTF8_BULLET);
             setTextAlignment(status_col_, Qt::AlignCenter);
+            QColor bgColor(ws_css_warn_background);
+            QColor textColor(ws_css_warn_text);
             for (int i = 0; i < columnCount(); i++) {
-                setBackgroundColor(i, ws_css_warn_background);
-                setTextColor(i, ws_css_warn_text);
+                QBrush bgBrush = background(i);
+                bgBrush.setColor(bgColor);
+                setBackground(i, bgBrush);
+                QBrush fgBrush = foreground(i);
+                fgBrush.setColor(textColor);
+                setForeground(i, fgBrush);
             }
         }
 
@@ -323,13 +329,13 @@ void RtpStreamDialog::tapMarkPacket(rtpstream_tapinfo_t *tapinfo, frame_data *fd
 
 void RtpStreamDialog::updateStreams()
 {
-    GList *cur_stream = g_list_nth(tapinfo_.strinfo_list, ui->streamTreeWidget->topLevelItemCount());
+    GList *cur_stream = g_list_nth(tapinfo_.strinfo_list, static_cast<guint>(ui->streamTreeWidget->topLevelItemCount()));
 
     // Add any missing items
     while (cur_stream && cur_stream->data) {
-        rtpstream_info_t *stream_info = (rtpstream_info_t*) cur_stream->data;
+        rtpstream_info_t *stream_info = gxx_list_data(rtpstream_info_t*, cur_stream);
         new RtpStreamTreeWidgetItem(ui->streamTreeWidget, stream_info);
-        cur_stream = g_list_next(cur_stream);
+        cur_stream = gxx_list_next(cur_stream);
     }
 
     // Recalculate values

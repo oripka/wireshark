@@ -22,7 +22,9 @@
 #include <ui/qt/widgets/stock_icon_tool_button.h>
 #include <ui/qt/widgets/syntax_line_edit.h>
 #include <ui/qt/utils/wireshark_mime_data.h>
+#include <ui/qt/utils/qt_ui_utils.h>
 #include <ui/qt/models/pref_models.h>
+#include <ui/qt/filter_action.h>
 #include "wireshark_application.h"
 
 #include <QAction>
@@ -98,7 +100,7 @@ DisplayFilterEdit::DisplayFilterEdit(QWidget *parent, DisplayFilterEditType type
     if (type_ == DisplayFilterToApply) {
         clear_button_ = new StockIconToolButton(this, "x-filter-clear");
         clear_button_->setCursor(Qt::ArrowCursor);
-        clear_button_->setToolTip(QString());
+        clear_button_->setToolTip(tr("Clear display filter"));
         clear_button_->setIconSize(QSize(14, 14));
         clear_button_->setStyleSheet(
                 "QToolButton {"
@@ -118,7 +120,7 @@ DisplayFilterEdit::DisplayFilterEdit(QWidget *parent, DisplayFilterEditType type
         apply_button_ = new StockIconToolButton(this, "x-filter-apply");
         apply_button_->setCursor(Qt::ArrowCursor);
         apply_button_->setEnabled(false);
-        apply_button_->setToolTip(tr("Apply this filter string to the display."));
+        apply_button_->setToolTip(tr("Apply display filter"));
         apply_button_->setIconSize(QSize(24, 14));
         apply_button_->setStyleSheet(
                 "QToolButton {"
@@ -280,9 +282,9 @@ void DisplayFilterEdit::checkFilter(const QString& filter_text)
         bool enable_save_action = false;
         bool match = false;
 
-        for (GList *df_item = get_filter_list_first(DFILTER_LIST); df_item; df_item = g_list_next(df_item)) {
+        for (GList *df_item = get_filter_list_first(DFILTER_LIST); df_item; df_item = gxx_list_next(df_item)) {
             if (!df_item->data) continue;
-            filter_def *df_def = (filter_def *) df_item->data;
+            filter_def *df_def = gxx_list_data(filter_def *, df_item);
             if (!df_def->name || !df_def->strval) continue;
 
             if (filter_text.compare(df_def->strval) == 0) {
@@ -333,9 +335,9 @@ void DisplayFilterEdit::updateBookmarkMenu()
     connect(expr_action, &QAction::triggered, this, &DisplayFilterEdit::showExpressionPrefs);
     bb_menu->addSeparator();
 
-    for (GList *df_item = get_filter_list_first(DFILTER_LIST); df_item; df_item = g_list_next(df_item)) {
+    for (GList *df_item = get_filter_list_first(DFILTER_LIST); df_item; df_item = gxx_list_next(df_item)) {
         if (!df_item->data) continue;
-        filter_def *df_def = (filter_def *) df_item->data;
+        filter_def *df_def = gxx_list_data(filter_def *, df_item);
         if (!df_def->name || !df_def->strval) continue;
 
         int one_em = bb_menu->fontMetrics().height();
@@ -396,8 +398,8 @@ void DisplayFilterEdit::buildCompletionList(const QString &field_word)
             }
         }
     }
-    for (const GList *df_item = get_filter_list_first(DFILTER_LIST); df_item; df_item = g_list_next(df_item)) {
-        const filter_def *df_def = (filter_def *) df_item->data;
+    for (const GList *df_item = get_filter_list_first(DFILTER_LIST); df_item; df_item = gxx_constlist_next(df_item)) {
+        const filter_def *df_def = gxx_list_data(const filter_def *, df_item);
         if (!df_def || !df_def->strval) continue;
         QString saved_filter = df_def->strval;
 
@@ -491,9 +493,9 @@ void DisplayFilterEdit::removeFilter()
 
     QString remove_filter = ra->data().toString();
 
-    for (GList *df_item = get_filter_list_first(DFILTER_LIST); df_item; df_item = g_list_next(df_item)) {
+    for (GList *df_item = get_filter_list_first(DFILTER_LIST); df_item; df_item = gxx_list_next(df_item)) {
         if (!df_item->data) continue;
-        filter_def *df_def = (filter_def *) df_item->data;
+        filter_def *df_def = gxx_list_data(filter_def *, df_item);
         if (!df_def->name || !df_def->strval) continue;
 
         if (remove_filter.compare(df_def->strval) == 0) {
@@ -514,7 +516,7 @@ void DisplayFilterEdit::showFilters()
 
 void DisplayFilterEdit::showExpressionPrefs()
 {
-    emit showPreferencesDialog(PrefsModel::FILTER_BUTTONS_PREFERENCE_TREE_NAME);
+    emit showPreferencesDialog(PrefsModel::typeToString(PrefsModel::FilterButtons));
 }
 
 void DisplayFilterEdit::applyOrPrepareFilter()
@@ -615,63 +617,10 @@ void DisplayFilterEdit::createFilterTextDropMenu(QDropEvent *event, bool prepare
     if ( filterText.isEmpty() )
         return;
 
-    QMenu applyMenu(this);
+    FilterAction::Action filterAct = prepare ? FilterAction::ActionPrepare : FilterAction::ActionApply;
+    QMenu * applyMenu = FilterAction::createFilterMenu(filterAct, filterText, true, this);
 
-    QAction * selAction = applyMenu.addAction(tr("Selected"));
-    selAction->setData(QString("%1").arg(filterText));
-    selAction->setProperty("clear", qVariantFromValue(true));
-    connect(selAction, &QAction::triggered, this, &DisplayFilterEdit::dropActionMenuEvent);
-
-    QAction * notSelAction = applyMenu.addAction(tr("Not Selected"));
-    notSelAction->setData(QString("!(%1)").arg(filterText));
-    notSelAction->setProperty("clear", qVariantFromValue(true));
-    connect(notSelAction, &QAction::triggered, this, &DisplayFilterEdit::dropActionMenuEvent);
-
-    if ( this->text().length() > 0 )
-    {
-        QAction * andAction = applyMenu.addAction(tr(UTF8_HORIZONTAL_ELLIPSIS "and Selected"));
-        andAction->setData(QString("&& %1").arg(filterText));
-        connect(andAction, &QAction::triggered, this, &DisplayFilterEdit::dropActionMenuEvent);
-
-        QAction * orAction = applyMenu.addAction(tr(UTF8_HORIZONTAL_ELLIPSIS "or Selected"));
-        orAction->setData(QString("|| %1").arg(filterText));
-        connect(orAction, &QAction::triggered, this, &DisplayFilterEdit::dropActionMenuEvent);
-
-        QAction * andNotAction = applyMenu.addAction(tr(UTF8_HORIZONTAL_ELLIPSIS "and not Selected"));
-        andNotAction->setData(QString("&& !(%1)").arg(filterText));
-        connect(andNotAction, &QAction::triggered, this, &DisplayFilterEdit::dropActionMenuEvent);
-
-        QAction * orNotAction = applyMenu.addAction(tr(UTF8_HORIZONTAL_ELLIPSIS "or not Selected"));
-        orNotAction->setData(QString("|| !(%1)").arg(filterText));
-        connect(orNotAction, &QAction::triggered, this, &DisplayFilterEdit::dropActionMenuEvent);
-    }
-
-    foreach ( QAction * action, applyMenu.actions() )
-        action->setProperty("prepare", qVariantFromValue(prepare));
-
-    applyMenu.exec(this->mapToGlobal(event->pos()));
-
-}
-
-void DisplayFilterEdit::dropActionMenuEvent()
-{
-    QAction * sendAction = qobject_cast<QAction *>(sender());
-    if ( ! sendAction )
-        return;
-
-    QString value = sendAction->data().toString();
-    bool prepare = sendAction->property("prepare").toBool();
-
-    QString filterText;
-    if ( sendAction->property("clear").toBool() )
-        filterText = value;
-    else
-        filterText = QString("((%1) %2)").arg(this->text()).arg(value);
-    setText(filterText);
-
-    // Holding down the Shift key will only prepare filter.
-    if ( ! prepare )
-        applyDisplayFilter();
+    applyMenu->exec(this->mapToGlobal(event->pos()));
 }
 
 /*

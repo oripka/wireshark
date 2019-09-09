@@ -12,7 +12,7 @@
  */
 
 /* A brief description of this file format is available at:
- *    http://www.tamos.com/htmlhelp/commview/logformat.htm
+ *    https://www.tamos.com/htmlhelp/commview/logformat.htm
  *
  * Use
  *
@@ -599,7 +599,7 @@ static gboolean commview_dump(wtap_dumper *wdh,
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

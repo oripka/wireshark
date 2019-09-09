@@ -98,6 +98,12 @@ static GSList *epan_plugin_register_all_handoffs = NULL;
 
 static wmem_allocator_t *pinfo_pool_cache = NULL;
 
+/* Global variables holding the content of the corresponding environment variable
+ * to save fetching it repeatedly.
+ */
+gboolean wireshark_abort_on_dissector_bug = FALSE;
+gboolean wireshark_abort_on_too_many_items = FALSE;
+
 #ifdef HAVE_PLUGINS
 plugins_t *libwireshark_plugins = NULL;
 static GSList *epan_plugins = NULL;
@@ -178,12 +184,35 @@ void epan_register_plugin(const epan_plugin *plug)
 	if (plug->register_all_handoffs)
 		epan_plugin_register_all_handoffs = g_slist_prepend(epan_plugin_register_all_handoffs, plug->register_all_handoffs);
 }
+
+void epan_plugin_register_all_tap_listeners(gpointer data, gpointer user_data _U_)
+{
+	epan_plugin *plug = (epan_plugin *)data;
+	if (plug->register_all_tap_listeners)
+		plug->register_all_tap_listeners();
+}
 #endif
 
 gboolean
 epan_init(register_cb cb, gpointer client_data, gboolean load_plugins)
 {
 	volatile gboolean status = TRUE;
+
+	/* Get the value of some environment variables and set corresponding globals for performance reasons*/
+	/* If the WIRESHARK_ABORT_ON_DISSECTOR_BUG environment variable is set,
+	 * it will call abort(), instead, to make it easier to get a stack trace.
+	*/
+	if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL) {
+		wireshark_abort_on_dissector_bug = TRUE;
+	} else {
+		wireshark_abort_on_dissector_bug = FALSE;
+	}
+
+	if (getenv("WIRESHARK_ABORT_ON_TOO_MANY_ITEMS") != NULL) {
+		wireshark_abort_on_too_many_items = TRUE;
+	} else {
+		wireshark_abort_on_too_many_items = FALSE;
+	}
 
 	/*
 	 * proto_init -> register_all_protocols -> g_async_queue_new which
@@ -242,6 +271,9 @@ epan_init(register_cb cb, gpointer client_data, gboolean load_plugins)
 		g_slist_foreach(epan_plugins, epan_plugin_init, NULL);
 #endif
 		proto_init(epan_plugin_register_all_procotols, epan_plugin_register_all_handoffs, cb, client_data);
+#ifdef HAVE_PLUGINS
+		g_slist_foreach(epan_plugins, epan_plugin_register_all_tap_listeners, NULL);
+#endif
 		packet_cache_proto_handles();
 		dfilter_init();
 		final_registration_all_protocols();
@@ -789,6 +821,14 @@ epan_get_compiled_version_info(GString *str)
 	g_string_append(str, "without LZ4");
 #endif /* HAVE_LZ4 */
 
+	/* Zstandard */
+	g_string_append(str, ", ");
+#ifdef HAVE_ZSTD
+	g_string_append(str, "with Zstandard");
+#else
+	g_string_append(str, "without Zstandard");
+#endif /* HAVE_ZSTD */
+
 	/* Snappy */
 	g_string_append(str, ", ");
 #ifdef HAVE_SNAPPY
@@ -829,7 +869,7 @@ epan_get_runtime_version_info(GString *str)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

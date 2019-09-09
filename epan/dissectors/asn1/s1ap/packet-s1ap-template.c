@@ -10,7 +10,7 @@
  *
  * Based on the RANAP dissector
  *
- * References: 3GPP TS 36.413 V15.5.0 (2019-03)
+ * References: 3GPP TS 36.413 V15.6.0 (2019-06)
  */
 
 #include "config.h"
@@ -24,6 +24,8 @@
 #include <epan/expert.h>
 #include <epan/conversation.h>
 #include <epan/proto_data.h>
+#include <epan/exceptions.h>
+#include <epan/show_exception.h>
 
 #include "packet-ber.h"
 #include "packet-per.h"

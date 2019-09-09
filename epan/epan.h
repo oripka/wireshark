@@ -22,12 +22,18 @@ extern "C" {
 #include <epan/register.h>
 #include "ws_symbol_export.h"
 
+
+/** Global variable holding the content of the corresponding environment variable
+ * to save fetching it repeatedly.
+ */
+extern gboolean wireshark_abort_on_dissector_bug;
+
 typedef struct epan_dissect epan_dissect_t;
 
 struct epan_dfilter;
 struct epan_column_info;
 
-/*
+/**
  * Opaque structure provided when an epan_t is created; it contains
  * information needed to allow the user of libwireshark to provide
  * time stamps, comments, and other information outside the packet
@@ -35,7 +41,7 @@ struct epan_column_info;
  */
 struct packet_provider_data;
 
-/*
+/**
  * Structure containing pointers to functions supplied by the user
  * of libwireshark.
  */
@@ -120,6 +126,7 @@ typedef struct {
 	void (*cleanup)(void);
 	void (*register_all_protocols)(register_cb, gpointer);
 	void (*register_all_handoffs)(register_cb, gpointer);
+	void (*register_all_tap_listeners)(void);
 } epan_plugin;
 
 WS_DLL_PUBLIC void epan_register_plugin(const epan_plugin *plugin);

@@ -50,8 +50,7 @@ BASIC_LIST="cmake \
 	libpcap-devel \
 	zlib-devel"
 
-ADDITIONAL_LIST="libnl3-devel \
-	libcap-devel \
+ADDITIONAL_LIST="libcap-devel \
 	libgcrypt-devel \
 	libssh-devel \
 	krb5-devel \
@@ -59,6 +58,7 @@ ADDITIONAL_LIST="libnl3-devel \
 	sbc-devel \
 	libsmi-devel \
 	snappy-devel \
+	minizip-devel \
 	lz4 \
 	doxygen \
 	libxml2-devel \
@@ -183,6 +183,8 @@ echo "nghttp2 is unavailable" >&2
 add_package ADDITIONAL_LIST snappy || add_package ADDITIONAL_LIST libsnappy1 ||
 echo "snappy is unavailable" >&2
 
+add_package ADDITIONAL_LIST libzstd-devel || echo "zstd is unavailable" >&2
+
 add_package ADDITIONAL_LIST lz4-devel || add_package ADDITIONAL_LIST liblz4-devel ||
 echo "lz4 devel is unavailable" >&2
 
@@ -217,6 +219,9 @@ echo "git-review is unavailabe" >&2
 
 add_package ADDITIONAL_LIST speexdsp-devel || add_package ADDITIONAL_LIST speex-devel ||
 echo "speex is unavailable" >&2
+
+add_package ADDITIONAL_LIST libnl3-devel || add_package ADDITIONAL_LIST libnl-devel ||
+echo "libnl3/libnl are unavailable" >&2
 
 ACTUAL_LIST=$BASIC_LIST
 

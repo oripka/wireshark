@@ -7,8 +7,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 
-include(UseABICheck)
-
 add_definitions(-DPLUGIN_DIR=\"${CMAKE_INSTALL_PREFIX}/${PLUGIN_INSTALL_LIBDIR}\")
 add_definitions(-DEXTCAP_DIR=\"${CMAKE_INSTALL_PREFIX}/${EXTCAP_INSTALL_LIBDIR}\")
 add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}\")
@@ -25,6 +23,7 @@ set(WSUTIL_PUBLIC_HEADERS
 	copyright_info.h
 	cpu_info.h
 	crash_info.h
+	crc5.h
 	crc6.h
 	crc7.h
 	crc8.h
@@ -87,6 +86,7 @@ set(WSUTIL_COMMON_FILES
 	crc16.c
 	crc16-plain.c
 	crc32.c
+	crc5.c
 	crc6.c
 	crc7.c
 	crc8.c
@@ -251,18 +251,6 @@ set_target_properties(wsutil PROPERTIES
 	INSTALL_RPATH "${LIBRARY_INSTALL_RPATH}"
 )
 
-ABICHECK(libwsutil)
-
-add_custom_command(OUTPUT libwsutil.abi.tar.gz
-	COMMAND ${CMAKE_COMMAND} -E remove_directory ${ABICHECK_TMPDIR}
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}
-	COMMAND ${ABI_COPY_COMMAND} ../config.h ${ABICHECK_TMPDIR}/ ${ABI_COPY_FLAGS}
-	COMMAND ${ABI_COPY_COMMAND} ${ABICHECK_HEADERS} ${ABICHECK_TMPDIR}/ ${ABI_COPY_FLAGS}
-	COMMAND ${ABICHECK_COMMAND}
-	COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/abi_dumps/libwsutil/libwsutil_* ${CMAKE_CURRENT_BINARY_DIR}/libwsutil.abi.tar.gz
-	COMMAND rm -rf ${ABICHECK_TMPDIR} ${CMAKE_CURRENT_BINARY_DIR}/abi_dumps
-	DEPENDS ${HEADERS} wsutil)
-
 target_link_libraries(wsutil
 	PUBLIC
 	${CMAKE_DL_LIBS}
@@ -272,6 +260,7 @@ target_link_libraries(wsutil
 	${GCRYPT_LIBRARIES}
 	${WIN_WS2_32_LIBRARY}
 	${GNUTLS_LIBRARIES}
+	${M_LIBRARIES}
 )
 
 if(WIN32)
@@ -307,7 +296,7 @@ CHECKAPI(
 set_source_files_properties(jsmn.c PROPERTIES COMPILE_DEFINITIONS "JSMN_STRICT")
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 8

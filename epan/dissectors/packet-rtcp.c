@@ -28,16 +28,18 @@
  * port number, but there is a registered port available, port 5005
  * See Annex B of ITU-T Recommendation H.225.0, section B.7
  *
- * Information on PoC can be found from http://www.openmobilealliance.org/
+ * Information on PoC can be found from
+ *    https://www.omaspecworks.org (OMA SpecWorks, formerly the Open
+ *    Mobile Alliance - http://www.openmobilealliance.org/)
  *
  * RTCP XR is specified in RFC 3611.
  *
- * See also http://www.iana.org/assignments/rtp-parameters
+ * See also https://www.iana.org/assignments/rtp-parameters
  *
  * RTCP FB is specified in RFC 4585 and extended by RFC 5104
  *
- * MS-RTP: Real-time Transport Protocol (RTP) Extensions http://msdn.microsoft.com/en-us/library/office/cc431492.aspx
- *
+ * MS-RTP: Real-time Transport Protocol (RTP) Extensions
+ *    https://docs.microsoft.com/en-us/openspecs/office_protocols/ms-rtp
  */
 
 /*
@@ -45,9 +47,9 @@
  * Torsten Loebner (loebnert@googlemail.com) in the context of a graduation
  * project with the research organization TNO in Delft, Netherland.
  * The extension is based on the RTCP XR block specified in
- * ETSI TS 182 063 v3.5.2 Annex W (http://www.etsi.org/deliver/etsi_ts/183000_183099/183063/),
+ * ETSI TS 182 063 v3.5.2 Annex W (https://www.etsi.org/deliver/etsi_ts/183000_183099/183063/),
  * which was registered by IANA as RTCP XR Block Type 12
- * (http://www.iana.org/assignments/rtcp-xr-block-types/rtcp-xr-block-types.xml).
+ * (https://www.iana.org/assignments/rtcp-xr-block-types/rtcp-xr-block-types.xml).
  */
 
 #include "config.h"
@@ -58,7 +60,6 @@
 
 #include "packet-rtcp.h"
 #include "packet-rtp.h"
-#include "packet-ntp.h"
 #include <epan/conversation.h>
 
 #include <epan/prefs.h>
@@ -101,7 +102,7 @@ static const value_string rtcp_version_vals[] =
 #define RTCP_SMPTETC 194
 #define RTCP_IJ      195
 /* RTCP packet types according to Section A.11.1 */
-/* And http://www.iana.org/assignments/rtp-parameters */
+/* And https://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml */
 #define RTCP_SR      200
 #define RTCP_RR      201
 #define RTCP_SDES    202
@@ -166,7 +167,7 @@ static const value_string rtcp_sdes_type_vals[] =
 };
 
 /* RTCP XR Blocks (Section 4, RTC 3611)
- * or http://www.iana.org/assignments/rtcp-xr-block-types */
+ * or https://www.iana.org/assignments/rtcp-xr-block-types */
 #define RTCP_XR_LOSS_RLE     1
 #define RTCP_XR_DUP_RLE      2
 #define RTCP_XR_PKT_RXTIMES  3
@@ -193,7 +194,7 @@ static const value_string rtcp_xr_type_vals[] =
     { RTCP_XR_TI_VOIP,      "Texas Instruments Extended VoIP Quality Block" },
     { RTCP_XR_PR_LOSS_RLE,  "Post-repair Loss RLE Report Block" },
     { RTCP_XR_MC_ACQ,       "Multicast Acquisition Report Block" },
-    { RTCP_XR_IDMS,         "Inter-destination Media Synchronization Block" }, /* [http://www.etsi.org/deliver/etsi_ts/183000_183099/183063/][ETSI 183 063][Miguel_Angel_Reina_Ortega] */
+    { RTCP_XR_IDMS,         "Inter-destination Media Synchronization Block" }, /* [https://www.etsi.org/deliver/etsi_ts/183000_183099/183063/][ETSI 183 063][Miguel_Angel_Reina_Ortega] */
     { 0, NULL}
 };
 
@@ -1636,7 +1637,7 @@ dissect_rtcp_psfb( tvbuff_t *tvb, int offset, proto_tree *rtcp_tree,
              *
              * REMB (Receiver Estimated Maximum Bitrate) is, according
              * to section 2.3 "Signaling of use of this extension" of
-             * http://tools.ietf.org/html/draft-alvestrand-rmcat-remb-03,
+             * https://tools.ietf.org/html/draft-alvestrand-rmcat-remb-03,
              * indicated as an SDP option when the session is set up.
              *
              * MS-RTP is, according to MS-RTP and according to MS-SDPEXT
@@ -1650,7 +1651,7 @@ dissect_rtcp_psfb( tvbuff_t *tvb, int offset, proto_tree *rtcp_tree,
             guint32 magic_value = tvb_get_ntohl( tvb, offset);
             /* look for string literal 'REMB' which is 0x52454d42 hex */
             if (magic_value == 0x52454d42) {
-                /* Handle REMB (Receiver Estimated Maximum Bitrate) - http://tools.ietf.org/html/draft-alvestrand-rmcat-remb-00 */
+                /* Handle REMB (Receiver Estimated Maximum Bitrate) - https://tools.ietf.org/html/draft-alvestrand-rmcat-remb-00 */
                 offset = dissect_rtcp_psfb_remb(tvb, offset, rtcp_tree, top_item, counter, &read_fci);
             } else {
                 /* Handle MS Application Layer Feedback Messages - MS-RTP */
@@ -1801,7 +1802,7 @@ dissect_rtcp_app( tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *tree
                 /* Request timestamp (optional) */
                 if (code == 103)
                 {
-                    const gchar *buff;
+                    char *buff;
 
                     item_len    = tvb_get_guint8(tvb, offset);
                     offset     += 1;
@@ -1809,9 +1810,7 @@ dissect_rtcp_app( tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *tree
                     if (item_len != 8) /* SHALL be 8 */
                         return offset;
 
-                    proto_tree_add_item(PoC1_tree, hf_rtcp_app_poc1_request_ts,
-                                        tvb, offset, 8, ENC_TIME_NTP|ENC_BIG_ENDIAN);
-                    buff = tvb_ntp_fmt_ts(tvb, offset);
+                    proto_tree_add_item_ret_time_string(PoC1_tree, hf_rtcp_app_poc1_request_ts, tvb, offset, 8, ENC_TIME_NTP|ENC_BIG_ENDIAN, wmem_packet_scope(), &buff);
 
                     offset     += 8;
                     packet_len -= 8;
@@ -4394,7 +4393,7 @@ proto_register_rtcp(void)
                 "Talk Burst Request Timestamp",
                 "rtcp.app.poc1.request.ts",
                 FT_ABSOLUTE_TIME,
-                ABSOLUTE_TIME_UTC,
+                ABSOLUTE_TIME_NTP_UTC,
                 NULL,
                 0x0,
                 NULL, HFILL
@@ -5882,8 +5881,8 @@ proto_register_rtcp(void)
             {
                 "Reference Time",
                 "rtcp.rtpfb.transportcc.reftime",
-                FT_UINT24,
-                BASE_DEC_HEX,
+                FT_INT24,
+                BASE_DEC,
                 NULL,
                 0x0,
                 NULL, HFILL
@@ -7007,7 +7006,7 @@ proto_reg_handoff_rtcp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

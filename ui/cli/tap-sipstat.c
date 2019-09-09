@@ -60,7 +60,7 @@ typedef struct _sip_request_method_t {
 } sip_request_method_t;
 
 /* TODO: extra codes to be added from SIP extensions?
-* http://www.iana.org/assignments/sip-parameters/sip-parameters.xhtml#sip-parameters-6
+* https://www.iana.org/assignments/sip-parameters/sip-parameters.xhtml#sip-parameters-6
 */
 static const value_string vals_status_code[] = {
 	{ 100, "Trying"},
@@ -456,7 +456,7 @@ register_tap_listener_sipstat(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

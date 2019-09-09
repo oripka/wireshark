@@ -29,7 +29,7 @@ project(${_project_name} C CXX)
 set(GIT_REVISION 0)
 set(PROJECT_MAJOR_VERSION 3)
 set(PROJECT_MINOR_VERSION 1)
-set(PROJECT_PATCH_VERSION 0)
+set(PROJECT_PATCH_VERSION 1)
 set(PROJECT_BUILD_VERSION ${GIT_REVISION})
 set(PROJECT_VERSION_EXTENSION "")
 
@@ -384,9 +384,9 @@ if( CMAKE_C_COMPILER_ID MATCHES "MSVC")
 		#                                   versions should always call this function as GetProcessMemoryInfo. To ensure correct
 		#                                   resolution of symbols, add Psapi.lib to the TARGETLIBS macro and compile the program
 		#                                   with -DPSAPI_VERSION=1.To use run-time dynamic linking, load Psapi.dll.
-		#                                   http://msdn.microsoft.com/en-us/library/windows/desktop/ms683219(v=vs.85).aspx
+		#                                   https://docs.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo
 		# -D_ALLOW_KEYWORD_MACROS           For VS2012 onwards the, C++ STL does not permit macro redefinitions of keywords
-		#                                   (see http://msdn.microsoft.com/en-us/library/bb531344(v=vs.110).aspx)
+		#                                   (see https://docs.microsoft.com/en-us/previous-versions/visualstudio/visual-studio-2012/bb531344(v=vs.110))
 		#                                   This definition prevents the complaint about the redefinition of inline by WinPCap
 		#                                   in pcap-stdinc.h when compiling C++ files, e.g. the Qt UI
 		/DPSAPI_VERSION=1
@@ -403,17 +403,17 @@ if( CMAKE_C_COMPILER_ID MATCHES "MSVC")
 
 	set(WS_LINK_FLAGS "/LARGEADDRESSAWARE /MANIFEST:NO /INCREMENTAL:NO /RELEASE")
 
-	# To do: Add /external:... See https://blogs.msdn.microsoft.com/vcblog/2017/12/13/broken-warnings-theory/
+	# To do: Add /external:... See https://devblogs.microsoft.com/cppblog/broken-warnings-theory/
 	#
 	# /Zo                               Enhanced debugging of optimised code
 	# /utf-8                            Set Source and Executable character sets to UTF-8
 	#                                   VS2015(MSVC14): On by default when /Zi or /Z7 used.
 	# /guard:cf                         Control Flow Guard (compile and link).
-	#                                   See https://msdn.microsoft.com/en-us/library/windows/desktop/mt637065.aspx
+	#                                   See https://docs.microsoft.com/en-us/windows/win32/secbp/control-flow-guard
 	#                                   Note: This requires CMake 3.9.0 or newer.
 	#                                   https://gitlab.kitware.com/cmake/cmake/commit/f973d49ab9d4c59b93f6dac812a94bb130200836
 	# /Qspectre                         Speculative execution attack mitigation
-	#                                   See https://blogs.msdn.microsoft.com/vcblog/2018/01/15/spectre-mitigations-in-msvc/
+	#                                   See https://devblogs.microsoft.com/cppblog/spectre-mitigations-in-msvc/
 	list(APPEND LOCAL_CFLAGS /Zo /utf-8 /guard:cf)
 	set(WS_LINK_FLAGS "${WS_LINK_FLAGS} /guard:cf")
 	# /Qspectre is not available for VS2015 or older VS2017. Test for its availability.
@@ -1126,6 +1126,9 @@ ws_find_package(CARES ENABLE_CARES HAVE_C_ARES "1.5.0")
 # Zlib compression
 ws_find_package(ZLIB ENABLE_ZLIB HAVE_ZLIB)
 
+# Minizip compression
+ws_find_package(Minizip ENABLE_MINIZIP HAVE_MINIZIP)
+
 # Brotli compression
 ws_find_package(BROTLI ENABLE_BROTLI HAVE_BROTLI)
 
@@ -1134,6 +1137,9 @@ ws_find_package(LZ4 ENABLE_LZ4 HAVE_LZ4)
 
 # Snappy compression
 ws_find_package(SNAPPY ENABLE_SNAPPY HAVE_SNAPPY)
+
+# zstd compression
+ws_find_package(ZSTD ENABLE_ZSTD HAVE_ZSTD "1.0.0")
 
 # Enhanced HTTP/2 dissection
 ws_find_package(NGHTTP2 ENABLE_NGHTTP2 HAVE_NGHTTP2)
@@ -1171,6 +1177,15 @@ endif()
 ws_find_package(CAP ENABLE_CAP HAVE_LIBCAP)
 if(NOT WIN32)
 	find_package(SETCAP)
+endif()
+
+# Include minizip include directories
+if(MINIZIP_FOUND)
+	include_directories(
+		${MINIZIP_INCLUDE_DIRS}
+	)
+else()
+	set(MINIZIP_LIBRARY "")
 endif()
 
 # Windows version updates
@@ -1308,7 +1323,7 @@ include(ConfigureChecks.cmake)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if(ENABLE_CCACHE AND (CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang"))
-	# http://stackoverflow.com/a/24305849/82195
+	# https://stackoverflow.com/questions/1815688/how-to-use-ccache-with-cmake/24305849#24305849
 	find_program(CCACHE_EXECUTABLE ccache)
 	if(CCACHE_EXECUTABLE)
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_EXECUTABLE}")
@@ -1404,10 +1419,6 @@ set(DATAFILE_DIR ${_datafile_dir} CACHE INTERNAL "Build time data file location.
 # learn about the directory location.
 add_subdirectory( wsutil )
 
-if(NOT WIN32)
-	add_custom_target(dumpabi DEPENDS dumpabi-libwireshark dumpabi-libwiretap dumpabi-libwsutil)
-endif()
-
 if(BUILD_wireshark AND QT_FOUND)
 	add_subdirectory( ui/qt )
 endif()
@@ -1497,13 +1508,21 @@ include(gmxTestLargeFiles)
 gmx_test_large_files(GMX_LARGEFILES)
 
 set( VERSION ${PROJECT_VERSION} )
-add_custom_target(version
-	BYPRODUCTS version.h
-	COMMAND ${PERL_EXECUTABLE}
-		${CMAKE_SOURCE_DIR}/tools/make-version.pl
-		${CMAKE_SOURCE_DIR}
-)
-set_target_properties(version PROPERTIES FOLDER "Auxiliary")
+if(VCSVERSION_OVERRIDE)
+	# Allow distributors to override detection of the Git tag and version.
+	string(CONFIGURE "#define VCSVERSION \"@VCSVERSION_OVERRIDE@\"\n"
+		_version_h_contents ESCAPE_QUOTES)
+	file(WRITE "${CMAKE_BINARY_DIR}/version.h" "${_version_h_contents}")
+	message(STATUS "VCSVERSION_OVERRIDE: ${VCSVERSION_OVERRIDE}")
+else()
+	add_custom_target(version
+		BYPRODUCTS version.h
+		COMMAND ${PERL_EXECUTABLE}
+			${CMAKE_SOURCE_DIR}/tools/make-version.pl
+			${CMAKE_SOURCE_DIR}
+	)
+	set_target_properties(version PROPERTIES FOLDER "Auxiliary")
+endif()
 
 set( configure_input "Built with CMake ${CMAKE_VERSION}" )
 configure_file(${CMAKE_SOURCE_DIR}/cmakeconfig.h.in ${CMAKE_BINARY_DIR}/config.h)
@@ -1550,7 +1569,7 @@ set_package_properties(SBC PROPERTIES
 )
 set_package_properties(SPANDSP PROPERTIES
 	DESCRIPTION "a library of many DSP functions for telephony"
-	URL "http://www.soft-switch.org/"
+	URL "https://www.soft-switch.org"
 	PURPOSE "Support for G.722 and G.726 codecs in RTP player"
 )
 set_package_properties(BCG729 PROPERTIES
@@ -1575,8 +1594,13 @@ set_package_properties(LZ4 PROPERTIES
 )
 set_package_properties(SNAPPY PROPERTIES
 	DESCRIPTION "A fast compressor/decompressor from Google"
-	URL "http://google.github.io/snappy/"
+	URL "https://google.github.io/snappy/"
 	PURPOSE "Snappy decompression in CQL and Kafka dissectors"
+)
+set_package_properties(ZSTD PROPERTIES
+	DESCRIPTION "A compressor/decompressor from Facebook providing better compression than Snappy at a cost of speed"
+	URL "https://facebook.github.io/zstd/"
+	PURPOSE "Zstd decompression in Kafka dissector"
 )
 set_package_properties(NGHTTP2 PROPERTIES
 	DESCRIPTION "HTTP/2 C library and tools"
@@ -1607,6 +1631,11 @@ set_package_properties(SpeexDSP PROPERTIES
 	URL "https://www.speex.org/"
 	DESCRIPTION "SpeexDSP is a patent-free, Open Source/Free Software DSP library"
 	PURPOSE "RTP audio resampling"
+)
+set_package_properties(Minizip PROPERTIES
+	URL "https://www.winimage.com/zLibDll/minizip.html"
+	DESCRIPTION "C library for supporting zip/unzip functionality"
+	PURPOSE "Support for profiles import/export"
 )
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _build_type)
@@ -1797,8 +1826,12 @@ if(WIN32)
 		list (APPEND OPTIONAL_DLLS "${LZ4_DLL_DIR}/${LZ4_DLL}")
 		list (APPEND OPTIONAL_PDBS "${LZ4_DLL_DIR}/${LZ4_PDB}")
 	endif(LZ4_FOUND)
+	if (ZSTD_FOUND)
+		list (APPEND OPTIONAL_DLLS "${ZSTD_DLL_DIR}/${ZSTD_DLL}")
+	endif(ZSTD_FOUND)
 	if (NGHTTP2_FOUND)
 		list (APPEND OPTIONAL_DLLS "${NGHTTP2_DLL_DIR}/${NGHTTP2_DLL}")
+		list (APPEND OPTIONAL_PDBS "${NGHTTP2_DLL_DIR}/${NGHTTP2_PDB}")
 	endif(NGHTTP2_FOUND)
 	if (SBC_FOUND)
 		list (APPEND OPTIONAL_DLLS "${SBC_DLL_DIR}/${SBC_DLL}")
@@ -2106,7 +2139,9 @@ set_target_properties(copy_data_files PROPERTIES FOLDER "Copy Tasks")
 # Shared code, build object files once for all users.
 add_library(version_info OBJECT version_info.c)
 target_include_directories(version_info SYSTEM PRIVATE ${VERSION_INFO_INCLUDE_DIRS})
-add_dependencies(version_info version)
+if(NOT VCSVERSION_OVERRIDE)
+	add_dependencies(version_info version)
+endif()
 # sources common for wireshark, tshark, rawshark and sharkd
 add_library(shark_common OBJECT
 	cfile.c
@@ -2232,6 +2267,7 @@ if(BUILD_wireshark AND QT_FOUND)
 		${WINSPARKLE_LIBRARIES}
 		$<$<BOOL:${WIN32}>:UxTheme.lib>
 		${SPEEXDSP_LIBRARIES}
+		${MINIZIP_LIBRARIES}
 	)
 
 	add_executable(wireshark WIN32 MACOSX_BUNDLE ${wireshark_FILES} ${EXTRA_BUNDLE_FILES})
@@ -2870,7 +2906,7 @@ if(DPKG_BUILDPACKAGE_EXECUTABLE)
 	)
 endif()
 
-if(LINUXDEPLOYQT_EXECUTABLE AND APPIMAGETOOL_EXECUTALBE)
+if(LINUXDEPLOYQT_EXECUTABLE AND APPIMAGETOOL_EXECUTABLE)
 	# The documentation at https://github.com/probonopd/linuxdeployqt
 	# says that you need to set CMAKE_BUILD_TYPE=Release and
 	# CMAKE_INSTALL_PREFIX=/usr. I (gcc) also had to set
@@ -3262,7 +3298,7 @@ if(SHELLCHECK_EXECUTABLE)
 endif()
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 8

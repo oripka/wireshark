@@ -5869,9 +5869,8 @@ static void dissect_ulsch_or_dlsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
             proto_tree_add_item(dpr_tree, hf_mac_lte_control_data_vol_power_headroom_level, tvb, offset, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(dpr_tree, hf_mac_lte_control_data_vol_power_headroom_data_vol, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
-            data_length--;
-            if (pdu_lengths[n] != -1) {
-                pdu_lengths[n]--;
+            if (pdu_lengths[n] == -1) {
+                data_length--;
             }
         }
 
@@ -9726,7 +9725,7 @@ void proto_reg_handoff_mac_lte(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

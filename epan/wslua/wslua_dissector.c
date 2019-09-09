@@ -561,7 +561,7 @@ WSLUA_METHOD DissectorTable_try (lua_State *L) {
         }
 
         if (!handled) {
-            len = call_dissector(lua_data_handle,tvb->ws_tvb,pinfo->ws_pinfo,ti->tree);
+            len = call_data_dissector(tvb->ws_tvb, pinfo->ws_pinfo, ti->tree);
         }
         /* XXX Are we sure about this??? is this the right/only thing to catch */
     } CATCH_NONFATAL_ERRORS {
@@ -583,7 +583,7 @@ WSLUA_METHOD DissectorTable_get_dissector (lua_State *L) {
 
     DissectorTable dt = checkDissectorTable(L,1);
     ftenum_t type;
-    dissector_handle_t handle = lua_data_handle;
+    dissector_handle_t handle = NULL;
 
     if (!dt) return 0;
 
@@ -731,7 +731,7 @@ int wslua_deregister_dissector_tables(lua_State* L) {
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

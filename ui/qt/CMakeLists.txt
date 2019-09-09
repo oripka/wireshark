@@ -16,7 +16,7 @@ set(WIRESHARK_WIDGET_HEADERS
 	widgets/capture_filter_combo.h
 	widgets/capture_filter_edit.h
 	widgets/clickable_label.h
-	widgets/copy_from_profile_menu.h
+	widgets/copy_from_profile_button.h
 	widgets/display_filter_combo.h
 	widgets/display_filter_edit.h
 	widgets/dissector_tables_view.h
@@ -35,12 +35,15 @@ set(WIRESHARK_WIDGET_HEADERS
 	widgets/overlay_scroll_bar.h
 	widgets/pref_module_view.h
 	widgets/packet_list_header.h
+	widgets/profile_tree_view.h
 	widgets/qcustomplot.h
 	widgets/range_syntax_lineedit.h
+	widgets/splash_overlay.h
 	widgets/stock_icon_tool_button.h
 	widgets/syntax_line_edit.h
 	widgets/tabnav_tree_view.h
 	widgets/wireshark_file_dialog.h
+	widgets/wireless_timeline.h
 )
 
 set(WIRESHARK_MANAGER_HEADERS
@@ -60,6 +63,7 @@ set(WIRESHARK_UTILS_HEADERS
 	utils/tango_colors.h
 	utils/variant_pointer.h
 	utils/wireshark_mime_data.h
+	utils/wireshark_zip_helper.h
 )
 
 set(WIRESHARK_MODEL_HEADERS
@@ -87,8 +91,10 @@ set(WIRESHARK_MODEL_HEADERS
 	models/percent_bar_delegate.h
 	models/pref_delegate.h
 	models/pref_models.h
+	models/profile_model.h
 	models/proto_tree_model.h
 	models/related_packet_delegate.h
+	models/resolved_addresses_models.h
 	models/sparkline_delegate.h
 	models/supported_protocols_model.h
 	models/timeline_delegate.h
@@ -207,7 +213,6 @@ set(WIRESHARK_QT_HEADERS
 	sequence_diagram.h
 	sequence_dialog.h
 	show_packet_bytes_dialog.h
-	splash_overlay.h
 	stats_tree_dialog.h
 	service_response_time_dialog.h
 	simple_statistics_dialog.h
@@ -221,7 +226,6 @@ set(WIRESHARK_QT_HEADERS
 	uat_frame.h
 	voip_calls_dialog.h
 	wireless_frame.h
-	wireless_timeline.h
 	wireshark_application.h
 	wireshark_dialog.h
 	wlan_statistics_dialog.h
@@ -242,7 +246,7 @@ set(WIRESHARK_WIDGET_SRCS
 	widgets/capture_filter_combo.cpp
 	widgets/capture_filter_edit.cpp
 	widgets/clickable_label.cpp
-	widgets/copy_from_profile_menu.cpp
+	widgets/copy_from_profile_button.cpp
 	widgets/display_filter_combo.cpp
 	widgets/display_filter_edit.cpp
 	widgets/dissector_tables_view.cpp
@@ -261,11 +265,14 @@ set(WIRESHARK_WIDGET_SRCS
 	widgets/overlay_scroll_bar.cpp
 	widgets/packet_list_header.cpp
 	widgets/pref_module_view.cpp
+	widgets/profile_tree_view.cpp
 	widgets/qcustomplot.cpp
 	widgets/range_syntax_lineedit.cpp
+	widgets/splash_overlay.cpp
 	widgets/stock_icon_tool_button.cpp
 	widgets/syntax_line_edit.cpp
 	widgets/tabnav_tree_view.cpp
+	widgets/wireless_timeline.cpp
 	widgets/wireshark_file_dialog.cpp
 )
 
@@ -283,6 +290,7 @@ set(WIRESHARK_UTILS_SRCS
 	utils/qt_ui_utils.cpp
 	utils/stock_icon.cpp
 	utils/wireshark_mime_data.cpp
+	utils/wireshark_zip_helper.cpp
 )
 
 set(WIRESHARK_MODEL_SRCS
@@ -310,8 +318,10 @@ set(WIRESHARK_MODEL_SRCS
 	models/percent_bar_delegate.cpp
 	models/pref_delegate.cpp
 	models/pref_models.cpp
-	models/proto_tree_model.cpp
+        models/profile_model.cpp
+        models/proto_tree_model.cpp
 	models/related_packet_delegate.cpp
+	models/resolved_addresses_models.cpp
 	models/sparkline_delegate.cpp
 	models/supported_protocols_model.cpp
 	models/timeline_delegate.cpp
@@ -425,7 +435,6 @@ set(WIRESHARK_QT_SRC
 	show_packet_bytes_dialog.cpp
 	simple_dialog.cpp
 	simple_statistics_dialog.cpp
-	splash_overlay.cpp
 	supported_protocols_dialog.cpp
 	tabnav_tree_widget.cpp
 	tap_parameter_dialog.cpp
@@ -436,7 +445,6 @@ set(WIRESHARK_QT_SRC
 	uat_frame.cpp
 	voip_calls_dialog.cpp
 	wireless_frame.cpp
-	wireless_timeline.cpp
 	wireshark_application.cpp
 	wireshark_dialog.cpp
 	${WIRESHARK_CUSTOM_QT_SRCS}
@@ -545,7 +553,7 @@ set(WIRESHARK_QT_UI
 	search_frame.ui
 	sequence_dialog.ui
 	show_packet_bytes_dialog.ui
-	splash_overlay.ui
+	widgets/splash_overlay.ui
 	supported_protocols_dialog.ui
 	tap_parameter_dialog.ui
 	tcp_stream_dialog.ui
@@ -690,7 +698,7 @@ set_target_properties(qtui PROPERTIES
 )
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 8
