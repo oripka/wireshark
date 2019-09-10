@@ -377,8 +377,6 @@ write_ek_proto_tree(output_fields_t* fields,
         write_ek_summary(edt->pi.cinfo, &data);
 
     if (edt->tree) {
-        json_dumper_set_member_name(&dumper, "layers");
-        json_dumper_begin_object(&dumper);
 
         if (fields == NULL || fields->fields == NULL) {
             /* Write out all fields */
@@ -392,7 +390,6 @@ write_ek_proto_tree(output_fields_t* fields,
             write_specified_fields(FORMAT_EK, fields, edt, cinfo, NULL, data.dumper);
         }
 
-        json_dumper_end_object(&dumper);
     }
     json_dumper_end_object(&dumper);
     json_dumper_finish(&dumper);
