@@ -353,7 +353,8 @@ write_ek_proto_tree(output_fields_t* fields,
     write_json_data data;
 
     json_dumper dumper = {
-        .output_file = fh
+        .output_file = fh,
+        .flags = JSON_DUMPER_DOT_TO_UNDERSCORE
     };
 
     data.dumper = &dumper;
