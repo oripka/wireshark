@@ -13,7 +13,7 @@
 
 #include <glib.h>
 #include <epan/column-utils.h>
-
+#include <epan/proto.h>
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -45,6 +45,7 @@ typedef struct {
   gchar              *col_buf;              /**< Buffer into which to copy data for column */
   int                 col_fence;            /**< Stuff in column buffer before this index is immutable */
   gboolean            writable;             /**< writable or not */
+  enum ftenum         type;         
 } col_item_t;
 
 /** Column info */

@@ -353,7 +353,8 @@ void col_custom_set_edt(epan_dissect_t *edt, column_info *cinfo)
                                      col_item->col_custom_occurrence,
                                      col_item->col_buf,
                                      col_item->col_buf,
-                                     COL_MAX_LEN);
+                                     COL_MAX_LEN,
+                                     &(col_item->type));
     }
   }
 }
