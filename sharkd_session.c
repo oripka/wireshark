@@ -4284,6 +4284,44 @@ sharkd_session_process_download(char *buf, const jsmntok_t *tokens, int count)
 	}
 }
 
+
+
+
+/**
+ * sharkd_session_process_load_colorrules()
+ *
+ * Process load request
+ *
+ * Input:
+ *   (m) file - file to be loaded
+ *
+ * Output object with attributes:
+ *   (m) err - error code
+ */
+static void
+sharkd_session_process_load_colorrules(char *buf, const jsmntok_t *tokens, int count)
+{
+
+	const char *tok_file = json_find_attr(buf, tokens, count, "file");
+	int err = 0;
+	char *err_msg = NULL;
+
+	if (!tok_file)
+		return;
+
+	fprintf(stderr, "load_colorrules: filename=%s\n", tok_file);
+
+
+	if (!color_filters_init_from_file(&err_msg, NULL, tok_file)) {
+		sharkd_json_simple_reply(1, NULL);
+		g_free(err_msg);
+		return;
+	}
+
+	sharkd_json_simple_reply(err, NULL);
+}
+
+
 static void
 sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 {
@@ -4375,6 +4413,8 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 			sharkd_session_process_dumpconf(buf, tokens, count);
 		else if (!strcmp(tok_req, "download"))
 			sharkd_session_process_download(buf, tokens, count);
+		else if (!strcmp(tok_req, "load_colorrules"))
+			sharkd_session_process_load_colorrules(buf, tokens, count);
 		else if (!strcmp(tok_req, "bye"))
 			exit(0);
 		else
