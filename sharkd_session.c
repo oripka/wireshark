@@ -909,6 +909,13 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		{
 			const col_item_t *col_item = &cinfo->columns[col];
 
+			/* "" values are always represented by "" not be the empty string which
+			 * JSON parsers do not like */
+			if (strcmp(col_item->col_data, "") == 0){
+				sharkd_json_value_string(NULL, col_item->col_data);
+				continue;
+			}
+
 			switch(col_item->type){
 
 					case FT_NONE:
