@@ -368,7 +368,7 @@ void
 parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item_range selections[], size_t selectionlen)
 {
 	char *pch;
-  static guint current = 0;
+  guint current = 0;
   guint maxs = 0;
 	char *tok_frames = (char *)json_find_attr(buf, tokens, count, "range");
   if(verbose)
