@@ -17,6 +17,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#include <stdlib.h>
 struct select_item
 {
   gboolean inclusive;
@@ -45,7 +46,7 @@ void add_print_only(unsigned int val);
 void add_string_selection(char * sel);
 void parse_selected_frames(const char *buf, const jsmntok_t *tokens, int count);
 
-void parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item *selections )
+void parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item *selections)
 
 #ifdef __cplusplus
 }

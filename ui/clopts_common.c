@@ -113,8 +113,6 @@ get_positive_double(const char *string, const char *name)
 }
 
 /* packet selection support, taken from editcap.c */
-
-
 #define MAX_SELECTIONS 51200
 static struct select_item selectfrm[MAX_SELECTIONS];
 static guint max_selected = 0;
@@ -367,7 +365,7 @@ add_selection_new(char *sel, guint *max_selection, guint * max_selected, struct 
 }
 
 void
-parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item *selections)
+parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct selections *selections)
 {
 	char *pch;
   static guint max_selected = 0;
