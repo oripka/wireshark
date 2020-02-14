@@ -311,6 +311,94 @@ parse_selected_frames(const char *buf, const jsmntok_t *tokens, int count)
 	}
 }
 
+
+/* Add a selection item, a simple parser for now */
+gboolean
+add_selection_new(char *sel, guint *max_selection, guint * max_selected, struct select_item *selectfrm)
+{
+  char *locn;
+  char *next;
+
+  if (*max_selected >= MAX_SELECTIONS)
+  {
+    /* Let the user know we stopped selecting */
+    fprintf(stderr, "Out of room for packet selections.\n");
+    return (FALSE);
+  }
+
+  if (verbose)
+    fprintf(stderr, "Add_Selected: %s\n", sel);
+
+  if ((locn = strchr(sel, '-')) == NULL)
+  { /* No dash, so a single number? */
+    if (verbose)
+      fprintf(stderr, "Not inclusive ...");
+
+    *selectfrm[*max_selected].inclusive = FALSE;
+    ws_strtou32(sel, NULL, &(*selectfrm[*max_selected].first));
+    if (*selectfrm[*max_selected].first > *max_selection)
+      *max_selection = *selectfrm[*max_selected].first;
+
+    if (verbose)
+      fprintf(stderr, " %u\n", *selectfrm[*max_selected].first);
+  }
+  else
+  {
+    if (verbose)
+      fprintf(stderr, "Inclusive ...");
+
+    *locn = '\0'; /* split the range */
+    next = locn + 1;
+    *selectfrm[*max_selected].inclusive = TRUE;
+    ws_strtou32(sel, NULL, &(*selectfrm[*max_selected].first));
+    ws_strtou32(next, NULL, &(*selectfrm[*max_selected].second));
+
+    if (*selectfrm[*max_selected].second == 0)
+    {
+      /* Not a valid number, presume all */
+      *selectfrm[*max_selected].second = *max_selection = G_MAXUINT;
+    }
+    else if (*selectfrm[*max_selected].second > *max_selection)
+      *max_selection = *selectfrm[*max_selected].second;
+
+    if (verbose)
+      fprintf(stderr, " %u, %u\n", *selectfrm[*max_selected].first,
+              *selectfrm[*max_selected].second);
+  }
+
+  *max_selected++;
+  return (TRUE);
+}
+
+void
+parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item *selections)
+{
+	char *pch;
+  static guint max_selected = 0;
+	char *tok_frames = (char *)json_find_attr(buf, tokens, count, "range");
+  if(verbose)
+	  fprintf(stderr, "decode: range=%s\n", tok_frames);
+
+	if (tok_frames == NULL)
+	{
+		return;
+	}
+
+	pch = strtok(tok_frames, " ");
+	while (pch != NULL)
+	{
+		// printf("%s\n", pch);
+		add_selection_new(pch, &max_packet_number, &max_selected, &selections);
+		pch = strtok(NULL, " ");
+	}
+}
+
+
+
+
+
+
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
