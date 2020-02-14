@@ -114,7 +114,7 @@ get_positive_double(const char *string, const char *name)
 
 /* packet selection support, taken from editcap.c */
 #define MAX_SELECTIONS 51200
-static struct select_item selectfrm[MAX_SELECTIONS];
+static struct select_item_range selectfrm[MAX_SELECTIONS];
 static guint max_selected = 0;
 guint max_packet_number = 0;
 
@@ -308,12 +308,12 @@ parse_selected_frames(const char *buf, const jsmntok_t *tokens, int count)
 
 /* Add a selection item, a simple parser for now */
 gboolean
-add_selection_new(char *sel, guint *max_selection, guint * max_selected, struct select_item *selectfrm)
+add_selection_new(char *sel, guint *maxs, guint * current, struct select_item_range *selection, size_t selectionlen)
 {
   char *locn;
   char *next;
 
-  if (*max_selected >= MAX_SELECTIONS)
+  if (*current >= selectionlen)
   {
     /* Let the user know we stopped selecting */
     fprintf(stderr, "Out of room for packet selections.\n");
@@ -328,13 +328,13 @@ add_selection_new(char *sel, guint *max_selection, guint * max_selected, struct 
     if (verbose)
       fprintf(stderr, "Not inclusive ...");
 
-    *selectfrm[*max_selected].inclusive = FALSE;
-    ws_strtou32(sel, NULL, &(*selectfrm[*max_selected].first));
-    if (*selectfrm[*max_selected].first > *max_selection)
-      *max_selection = *selectfrm[*max_selected].first;
+    selection[*current].inclusive = FALSE;
+    ws_strtou32(sel, NULL, &(selection[*current].first));
+    if (selection[*current].first > *maxs)
+      *maxs = selection[*current].first;
 
     if (verbose)
-      fprintf(stderr, " %u\n", *selectfrm[*max_selected].first);
+      fprintf(stderr, " %u\n", selection[*current].first);
   }
   else
   {
@@ -343,32 +343,33 @@ add_selection_new(char *sel, guint *max_selection, guint * max_selected, struct 
 
     *locn = '\0'; /* split the range */
     next = locn + 1;
-    *selectfrm[*max_selected].inclusive = TRUE;
-    ws_strtou32(sel, NULL, &(*selectfrm[*max_selected].first));
-    ws_strtou32(next, NULL, &(*selectfrm[*max_selected].second));
+    selection[*current].inclusive = TRUE;
+    ws_strtou32(sel, NULL, &(selection[*current].first));
+    ws_strtou32(next, NULL, &(selection[*current].second));
 
-    if (*selectfrm[*max_selected].second == 0)
+    if (selection[*current].second == 0)
     {
       /* Not a valid number, presume all */
-      *selectfrm[*max_selected].second = *max_selection = G_MAXUINT;
+      selection[*current].second = *maxs = G_MAXUINT;
     }
-    else if (*selectfrm[*max_selected].second > *max_selection)
-      *max_selection = *selectfrm[*max_selected].second;
+    else if (selection[*current].second > *maxs)
+      *maxs = selection[*current].second;
 
     if (verbose)
-      fprintf(stderr, " %u, %u\n", *selectfrm[*max_selected].first,
-              *selectfrm[*max_selected].second);
+      fprintf(stderr, " %u, %u\n", selection[*current].first,
+              selection[*current].second);
   }
 
-  *max_selected++;
+  (*current)++;
   return (TRUE);
 }
 
 void
-parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct selections *selections)
+parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item_range selections[], size_t selectionlen)
 {
 	char *pch;
-  static guint max_selected = 0;
+  static guint current = 0;
+  guint maxs = 0;
 	char *tok_frames = (char *)json_find_attr(buf, tokens, count, "range");
   if(verbose)
 	  fprintf(stderr, "decode: range=%s\n", tok_frames);
@@ -382,7 +383,7 @@ parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct se
 	while (pch != NULL)
 	{
 		// printf("%s\n", pch);
-		add_selection_new(pch, &max_packet_number, &max_selected, &selections);
+		add_selection_new(pch, &maxs, &current, selections, selectionlen);
 		pch = strtok(NULL, " ");
 	}
 }

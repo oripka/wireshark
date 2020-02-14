@@ -3065,6 +3065,154 @@ sharkd_session_process_frame_cb(epan_dissect_t *edt, proto_tree *tree, struct ep
 	json_dumper_finish(&dumper);
 }
 
+
+
+static void
+sharkd_session_process_frame_ranges_cb(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data)
+{
+	packet_info *pi = &edt->pi;
+	frame_data *fdata = pi->fd;
+	const char *pkt_comment = NULL;
+
+	const struct sharkd_frame_request_data * const req_data = (const struct sharkd_frame_request_data * const) data;
+	const gboolean display_hidden = (req_data) ? req_data->display_hidden : FALSE;
+
+	if (fdata->has_user_comment)
+		pkt_comment = sharkd_get_user_comment(fdata);
+	else if (fdata->has_phdr_comment)
+		pkt_comment = pi->rec->opt_comment;
+
+	if (pkt_comment)
+		sharkd_json_value_string("comment", pkt_comment);
+
+	if (tree)
+	{
+		tvbuff_t **tvbs = NULL;
+
+		/* arrayize data src, to speedup searching for ds_tvb index */
+		if (data_src && data_src->next /* only needed if there are more than one data source */)
+		{
+			guint count = g_slist_length((GSList *) data_src);
+			guint i;
+
+			tvbs = (tvbuff_t **) g_malloc((count + 1) * sizeof(*tvbs));
+
+			for (i = 0; i < count; i++)
+			{
+				const struct data_source *src = (const struct data_source *) g_slist_nth_data((GSList *) data_src, i);
+
+				tvbs[i] = get_data_source_tvb(src);
+			}
+
+			tvbs[count] = NULL;
+		}
+
+		sharkd_json_value_anyf("tree", NULL);
+		sharkd_session_process_frame_cb_tree(edt, tree, tvbs, display_hidden);
+
+		g_free(tvbs);
+	}
+
+	if (cinfo)
+	{
+		int col;
+
+		sharkd_json_array_open("col");
+		for (col = 0; col < cinfo->num_cols; ++col)
+		{
+			const col_item_t *col_item = &cinfo->columns[col];
+
+			sharkd_json_value_string(NULL, col_item->col_data);
+		}
+		sharkd_json_array_close();
+	}
+
+	if (fdata->ignored)
+		sharkd_json_value_anyf("i", "true");
+
+	if (fdata->marked)
+		sharkd_json_value_anyf("m", "true");
+
+	if (fdata->color_filter)
+	{
+		sharkd_json_value_stringf("bg", "%x", color_t_to_rgb(&fdata->color_filter->bg_color));
+		sharkd_json_value_stringf("fg", "%x", color_t_to_rgb(&fdata->color_filter->fg_color));
+	}
+
+	if (data_src)
+	{
+		struct data_source *src = (struct data_source *) data_src->data;
+		gboolean ds_open = FALSE;
+
+		tvbuff_t *tvb;
+		guint length;
+
+		tvb = get_data_source_tvb(src);
+		length = tvb_captured_length(tvb);
+
+		if (length != 0)
+		{
+			const guchar *cp = tvb_get_ptr(tvb, 0, length);
+
+			/* XXX pi.fd->encoding */
+			sharkd_json_value_base64("bytes", cp, length);
+		}
+		else
+		{
+			sharkd_json_value_base64("bytes", "", 0);
+		}
+
+		data_src = data_src->next;
+		if (data_src)
+		{
+			sharkd_json_array_open("ds");
+			ds_open = TRUE;
+		}
+
+		while (data_src)
+		{
+			src = (struct data_source *) data_src->data;
+
+			json_dumper_begin_object(&dumper);
+
+			{
+				char *src_name = get_data_source_name(src);
+
+				sharkd_json_value_string("name", src_name);
+				wmem_free(NULL, src_name);
+			}
+
+			tvb = get_data_source_tvb(src);
+			length = tvb_captured_length(tvb);
+
+			if (length != 0)
+			{
+				const guchar *cp = tvb_get_ptr(tvb, 0, length);
+
+				/* XXX pi.fd->encoding */
+				sharkd_json_value_base64("bytes", cp, length);
+			}
+			else
+			{
+				sharkd_json_value_base64("bytes", "", 0);
+			}
+
+			json_dumper_end_object(&dumper);
+
+			data_src = data_src->next;
+		}
+
+		/* close ds, only if was opened */
+		if (ds_open)
+			sharkd_json_array_close();
+	}
+
+	sharkd_json_array_open("fol");
+	follow_iterate_followers(sharkd_follower_visit_layers_cb, pi);
+	sharkd_json_array_close();
+}
+
+
 #define SHARKD_IOGRAPH_MAX_ITEMS 250000 /* 250k limit of items is taken from wireshark-qt, on x86_64 sizeof(io_graph_item_t) is 152, so single graph can take max 36 MB */
 
 struct sharkd_iograph
@@ -3526,20 +3674,28 @@ sharkd_session_process_frame(char *buf, const jsmntok_t *tokens, int count)
  *   (o) fg  - color filter - foreground color in hex
  */
 static void
-parse_frame_range(const char *buf, const jsmntok_t *tokens, int count)
+sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int count)
 {
 	const char *tok_frame = json_find_attr(buf, tokens, count, "frame");
 	const char *tok_ref_frame = json_find_attr(buf, tokens, count, "ref_frame");
 	const char *tok_prev_frame = json_find_attr(buf, tokens, count, "prev_frame");
 
-	static struct select_item selections[10];
-
-	parse_frame_range(buf, tokens, count, &selections)
-
-	guint32 framenum, ref_frame_num, prev_dis_num;
+	guint32 framenum, ref_frame_num, prev_dis_num, min, max;
 	guint32 dissect_flags = SHARKD_DISSECT_FLAG_NULL;
+
 	struct sharkd_frame_request_data req_data;
 
+	static struct select_item_range selections[10];
+
+	parse_frame_range(buf, tokens, count, selections, 10);
+
+	// just one, keep it simple for now
+	min = selections[0].first;
+	max = selections[0].second;
+
+
+
+	/*
 	if (!tok_frame || !ws_strtou32(tok_frame, NULL, &framenum) || framenum == 0)
 		return;
 
@@ -3550,7 +3706,7 @@ parse_frame_range(const char *buf, const jsmntok_t *tokens, int count)
 	prev_dis_num = framenum - 1;
 	if (tok_prev_frame && (!ws_strtou32(tok_prev_frame, NULL, &prev_dis_num) || prev_dis_num >= framenum))
 		return;
-
+	*/
 	if (json_find_attr(buf, tokens, count, "proto") != NULL)
 		dissect_flags |= SHARKD_DISSECT_FLAG_PROTO_TREE;
 	if (json_find_attr(buf, tokens, count, "bytes") != NULL)
@@ -3562,7 +3718,25 @@ parse_frame_range(const char *buf, const jsmntok_t *tokens, int count)
 
 	req_data.display_hidden = (json_find_attr(buf, tokens, count, "v") != NULL);
 
-	sharkd_dissect_request(framenum, ref_frame_num, prev_dis_num, &sharkd_session_process_frame_cb, dissect_flags, &req_data);
+
+	json_dumper_begin_object(&dumper);
+
+	sharkd_json_value_anyf("err", "0");
+
+	sharkd_json_array_open("frames");
+
+
+	for (framenum = min; framenum <=  max; framenum++){
+		json_dumper_begin_object(&dumper);
+		sharkd_dissect_request(framenum, (framenum != 1) ? 1 : 0, framenum - 1, &sharkd_session_process_frame_ranges_cb, dissect_flags, &req_data);
+		json_dumper_end_object(&dumper);
+	}
+		
+	sharkd_json_array_close();
+
+	json_dumper_end_object(&dumper);
+
+	json_dumper_finish(&dumper);
 }
 
 /**
@@ -4491,6 +4665,8 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 			sharkd_session_process_intervals(buf, tokens, count);
 		else if (!strcmp(tok_req, "frame"))
 			sharkd_session_process_frame(buf, tokens, count);
+		else if (!strcmp(tok_req, "framerange"))
+			sharkd_session_process_frame_range(buf, tokens, count);
 		else if (!strcmp(tok_req, "setcomment"))
 			sharkd_session_process_setcomment(buf, tokens, count);
 		else if (!strcmp(tok_req, "setconf"))
