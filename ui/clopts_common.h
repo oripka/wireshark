@@ -47,7 +47,6 @@ void parse_selected_frames(const char *buf, const jsmntok_t *tokens, int count);
 
 void parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item *selections )
 
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

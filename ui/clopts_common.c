@@ -114,11 +114,7 @@ get_positive_double(const char *string, const char *name)
 
 /* packet selection support, taken from editcap.c */
 
-struct select_item
-{
-  gboolean inclusive;
-  guint first, second;
-};
+
 #define MAX_SELECTIONS 51200
 static struct select_item selectfrm[MAX_SELECTIONS];
 static guint max_selected = 0;
