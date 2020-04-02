@@ -70,7 +70,7 @@
 #include <wsutil/strtoi.h>
 
 #include <ui/clopts_common.h>
-
+#include "ui/decode_as_utils.h"
 #include "globals.h"
 
 #include "sharkd.h"
@@ -3693,8 +3693,6 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 	min = selections[0].first;
 	max = selections[0].second;
 
-
-
 	/*
 	if (!tok_frame || !ws_strtou32(tok_frame, NULL, &framenum) || framenum == 0)
 		return;
@@ -3997,6 +3995,52 @@ sharkd_session_process_setcomment(char *buf, const jsmntok_t *tokens, int count)
 
 	sharkd_json_simple_reply(ret, NULL);
 }
+
+/**
+ * sharkd_session_process_decodeas()
+ *
+ * Process decodeas request
+ *
+ * Input:
+ *   (m) entry  - decode as entry
+ *
+ * entry is as specified by tshark command line:
+ *
+ * Example: tshark -d tcp.port==8888,http will decode any traffic running over TCP port 8888 as HTTP.
+ * Example: tshark -d tcp.port==8888:3,http will decode any traffic running over TCP ports 8888, 8889 or 8890 as HTTP.
+ * Example: tshark -d tcp.port==8888-8890,http will decode any traffic running over TCP ports 8888, 8889 or 8890 as HTTP.
+ *
+ * Output object with attributes:
+ *   (m) err   - error code: 0 succeed
+ */
+static void
+sharkd_session_process_decodeas(char *buf, const jsmntok_t *tokens, int count)
+{
+	const char *tok_entry = json_find_attr(buf, tokens, count, "entry");
+
+	gboolean ret = FALSE;
+	char *errmsg = NULL;
+
+	if (!tok_entry || tok_entry[0] == '\0')
+		return;
+
+
+	json_dumper_begin_object(&dumper);
+
+	/* negate; everything fine of decode_as returns true, but here we return 0 */
+	ret = !decode_as_command_option_extended(tok_entry, TRUE, &dumper);
+
+	if(ret == FALSE){
+		sharkd_json_value_anyf("err", "%d", ret);
+	}
+
+	json_dumper_end_object(&dumper);
+	json_dumper_finish(&dumper);
+
+	//sharkd_json_simple_reply(ret, errmsg);
+	g_free(errmsg);
+}
+
 
 /**
  * sharkd_session_process_setconf()
@@ -4669,6 +4713,8 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 			sharkd_session_process_frame_range(buf, tokens, count);
 		else if (!strcmp(tok_req, "setcomment"))
 			sharkd_session_process_setcomment(buf, tokens, count);
+		else if (!strcmp(tok_req, "decodeas"))
+			sharkd_session_process_decodeas(buf, tokens, count);
 		else if (!strcmp(tok_req, "setconf"))
 			sharkd_session_process_setconf(buf, tokens, count);
 		else if (!strcmp(tok_req, "dumpconf"))
