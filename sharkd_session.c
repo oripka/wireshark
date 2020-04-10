@@ -933,8 +933,6 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 					case FT_ABSOLUTE_TIME:
 						sharkd_json_value_string(NULL, col_item->col_data);
 						break;
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
 					case FT_RELATIVE_TIME:
 						sharkd_json_value_string(NULL, col_item->col_data);
 						break;
