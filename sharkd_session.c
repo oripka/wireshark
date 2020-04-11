@@ -33,6 +33,7 @@
 #include <wiretap/wtap.h>
 
 #include <epan/column.h>
+#include <epan/column-utils.h>
 
 #include <ui/ssl_key_export.h>
 
@@ -916,136 +917,294 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 				continue;
 			}
 
-			switch(col_item->type){
+			//fprintf(stderr, "%s is FT_TYPE %i COL_TYPE %i\n", col_item->col_data, col_item->type, col_item->col_fmt);
 
-					case FT_NONE:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_PROTOCOL:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_UINT_BYTES:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_BYTES:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_ABSOLUTE_TIME:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_RELATIVE_TIME:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_BOOLEAN:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_CHAR:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_INT8:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_INT16:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_INT24:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_INT32:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_UINT8:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_UINT16:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_UINT24:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_UINT32:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_FRAMENUM:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_INT40:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_INT48:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_INT56:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_INT64:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_UINT40:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_UINT48:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_UINT56:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_UINT64:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_EUI64:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_IPv4:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_IPv6:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_FCWWN:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_ETHER:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_GUID:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_REL_OID:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_OID:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_SYSTEM_ID:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_FLOAT:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_DOUBLE:
-						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-						break;
-					case FT_STRING:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_STRINGZ:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_UINT_STRING:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					case FT_STRINGZPAD:
-						sharkd_json_value_string(NULL, col_item->col_data);
-						break;
-					default:
-						sharkd_json_value_string(NULL, col_item->col_data);
+			if(col_item->col_fmt != COL_CUSTOM){
+
+				switch(col_item->col_fmt){
+						case COL_8021Q_VLAN_ID:  /**< 0) 802.1Q vlan ID */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_ABS_YMD_TIME:   /**< 1) Absolute date, as YYYY-MM-DD, and time */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_ABS_YDOY_TIME:  /**< 2) Absolute date, as YYYY/DOY, and time */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_ABS_TIME:       /**< 3) Absolute time */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_VSAN:           /**< 4) VSAN - Cisco MDS-specific */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_CUMULATIVE_BYTES: /**< 5) Cumulative number of bytes */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_DCE_CALL:       /**< 7) DCE/RPC connection oriented call id OR datagram sequence number */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_DELTA_TIME:     /**< 8) Delta time */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_DELTA_TIME_DIS: /**< 9) Delta time displayed*/
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_RES_DST:        /**< 10) Resolved dest */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UNRES_DST:      /**< 11) Unresolved dest */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_RES_DST_PORT:   /**< 12) Resolved dest port */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UNRES_DST_PORT: /**< 13) Unresolved dest port */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_DEF_DST:        /**< 14) Destination address */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_DEF_DST_PORT:   /**< 15) Destination port */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_EXPERT:         /**< 16) Expert Info */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_IF_DIR:         /**< 17) FW-1 monitor interface/direction */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_FREQ_CHAN:      /**< 18) IEEE 802.11 (and WiMax?) - Channel */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_DEF_DL_DST:     /**< 19) Data link layer dest address */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_DEF_DL_SRC:     /**< 20) Data link layer source address */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_RES_DL_DST:     /**< 21) Resolved DL dest */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UNRES_DL_DST:   /**< 22) Unresolved DL dest */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_RES_DL_SRC:     /**< 23) Resolved DL source */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UNRES_DL_SRC:   /**< 24) Unresolved DL source */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_RSSI:           /**< 25) IEEE 802.11 - received signal strength */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_TX_RATE:        /**< 26) IEEE 802.11 - TX rate in Mbps */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_DSCP_VALUE:     /**< 27) IP DSCP Value */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_INFO:           /**< 28) Description */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_RES_NET_DST:    /**< 29) Resolved net dest */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UNRES_NET_DST:  /**< 30) Unresolved net dest */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_RES_NET_SRC:    /**< 31) Resolved net source */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UNRES_NET_SRC:  /**< 32) Unresolved net source */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_DEF_NET_DST:    /**< 33) Network layer dest address */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_DEF_NET_SRC:    /**< 34) Network layer source address */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_NUMBER:         /**< 35) Packet list item number */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_PACKET_LENGTH:  /**< 36) Packet length in bytes */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_PROTOCOL:       /**< 37) Protocol */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_REL_TIME:       /**< 38) Relative time */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case COL_DEF_SRC:        /**< 39) Source address */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_DEF_SRC_PORT:   /**< 40) Source port */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_RES_SRC:        /**< 41) Resolved source */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UNRES_SRC:      /**< 42) Unresolved source */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_RES_SRC_PORT:   /**< 43) Resolved source port */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UNRES_SRC_PORT: /**< 44) Unresolved source port */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_TEI:            /**< 45) Q.921 TEI */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UTC_YMD_TIME:   /**< 46) UTC date, as YYYY-MM-DD, and time */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UTC_YDOY_TIME:  /**< 47) UTC date, as YYYY/DOY, and time */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_UTC_TIME:       /**< 48) UTC time */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case COL_CLS_TIME:       /**< 49) Command line-specified time (default relative) */
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case NUM_COL_FMTS:        /**< 50) Should always be last */
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
 				}
 
 
-		
+			} else {
+
+				switch(col_item->type){
+						
+						case FT_NONE:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_PROTOCOL:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_UINT_BYTES:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_BYTES:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_ABSOLUTE_TIME:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_RELATIVE_TIME:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_BOOLEAN:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_CHAR:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_INT8:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_INT16:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_INT24:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_INT32:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_UINT8:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_UINT16:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_UINT24:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_UINT32:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_FRAMENUM:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_INT40:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_INT48:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_INT56:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_INT64:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_UINT40:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_UINT48:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_UINT56:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_UINT64:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_EUI64:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_IPv4:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_IPv6:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_FCWWN:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_ETHER:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_GUID:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_REL_OID:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_OID:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_SYSTEM_ID:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_FLOAT:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_DOUBLE:
+							sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+							break;
+						case FT_STRING:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_STRINGZ:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_UINT_STRING:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						case FT_STRINGZPAD:
+							sharkd_json_value_string(NULL, col_item->col_data);
+							break;
+						default:
+							sharkd_json_value_string(NULL, col_item->col_data);
+					}
+			}
 			
 		}
 		sharkd_json_array_close();
