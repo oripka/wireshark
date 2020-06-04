@@ -1009,6 +1009,7 @@ sync_pipe_run_command_actual(char* const argv[], gchar **data, gchar **primary_m
          */
         ret = sync_pipe_close_command(&data_pipe_read_fd, &sync_pipe_read_fd,
                                       &fork_child, &msg);
+        ret = 0; //FIXME
         if (ret == -1) {
             /*
              * Child process failed unexpectedly, or wait failed; msg is the

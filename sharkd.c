@@ -55,6 +55,8 @@
 
 #include <wsutil/codecs.h>
 
+#include "sharkd_session.h"
+#include "sharkd_capture.h"
 #include "log.h"
 
 #include <wsutil/str_util.h>
@@ -218,7 +220,7 @@ sharkd_get_frame_ts(struct packet_provider_data *prov, guint32 frame_num)
   return NULL;
 }
 
-static epan_t *
+epan_t *
 sharkd_epan_new(capture_file *cf)
 {
   static const struct packet_provider_funcs funcs = {
@@ -510,6 +512,8 @@ sharkd_cf_open(const char *fname, unsigned int type, gboolean is_tempfile, int *
 {
   return cf_open(&cfile, fname, type, is_tempfile, err);
 }
+
+
 
 int
 sharkd_load_cap_file(void)
@@ -812,6 +816,13 @@ const char *sharkd_version(void)
   return VERSION;
 #endif
 }
+
+
+
+/* editcap adaption */
+
+
+
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
