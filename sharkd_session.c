@@ -3359,7 +3359,7 @@ sharkd_session_process_frame_cb_tree(epan_dissect_t *edt, proto_tree *tree, tvbu
 		{
 			char *filter;
 
-			sharkd_json_value_anyf("bitmask", "%x", finfo->hfinfo.bitmask);
+			sharkd_json_value_anyf("bitmask", "%x", finfo->hfinfo->bitmask);
 
 			if (finfo->hfinfo->type == FT_PROTOCOL)
 			{
