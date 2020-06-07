@@ -917,6 +917,12 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 				continue;
 			}
 
+			/* *REF* values are always quoted */
+			if (strcmp(col_item->col_data, "*REF*") == 0){
+				sharkd_json_value_string(NULL, col_item->col_data);
+				continue;
+			}
+
 			//fprintf(stderr, "%s is FT_TYPE %i COL_TYPE %i\n", col_item->col_data, col_item->type, col_item->col_fmt);
 
 			if(col_item->col_fmt != COL_CUSTOM){
@@ -2981,6 +2987,8 @@ sharkd_session_process_frame_cb_tree(epan_dissect_t *edt, proto_tree *tree, tvbu
 		if (finfo->hfinfo)
 		{
 			char *filter;
+
+			sharkd_json_value_anyf("bitmask", "%x", finfo->hfinfo->bitmask);
 
 			if (finfo->hfinfo->type == FT_PROTOCOL)
 			{
