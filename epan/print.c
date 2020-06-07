@@ -339,114 +339,6 @@ write_pdml_proto_tree(output_fields_t* fields, gchar **protocolfilter, pf_flags 
     fprintf(fh, "</packet>\n\n");
 }
 
-
-static void G_GNUC_PRINTF(3, 4)
-sharkd_json_value_anyf(json_dumper *dumper, const char *key, const char *format, ...)
-{
-	if (key)
-		json_dumper_set_member_name(dumper, key);
-
-	if (format) {
-		va_list ap;
-		va_start(ap, format);
-		json_dumper_value_va_list(dumper, format, ap);
-		va_end(ap);
-	}
-}
-
-
-static void G_GNUC_PRINTF(3, 4)
-sharkd_json_value_stringf(json_dumper *dumper, const char *key, const char *format, ...)
-{
-	if (key)
-		json_dumper_set_member_name(dumper, key);
-
-	if (format) {
-		va_list ap;
-		va_start(ap, format);
-		char* sformat = g_strdup_printf("\"%s\"", format);
-		json_dumper_value_va_list(dumper, sformat, ap);
-		g_free(sformat);
-		va_end(ap);
-	}
-}
-
-static void
-sharkd_json_array_open(json_dumper *dumper, const char *key)
-{
-	if (key)
-		json_dumper_set_member_name(dumper, key);
-	json_dumper_begin_array(dumper);
-}
-
-static void
-sharkd_json_array_close(json_dumper *dumper)
-{
-	json_dumper_end_array(dumper);
-}
-
-void
-write_sharkd_proto_tree(output_fields_t* fields,
-                    gboolean print_summary, gboolean print_hex,
-                    gchar **protocolfilter,
-                    pf_flags protocolfilter_flags, epan_dissect_t *edt,
-                    column_info *cinfo,
-                    FILE *fh)
-{
-    g_assert(edt);
-    g_assert(fh);
-
-    write_json_data data;
-
-    json_dumper dumper = {
-        .output_file = fh,
-        .flags = JSON_DUMPER_DOT_TO_UNDERSCORE
-    };
-
-    data.dumper = &dumper;
-    
-    json_dumper_begin_object(&dumper);
-
-    sharkd_json_array_open(&dumper,"c");
-
-    if (print_summary)
-        write_ek_summary(edt->pi.cinfo, &data);
-
-    if (edt->tree) {
-
-        if (fields == NULL || fields->fields == NULL) {
-            /* Write out all fields */
-            data.src_list = edt->pi.data_src;
-            data.filter = protocolfilter;
-            data.filter_flags = protocolfilter_flags;
-            data.print_hex = print_hex;
-            proto_tree_write_node_ek(edt->tree, &data);
-        } else {
-
-            /* Write out specified fields */
-            write_specified_fields(FORMAT_SHARKD, fields, edt, cinfo, NULL, data.dumper);
-        }
-    }
-
-    sharkd_json_array_close(&dumper);
-
-    guint frame_number = 1;
-	sharkd_json_value_anyf(&dumper, "num", "%u", frame_number);
-
-
-    const color_filter_t *cfp = edt->pi.fd->color_filter;
-
-    if (cfp != NULL)
-    {
-        sharkd_json_value_stringf(&dumper, "bg", "%x", color_t_to_rgb(&cfp->bg_color));
-        sharkd_json_value_stringf(&dumper, "fg", "%x", color_t_to_rgb(&cfp->fg_color));
-    }
-
-
-    json_dumper_end_object(&dumper);
-    json_dumper_finish(&dumper);
-}
-
 void
 write_ek_proto_tree(output_fields_t* fields,
                     gboolean print_summary, gboolean print_hex,
@@ -2461,7 +2353,7 @@ static void write_specified_fields(fields_format format, output_fields_t *fields
     g_assert(fields->fields);
     g_assert(edt);
     /* JSON formats must go through json_dumper */
-    if (format == FORMAT_JSON || format == FORMAT_EK || format == FORMAT_SHARKD) {
+    if (format == FORMAT_JSON || format == FORMAT_EK) {
         g_assert(!fh && dumper);
     } else {
         g_assert(fh && !dumper);
@@ -2595,35 +2487,6 @@ static void write_specified_fields(fields_format format, output_fields_t *fields
         }
         json_dumper_end_object(dumper);
         break;
-
-    case FORMAT_SHARKD:
-        for(i = 0; i < fields->fields->len; ++i) {
-            //gchar *field = (gchar *)g_ptr_array_index(fields->fields, i);
-
-            if (NULL != fields->field_values[i]) {
-                GPtrArray *fv_p;
-                gchar * str;
-                gsize j;
-                fv_p = fields->field_values[i];
-
-                //json_dumper_set_member_name(dumper, field);
-                //json_dumper_begin_array(dumper);
-
-                /* Output the array of (partial) field values */
-                for (j = 0; j < (g_ptr_array_len(fv_p)); j += 2) {
-                    str = (gchar *)g_ptr_array_index(fv_p, j);
-                    json_dumper_value_string(dumper, str);
-                    g_free(str);
-                }
-
-                //json_dumper_end_array(dumper);
-
-                g_ptr_array_free(fv_p, TRUE);  /* get ready for the next packet */
-                fields->field_values[i] = NULL;
-            }
-        }
-        break;
-
     case FORMAT_EK:
         for(i = 0; i < fields->fields->len; ++i) {
             gchar *field = (gchar *)g_ptr_array_index(fields->fields, i);

@@ -2455,8 +2455,6 @@ endif()
 if(BUILD_sharkd)
 	set(sharkd_LIBS
 		ui
-		capchild
-		caputils
 		wiretap
 		epan
 		${VERSION_INFO_LIBS}
@@ -2471,14 +2469,11 @@ if(BUILD_sharkd)
 		# XXX - currently doesn't work on Windows if it uses
 		# $<TARGET_OBJECTS:cli_main> and has real_main().
 		#
-		$<TARGET_OBJECTS:capture_opts>
 		$<TARGET_OBJECTS:shark_common>
 		$<TARGET_OBJECTS:version_info>
 		sharkd.c
 		sharkd_daemon.c
 		sharkd_session.c
-		sharkd_capture.c
-		sharkd_editcap.c
 	)
 	set_executable_resources(sharkd "SharkD")
 	add_executable(sharkd ${sharkd_FILES})
