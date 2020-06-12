@@ -13,8 +13,6 @@
 #define __SHARKD_H
 
 #include <file.h>
-#include <epan/epan.h>
-#include <cfile.h>
 
 #define SHARKD_DISSECT_FLAG_NULL       0x00u
 #define SHARKD_DISSECT_FLAG_BYTES      0x01u
@@ -25,7 +23,6 @@
 typedef void (*sharkd_dissect_func_t)(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data);
 
 /* sharkd.c */
-epan_t * sharkd_epan_new(capture_file *cf);
 cf_status_t sharkd_cf_open(const char *fname, unsigned int type, gboolean is_tempfile, int *err);
 int sharkd_load_cap_file(void);
 int sharkd_retap(void);

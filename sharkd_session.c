@@ -75,8 +75,6 @@
 #include "globals.h"
 
 #include "sharkd.h"
-#include "sharkd_capture.h"
-#include "sharkd_editcap.h"
 
 struct sharkd_filter_item
 {
@@ -85,7 +83,7 @@ struct sharkd_filter_item
 
 static GHashTable *filter_table = NULL;
 
-json_dumper dumper = {0};
+static json_dumper dumper = {0};
 
 static const char *
 json_find_attr(const char *buf, const jsmntok_t *tokens, int count, const char *attr)
@@ -530,58 +528,6 @@ sharkd_session_process_info(void)
 }
 
 /**
- * sharkd_session_start_capture()
-*
-* Process start capture
-*
-* Input:
-*   (m) interface - interface to capture on
-*
-* Ouput stream captured cpatures
-*   (m) TODO
-*/
-static void
-sharkd_session_start_capture(const char *buf, const jsmntok_t *tokens, int count)
-{
-	const char *tok_if = json_find_attr(buf, tokens, count, "interface");
-	int err = 0;
-
-	fprintf(stderr, "load: interface=%s\n", tok_if);
-
-	if (!tok_if)
-		return;
-
-	TRY
-	{
-		err = sharkd_capture_start_with_if(tok_if);
-	}
-	CATCH(OutOfMemoryError)
-	{
-		fprintf(stderr, "load: OutOfMemoryError\n");
-		err = ENOMEM;
-	}
-	ENDTRY;
-
-	sharkd_json_simple_reply(err, NULL);
-}
-
-
-/**
- * sharkd_session_stop_capture()
-*
-* Process stop capture
-*
-*/
-static void
-sharkd_session_stop_capture(const char *buf, const jsmntok_t *tokens, int count)
-{
-	int err = 0;
-
-	sharkd_capture_stop();
-	sharkd_json_simple_reply(err, NULL);
-}
-
-/**
  * sharkd_session_process_load()
  *
  * Process load request
@@ -826,12 +772,136 @@ sharkd_session_create_columns(column_info *cinfo, const char *buf, const jsmntok
 	return cinfo;
 }
 
-
-
-void sharkd_print_packet(column_info *cinfo)
+/**
+ * sharkd_session_process_frames()
+ *
+ * Process frames request
+ *
+ * Input:
+ *   (o) column0...columnXX - requested columns either number in range [0..NUM_COL_FMTS), or custom (syntax <dfilter>:<occurence>).
+ *                            If column0 is not specified default column set will be used.
+ *   (o) filter - filter to be used
+ *   (o) skip=N   - skip N frames
+ *   (o) limit=N  - show only N frames
+ *   (o) refs  - list (comma separated) with sorted time reference frame numbers.
+ *
+ * Output array of frames with attributes:
+ *   (m) c   - array of column data
+ *   (m) num - frame number
+ *   (o) i   - if frame is ignored
+ *   (o) m   - if frame is marked
+ *   (o) ct  - if frame is commented
+ *   (o) bg  - color filter - background color in hex
+ *   (o) fg  - color filter - foreground color in hex
+ */
+static void
+sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int count)
 {
+	const char *tok_filter = json_find_attr(buf, tokens, count, "filter");
+	const char *tok_column = json_find_attr(buf, tokens, count, "column0");
+	const char *tok_skip   = json_find_attr(buf, tokens, count, "skip");
+	const char *tok_limit  = json_find_attr(buf, tokens, count, "limit");
+	const char *tok_refs   = json_find_attr(buf, tokens, count, "refs");
+
+	const guint8 *filter_data = NULL;
 
 	int col;
+
+	guint32 framenum, prev_dis_num = 0;
+	guint32 current_ref_frame = 0, next_ref_frame = G_MAXUINT32;
+	guint32 skip;
+	guint32 limit;
+
+	column_info *cinfo = &cfile.cinfo;
+	column_info user_cinfo;
+
+	if (tok_column)
+	{
+		memset(&user_cinfo, 0, sizeof(user_cinfo));
+		cinfo = sharkd_session_create_columns(&user_cinfo, buf, tokens, count);
+		if (!cinfo)
+			return;
+	}
+
+	if (tok_filter)
+	{
+		const struct sharkd_filter_item *filter_item;
+
+		filter_item = sharkd_session_filter_data(tok_filter);
+		if (!filter_item)
+			return;
+		filter_data = filter_item->filtered;
+	}
+
+	skip = 0;
+	if (tok_skip)
+	{
+		if (!ws_strtou32(tok_skip, NULL, &skip))
+			return;
+	}
+
+	limit = 0;
+	if (tok_limit)
+	{
+		if (!ws_strtou32(tok_limit, NULL, &limit))
+			return;
+	}
+
+	if (tok_refs)
+	{
+		if (!ws_strtou32(tok_refs, &tok_refs, &next_ref_frame))
+			return;
+	}
+
+	sharkd_json_array_open(NULL);
+	for (framenum = 1; framenum <= cfile.count; framenum++)
+	{
+		frame_data *fdata;
+		guint32 ref_frame = (framenum != 1) ? 1 : 0;
+
+		if (filter_data && !(filter_data[framenum / 8] & (1 << (framenum % 8))))
+			continue;
+
+		if (skip)
+		{
+			skip--;
+			prev_dis_num = framenum;
+			continue;
+		}
+
+		if (tok_refs)
+		{
+			if (framenum >= next_ref_frame)
+			{
+				current_ref_frame = next_ref_frame;
+
+				if (*tok_refs != ',')
+					next_ref_frame = G_MAXUINT32;
+
+				while (*tok_refs == ',' && framenum >= next_ref_frame)
+				{
+					current_ref_frame = next_ref_frame;
+
+					if (!ws_strtou32(tok_refs + 1, &tok_refs, &next_ref_frame))
+					{
+						fprintf(stderr, "sharkd_session_process_frames() wrong format for refs: %s\n", tok_refs);
+						break;
+					}
+				}
+
+				if (*tok_refs == '\0' && framenum >= next_ref_frame)
+				{
+					current_ref_frame = next_ref_frame;
+					next_ref_frame = G_MAXUINT32;
+				}
+			}
+
+			if (current_ref_frame)
+				ref_frame = current_ref_frame;
+		}
+
+		fdata = sharkd_get_frame(framenum);
+		sharkd_dissect_columns(fdata, ref_frame, prev_dis_num, cinfo, (fdata->color_filter == NULL));
 
 		json_dumper_begin_object(&dumper);
 
@@ -846,7 +916,7 @@ void sharkd_print_packet(column_info *cinfo)
 				sharkd_json_value_string(NULL, col_item->col_data);
 				continue;
 			}
-			
+
 			/* *REF* values are always quoted */
 			if (strcmp(col_item->col_data, "*REF*") == 0){
 				sharkd_json_value_string(NULL, col_item->col_data);
@@ -1144,447 +1214,6 @@ void sharkd_print_packet(column_info *cinfo)
 			
 		}
 		sharkd_json_array_close();
-}
-
-
-/**
- * sharkd_session_process_frames()
- *
- * Process frames request
- *
- * Input:
- *   (o) column0...columnXX - requested columns either number in range [0..NUM_COL_FMTS), or custom (syntax <dfilter>:<occurence>).
- *                            If column0 is not specified default column set will be used.
- *   (o) filter - filter to be used
- *   (o) skip=N   - skip N frames
- *   (o) limit=N  - show only N frames
- *   (o) refs  - list (comma separated) with sorted time reference frame numbers.
- *
- * Output array of frames with attributes:
- *   (m) c   - array of column data
- *   (m) num - frame number
- *   (o) i   - if frame is ignored
- *   (o) m   - if frame is marked
- *   (o) ct  - if frame is commented
- *   (o) bg  - color filter - background color in hex
- *   (o) fg  - color filter - foreground color in hex
- */
-static void
-sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int count)
-{
-	const char *tok_filter = json_find_attr(buf, tokens, count, "filter");
-	const char *tok_column = json_find_attr(buf, tokens, count, "column0");
-	const char *tok_skip   = json_find_attr(buf, tokens, count, "skip");
-	const char *tok_limit  = json_find_attr(buf, tokens, count, "limit");
-	const char *tok_refs   = json_find_attr(buf, tokens, count, "refs");
-
-	const guint8 *filter_data = NULL;
-
-	//int col;
-
-	guint32 framenum, prev_dis_num = 0;
-	guint32 current_ref_frame = 0, next_ref_frame = G_MAXUINT32;
-	guint32 skip;
-	guint32 limit;
-
-	column_info *cinfo = &cfile.cinfo;
-	column_info user_cinfo;
-
-	if (tok_column)
-	{
-		memset(&user_cinfo, 0, sizeof(user_cinfo));
-		cinfo = sharkd_session_create_columns(&user_cinfo, buf, tokens, count);
-		if (!cinfo)
-			return;
-	}
-
-	if (tok_filter)
-	{
-		const struct sharkd_filter_item *filter_item;
-
-		filter_item = sharkd_session_filter_data(tok_filter);
-		if (!filter_item)
-			return;
-		filter_data = filter_item->filtered;
-	}
-
-	skip = 0;
-	if (tok_skip)
-	{
-		if (!ws_strtou32(tok_skip, NULL, &skip))
-			return;
-	}
-
-	limit = 0;
-	if (tok_limit)
-	{
-		if (!ws_strtou32(tok_limit, NULL, &limit))
-			return;
-	}
-
-	if (tok_refs)
-	{
-		if (!ws_strtou32(tok_refs, &tok_refs, &next_ref_frame))
-			return;
-	}
-
-	sharkd_json_array_open(NULL);
-	for (framenum = 1; framenum <= cfile.count; framenum++)
-	{
-		frame_data *fdata;
-		guint32 ref_frame = (framenum != 1) ? 1 : 0;
-
-		if (filter_data && !(filter_data[framenum / 8] & (1 << (framenum % 8))))
-			continue;
-
-		if (skip)
-		{
-			skip--;
-			prev_dis_num = framenum;
-			continue;
-		}
-
-		if (tok_refs)
-		{
-			if (framenum >= next_ref_frame)
-			{
-				current_ref_frame = next_ref_frame;
-
-				if (*tok_refs != ',')
-					next_ref_frame = G_MAXUINT32;
-
-				while (*tok_refs == ',' && framenum >= next_ref_frame)
-				{
-					current_ref_frame = next_ref_frame;
-
-					if (!ws_strtou32(tok_refs + 1, &tok_refs, &next_ref_frame))
-					{
-						fprintf(stderr, "sharkd_session_process_frames() wrong format for refs: %s\n", tok_refs);
-						break;
-					}
-				}
-
-				if (*tok_refs == '\0' && framenum >= next_ref_frame)
-				{
-					current_ref_frame = next_ref_frame;
-					next_ref_frame = G_MAXUINT32;
-				}
-			}
-
-			if (current_ref_frame)
-				ref_frame = current_ref_frame;
-		}
-
-		fdata = sharkd_get_frame(framenum);
-		sharkd_dissect_columns(fdata, ref_frame, prev_dis_num, cinfo, (fdata->color_filter == NULL));
-
-		json_dumper_begin_object(&dumper);
-
-		sharkd_print_packet(cinfo);
-
-	// /* 	sharkd_json_array_open("c");
-	// 	for (col = 0; col < cinfo->num_cols; ++col)
-	// 	{
-	// 		const col_item_t *col_item = &cinfo->columns[col];
-
-	// 		/* "" values are always represented by "" not be the empty string which
-	// 		 * JSON parsers do not like */
-	// 		if (strcmp(col_item->col_data, "") == 0){
-	// 			sharkd_json_value_string(NULL, col_item->col_data);
-	// 			continue;
-	// 		}
-
-	// 		//fprintf(stderr, "%s is FT_TYPE %i COL_TYPE %i\n", col_item->col_data, col_item->type, col_item->col_fmt);
-
-	// 		if(col_item->col_fmt != COL_CUSTOM){
-
-	// 			switch(col_item->col_fmt){
-	// 					case COL_8021Q_VLAN_ID:  /**< 0) 802.1Q vlan ID */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_ABS_YMD_TIME:   /**< 1) Absolute date, as YYYY-MM-DD, and time */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_ABS_YDOY_TIME:  /**< 2) Absolute date, as YYYY/DOY, and time */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_ABS_TIME:       /**< 3) Absolute time */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_VSAN:           /**< 4) VSAN - Cisco MDS-specific */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_CUMULATIVE_BYTES: /**< 5) Cumulative number of bytes */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_DCE_CALL:       /**< 7) DCE/RPC connection oriented call id OR datagram sequence number */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_DELTA_TIME:     /**< 8) Delta time */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_DELTA_TIME_DIS: /**< 9) Delta time displayed*/
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_RES_DST:        /**< 10) Resolved dest */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UNRES_DST:      /**< 11) Unresolved dest */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_RES_DST_PORT:   /**< 12) Resolved dest port */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UNRES_DST_PORT: /**< 13) Unresolved dest port */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_DEF_DST:        /**< 14) Destination address */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_DEF_DST_PORT:   /**< 15) Destination port */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_EXPERT:         /**< 16) Expert Info */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_IF_DIR:         /**< 17) FW-1 monitor interface/direction */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_FREQ_CHAN:      /**< 18) IEEE 802.11 (and WiMax?) - Channel */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_DEF_DL_DST:     /**< 19) Data link layer dest address */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_DEF_DL_SRC:     /**< 20) Data link layer source address */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_RES_DL_DST:     /**< 21) Resolved DL dest */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UNRES_DL_DST:   /**< 22) Unresolved DL dest */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_RES_DL_SRC:     /**< 23) Resolved DL source */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UNRES_DL_SRC:   /**< 24) Unresolved DL source */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_RSSI:           /**< 25) IEEE 802.11 - received signal strength */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_TX_RATE:        /**< 26) IEEE 802.11 - TX rate in Mbps */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_DSCP_VALUE:     /**< 27) IP DSCP Value */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_INFO:           /**< 28) Description */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_RES_NET_DST:    /**< 29) Resolved net dest */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UNRES_NET_DST:  /**< 30) Unresolved net dest */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_RES_NET_SRC:    /**< 31) Resolved net source */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UNRES_NET_SRC:  /**< 32) Unresolved net source */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_DEF_NET_DST:    /**< 33) Network layer dest address */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_DEF_NET_SRC:    /**< 34) Network layer source address */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_NUMBER:         /**< 35) Packet list item number */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_PACKET_LENGTH:  /**< 36) Packet length in bytes */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_PROTOCOL:       /**< 37) Protocol */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_REL_TIME:       /**< 38) Relative time */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case COL_DEF_SRC:        /**< 39) Source address */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_DEF_SRC_PORT:   /**< 40) Source port */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_RES_SRC:        /**< 41) Resolved source */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UNRES_SRC:      /**< 42) Unresolved source */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_RES_SRC_PORT:   /**< 43) Resolved source port */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UNRES_SRC_PORT: /**< 44) Unresolved source port */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_TEI:            /**< 45) Q.921 TEI */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UTC_YMD_TIME:   /**< 46) UTC date, as YYYY-MM-DD, and time */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UTC_YDOY_TIME:  /**< 47) UTC date, as YYYY/DOY, and time */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_UTC_TIME:       /**< 48) UTC time */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case COL_CLS_TIME:       /**< 49) Command line-specified time (default relative) */
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case NUM_COL_FMTS:        /**< 50) Should always be last */
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 			}
-
-
-	// 		} else {
-
-	// 			switch(col_item->type){
-						
-	// 					case FT_NONE:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_PROTOCOL:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_UINT_BYTES:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_BYTES:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_ABSOLUTE_TIME:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_RELATIVE_TIME:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_BOOLEAN:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_CHAR:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_INT8:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_INT16:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_INT24:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_INT32:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_UINT8:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_UINT16:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_UINT24:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_UINT32:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_FRAMENUM:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_INT40:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_INT48:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_INT56:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_INT64:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_UINT40:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_UINT48:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_UINT56:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_UINT64:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_EUI64:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_IPv4:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_IPv6:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_FCWWN:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_ETHER:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_GUID:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_REL_OID:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_OID:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_SYSTEM_ID:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_FLOAT:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_DOUBLE:
-	// 						sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
-	// 						break;
-	// 					case FT_STRING:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_STRINGZ:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_UINT_STRING:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					case FT_STRINGZPAD:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 						break;
-	// 					default:
-	// 						sharkd_json_value_string(NULL, col_item->col_data);
-	// 				}
-	// 		}
-			
-	// 	}
-	// 	sharkd_json_array_close(); */
 
 		sharkd_json_value_anyf("num", "%u", framenum);
 
@@ -4229,7 +3858,7 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 	min = selections[0].first;
 	max = selections[0].second;
 
-	
+	/*
 	if (!tok_frame || !ws_strtou32(tok_frame, NULL, &framenum) || framenum == 0)
 		return;
 
@@ -4240,7 +3869,7 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 	prev_dis_num = framenum - 1;
 	if (tok_prev_frame && (!ws_strtou32(tok_prev_frame, NULL, &prev_dis_num) || prev_dis_num >= framenum))
 		return;
-
+	*/
 	if (json_find_attr(buf, tokens, count, "proto") != NULL)
 		dissect_flags |= SHARKD_DISSECT_FLAG_PROTO_TREE;
 	if (json_find_attr(buf, tokens, count, "bytes") != NULL)
@@ -5125,37 +4754,7 @@ sharkd_session_process_download(char *buf, const jsmntok_t *tokens, int count)
 }
 
 
-// /**
-//  * sharkd_session_process_editcap()
-//  *
-//  * Process editcap request
-//  *
-//  * Input:
-//  *   (m) editparams  - editcap parameters
-//  *
-//  * Output object with attributes:
-//  *   (o) data - payload base64 encoded
-//  */
-// static void
-// sharkd_session_process_editcap(char *buf, const jsmntok_t *tokens, int count)
-// {
-// 	const char *editparams = json_find_attr(buf, tokens, count, "editparams");
-// 	int err = 0;
-// 	int arglen = 0;
 
-// 	if (!editparams)
-// 		return;
-
-// 	char *arguments[5]={"whatever","--opt1","--opt2","blabla","blablabla"};
-// 	arglen = ; 
-	
-// 	err = editcap(arglen, arguments)
-
-// 	json_dumper_begin_object(&dumper);
-// 	sharkd_json_value_base64("data", eo_entry->payload_data, (size_t) eo_entry->payload_len);
-// 	json_dumper_end_object(&dumper);
-// 	json_dumper_finish(&dumper);
-// }
 
 /**
  * sharkd_session_process_load_colorrules()
@@ -5253,10 +4852,6 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 
 		if (!strcmp(tok_req, "load"))
 			sharkd_session_process_load(buf, tokens, count);
-		else if (!strcmp(tok_req, "capture"))
-			sharkd_session_start_capture(buf, tokens, count);
-		else if (!strcmp(tok_req, "stop_capture"))
-			sharkd_session_stop_capture(buf, tokens, count);
 		else if (!strcmp(tok_req, "status"))
 			sharkd_session_process_status();
 		else if (!strcmp(tok_req, "analyse"))

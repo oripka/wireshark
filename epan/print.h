@@ -46,8 +46,7 @@ typedef enum {
   FORMAT_CSV,     /* CSV */
   FORMAT_JSON,    /* JSON */
   FORMAT_EK,      /* JSON bulk insert to Elasticsearch */
-  FORMAT_XML,      /* PDML output */
-  FORMAT_SHARKD      /* PDML output */
+  FORMAT_XML      /* PDML output */
 } fields_format;
 
 typedef enum {
@@ -104,14 +103,6 @@ WS_DLL_PUBLIC void write_json_proto_tree(output_fields_t* fields,
                                          proto_node_children_grouper_func node_children_grouper,
                                          json_dumper *dumper);
 WS_DLL_PUBLIC void write_json_finale(json_dumper *dumper);
-
-WS_DLL_PUBLIC void write_sharkd_proto_tree(output_fields_t* fields,
-                                       gboolean print_summary,
-                                       gboolean print_hex_data,
-                                       gchar **protocolfilter,
-                                       pf_flags protocolfilter_flags,
-                                       epan_dissect_t *edt,
-                                       column_info *cinfo, FILE *fh);
 
 WS_DLL_PUBLIC void write_ek_proto_tree(output_fields_t* fields,
                                        gboolean print_summary,
