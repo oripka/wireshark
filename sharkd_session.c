@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 
 #include <glib.h>
@@ -773,6 +774,18 @@ sharkd_session_create_columns(column_info *cinfo, const char *buf, const jsmntok
 	return cinfo;
 }
 
+
+int all_digits(const char *string){
+    if( *string == 0)              // empty string - wrong
+         return 1;
+
+    for( ; *string != 0; string++) // scan the string till its end (a zero byte (char)0)
+        if (!isdigit(*string))     // test for a digit
+            return 1;              // not a digit - return
+
+    return 0;                      // all characters are digits
+}
+
 /**
  * sharkd_session_process_frames()
  *
@@ -910,6 +923,13 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		for (col = 0; col < cinfo->num_cols; ++col)
 		{
 			const col_item_t *col_item = &cinfo->columns[col];
+
+
+			/* just quote all not numeric data */
+			if (!all_digits(col_item->col_data)){
+				sharkd_json_value_string(NULL, col_item->col_data);
+				continue;				
+			}
 
 			/* "" values are always represented by "" not be the empty string which
 			 * JSON parsers do not like */
