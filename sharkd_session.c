@@ -29,6 +29,7 @@
 #include <epan/color_filters.h>
 #include <epan/prefs.h>
 #include <epan/prefs-int.h>
+#include <epan/proto.h>
 #include <epan/uat-int.h>
 #include <wiretap/wtap.h>
 
@@ -923,6 +924,12 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 				continue;
 			}
 
+			/* HEX strings are always quoted */
+			if  (strlen(col_item->col_data) > 2 && col_item->col_data[0] == "0" && col_item->col_data[1] == "x"){
+				sharkd_json_value_string(NULL, col_item->col_data);
+				continue;
+			}
+
 			//fprintf(stderr, "%s is FT_TYPE %i COL_TYPE %i\n", col_item->col_data, col_item->type, col_item->col_fmt);
 
 			if(col_item->col_fmt != COL_CUSTOM){
@@ -1082,7 +1089,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 
 
 			} else {
-
+				/* custom column type json format output */
 				switch(col_item->type){
 						
 						case FT_NONE:
