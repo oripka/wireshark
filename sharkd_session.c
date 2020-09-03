@@ -925,7 +925,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			}
 
 			/* HEX strings are always quoted */
-			if  (strlen(col_item->col_data) > 2 && col_item->col_data[0] == "0" && col_item->col_data[1] == "x"){
+			if  (strlen(col_item->col_data) > 2 && col_item->col_data[0] == '0' && col_item->col_data[1] == 'x'){
 				sharkd_json_value_string(NULL, col_item->col_data);
 				continue;
 			}
