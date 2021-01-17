@@ -102,7 +102,7 @@ static void print_escaped_csv(FILE *fh, const char *unescaped_string);
 
 typedef void (*proto_node_value_writer)(proto_node *, write_json_data *);
 static void write_json_index(json_dumper *dumper, epan_dissect_t *edt);
-static void write_json_index_enhanced(json_dumper *dumper, epan_dissect_t *edt);
+static void write_json_index_enhanced(json_dumper *dumper, epan_dissect_t *edt, const char *index_name);
 static void write_json_proto_node_list(GSList *proto_node_list_head, write_json_data *data);
 static void write_json_proto_node(GSList *node_values_head,
                                   const char *suffix,
