@@ -735,7 +735,6 @@ main(int argc, char *argv[])
   volatile gboolean    out_file_name_res = FALSE;
   volatile int         in_file_type = WTAP_TYPE_AUTO;
   gchar               *volatile cf_name = NULL;
-  gchar               *volatile index_name = NULL;
   gchar               *rfilter = NULL;
   gchar               *dfilter = NULL;
 #ifdef HAVE_PCAP_OPEN_DEAD
@@ -1478,9 +1477,6 @@ main(int argc, char *argv[])
       break;
     case LONGOPT_DECODE_ONLY: /* decode only certain packets */
       add_string_selection(optarg);
-      break;
-    case LONGOPT_INDEX_NAME: /* set elastic search index name */
-      index_name = g_strdup(optarg);
       break;
     default:
     case '?':        /* Bad flag - print usage message */
@@ -2294,7 +2290,6 @@ main(int argc, char *argv[])
 
 clean_exit:
   g_free(cf_name);
-  g_free(index_name)
   destroy_print_stream(print_stream);
   g_free(output_file_name);
 #ifdef HAVE_LIBPCAP
@@ -4236,7 +4231,7 @@ print_packet(capture_file *cf, epan_dissect_t *edt)
 
   case WRITE_EK_ENHANCED:
     write_ek_enhanced_proto_tree(output_fields, print_summary, print_hex, protocolfilter,
-                        protocolfilter_flags, edt, &cf->cinfo, stdout, index_name);
+                        protocolfilter_flags, edt, &cf->cinfo, stdout);
     return !ferror(stdout);
 
   if (print_hex) {
