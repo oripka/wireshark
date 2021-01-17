@@ -102,7 +102,6 @@ static void print_escaped_csv(FILE *fh, const char *unescaped_string);
 
 typedef void (*proto_node_value_writer)(proto_node *, write_json_data *);
 static void write_json_index(json_dumper *dumper, epan_dissect_t *edt);
-static void write_json_index_enhanced(json_dumper *dumper, const char *index_name);
 static void write_json_proto_node_list(GSList *proto_node_list_head, write_json_data *data);
 static void write_json_proto_node(GSList *node_values_head,
                                   const char *suffix,
@@ -376,7 +375,7 @@ write_ek_enhanced_proto_tree(output_fields_t* fields,
     //json_dumper_finish(&dumper);
 
     //json_dumper_begin_object(&dumper);
-    json_dumper_set_member_name(&dumper, "_source");
+    json_dumper_set_member_name(dumper, "_source");
     /* Timestamp added for time indexing in Elasticsearch */
     json_dumper_set_member_name(&dumper, "timestamp");
     json_dumper_value_anyf(&dumper, "\"%" G_GUINT64_FORMAT "%03d\"", (guint64)edt->pi.abs_ts.secs, edt->pi.abs_ts.nsecs/1000000);
@@ -760,18 +759,6 @@ write_json_finale(json_dumper *dumper)
     json_dumper_end_array(dumper);
     json_dumper_finish(dumper);
 }
-
-static void
-write_json_index_enhanced(json_dumper *dumper, const char *index_name)
-{
-    gchar* str;
-
-    json_dumper_set_member_name(dumper, "_index");
-    str = g_strdup(index_name);
-    json_dumper_value_string(dumper, str);
-    g_free(str);
-}
-
 
 static void
 write_json_index(json_dumper *dumper, epan_dissect_t *edt)
