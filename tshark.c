@@ -175,7 +175,8 @@ typedef enum {
   WRITE_FIELDS, /* User defined list of fields */
   WRITE_JSON,   /* JSON */
   WRITE_JSON_RAW,   /* JSON only raw hex */
-  WRITE_EK      /* JSON bulk insert to Elasticsearch */
+  WRITE_EK,      /* JSON bulk insert to Elasticsearch */
+  WRITE_EK_ENHANCED /* JSON bulk insert into Elasticsearch enhanced */
   /* Add CSV and the like here */
 } output_action_e;
 
@@ -1335,6 +1336,10 @@ main(int argc, char *argv[])
         output_action = WRITE_EK;
         if (!print_summary)
           print_details = TRUE;
+      } else if (strcmp(optarg, "eke") == 0) {
+        output_action = WRITE_EK_ENHANCED;
+        if (!print_summary)
+          print_details = TRUE;
       } else if (strcmp(optarg, "jsonraw") == 0) {
         output_action = WRITE_JSON_RAW;
         print_details = TRUE;   /* Need details */
@@ -1508,7 +1513,7 @@ main(int argc, char *argv[])
   }
 
   /* If we specified output fields, but not the output field type... */
-  if ((WRITE_FIELDS != output_action && WRITE_XML != output_action && WRITE_JSON != output_action && WRITE_EK != output_action) && 0 != output_fields_num_fields(output_fields)) {
+  if ((WRITE_FIELDS != output_action && WRITE_XML != output_action && WRITE_JSON != output_action && WRITE_EK != output_action && WRITE_EK_ENHANCED != output_action) && 0 != output_fields_num_fields(output_fields)) {
         cmdarg_err("Output fields were specified with \"-e\", "
             "but \"-Tek, -Tfields, -Tjson or -Tpdml\" was not specified.");
         exit_status = INVALID_OPTION;
@@ -1601,7 +1606,7 @@ main(int argc, char *argv[])
   }
 
   if (print_hex) {
-    if (output_action != WRITE_TEXT && output_action != WRITE_JSON && output_action != WRITE_JSON_RAW && output_action != WRITE_EK) {
+    if (output_action != WRITE_TEXT && output_action != WRITE_JSON && output_action != WRITE_JSON_RAW && output_action != WRITE_EK && output_action != WRITE_EK_ENHANCED) {
       cmdarg_err("Raw packet hex data can only be printed as text, PostScript, JSON, JSONRAW or EK JSON");
       exit_status = INVALID_OPTION;
       goto clean_exit;
@@ -3852,6 +3857,9 @@ write_preamble(capture_file *cf)
 
   case WRITE_EK:
     return TRUE;
+  
+  case WRITE_EK_ENHANCED:
+    return TRUE;
 
   default:
     g_assert_not_reached();
@@ -4226,6 +4234,11 @@ print_packet(capture_file *cf, epan_dissect_t *edt)
     return !ferror(stdout);
   }
 
+  case WRITE_EK_ENHANCED:
+    write_ek_enhanced_proto_tree(output_fields, print_summary, print_hex, protocolfilter,
+                        protocolfilter_flags, edt, &cf->cinfo, stdout, index_name);
+    return !ferror(stdout);
+
   if (print_hex) {
     if (print_summary || print_details) {
       if (!print_line(print_stream, 0, ""))
@@ -4264,6 +4277,9 @@ write_finale(void)
     return !ferror(stdout);
 
   case WRITE_EK:
+    return TRUE;
+
+  case WRITE_EK_ENHANCED:
     return TRUE;
 
   default:
