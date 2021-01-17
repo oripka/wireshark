@@ -4227,12 +4227,12 @@ print_packet(capture_file *cf, epan_dissect_t *edt)
     write_ek_proto_tree(output_fields, print_summary, print_hex, protocolfilter,
                         protocolfilter_flags, edt, &cf->cinfo, stdout);
     return !ferror(stdout);
-  }
 
   case WRITE_EK_ENHANCED:
     write_ek_enhanced_proto_tree(output_fields, print_summary, print_hex, protocolfilter,
                         protocolfilter_flags, edt, &cf->cinfo, stdout);
     return !ferror(stdout);
+  }
 
   if (print_hex) {
     if (print_summary || print_details) {
