@@ -102,7 +102,7 @@ static void print_escaped_csv(FILE *fh, const char *unescaped_string);
 
 typedef void (*proto_node_value_writer)(proto_node *, write_json_data *);
 static void write_json_index(json_dumper *dumper, epan_dissect_t *edt);
-static void write_json_index_enhanced(json_dumper *dumper, epan_dissect_t *edt, const char *index_name);
+static void write_json_index_enhanced(json_dumper *dumper, const char *index_name);
 static void write_json_proto_node_list(GSList *proto_node_list_head, write_json_data *data);
 static void write_json_proto_node(GSList *node_values_head,
                                   const char *suffix,
@@ -365,7 +365,7 @@ write_ek_enhanced_proto_tree(output_fields_t* fields,
     json_dumper_begin_object(&dumper);
     json_dumper_set_member_name(&dumper, "index");
     json_dumper_begin_object(&dumper);
-    write_json_index_enhanced(&dumper, edt, index_name);
+    write_json_index_enhanced(&dumper, index_name);
     json_dumper_set_member_name(&dumper, "_type");
     json_dumper_value_string(&dumper, "doc");
     json_dumper_end_object(&dumper);
@@ -759,7 +759,7 @@ write_json_finale(json_dumper *dumper)
 }
 
 static void
-write_json_index_enhanced(json_dumper *dumper, epan_dissect_t *edt, const char *index_name)
+write_json_index_enhanced(json_dumper *dumper, const char *index_name)
 {
     gchar* str;
 
