@@ -156,7 +156,7 @@
 #endif
 
 capture_file cfile;
-
+gchar *volatile index_name = NULL;
 static guint32 cum_bytes;
 static frame_data ref_frame;
 static frame_data prev_dis_frame;
@@ -735,7 +735,6 @@ main(int argc, char *argv[])
   volatile gboolean    out_file_name_res = FALSE;
   volatile int         in_file_type = WTAP_TYPE_AUTO;
   gchar               *volatile cf_name = NULL;
-  gchar               *volatile index_name = NULL;
   gchar               *rfilter = NULL;
   gchar               *dfilter = NULL;
 #ifdef HAVE_PCAP_OPEN_DEAD
