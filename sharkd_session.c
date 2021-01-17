@@ -4884,10 +4884,10 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 			return;
 		}
 
-		if(MEASURE_PERFORMANCE){
-			struct timeval  tv1, tv2;
-			gettimeofday(&tv1, NULL);
-		}
+		// if(MEASURE_PERFORMANCE){
+		// 	struct timeval  tv1, tv2;
+		// 	gettimeofday(&tv1, NULL);
+		// }
 
 
 		if (!strcmp(tok_req, "load"))
@@ -4933,11 +4933,11 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 		else
 			fprintf(stderr, "::: req = %s\n", tok_req);
 
-		if(MEASURE_PERFORMANCE){
-			gettimeofday(&tv2, NULL);
-			fprintf (stderr, "%s time = %f seconds\n", tok_req, 
-				(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec));
-		}
+		// if(MEASURE_PERFORMANCE){
+		// 	gettimeofday(&tv2, NULL);
+		// 	fprintf (stderr, "%s time = %f seconds\n", tok_req, 
+		// 		(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec));
+		// }
 
 		/* reply for every command are 0+ lines of JSON reply (outputed above), finished by empty new line */
 		json_dumper_finish(&dumper);
