@@ -123,7 +123,7 @@ gboolean use_selections = FALSE;
 static gboolean print_only = FALSE;
 static unsigned int print_only_packet = 0;
 
-int verbose=1;
+int verbose=0;
 
 static const char *
 json_find_attr(const char *buf, const jsmntok_t *tokens, int count, const char *attr)

@@ -78,6 +78,9 @@
 
 #include "sharkd.h"
 
+#define MEASURE_PERFORMANCE 0
+#define VERBOSE 0
+
 struct sharkd_filter_item
 {
 	guint8 *filtered; /* can be NULL if all frames are matching for given filter. */
@@ -554,7 +557,10 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 	parse_selected_frames(buf, tokens, count);
 	parse_add_print_only(buf, tokens, count);
 
-	fprintf(stderr, "load: filename=%s\n", tok_file);
+	if(VERBOSE){
+		fprintf(stderr, "load: filename=%s\n", tok_file);
+	}
+	
 
 	if (!tok_file)
 		return;
@@ -2819,7 +2825,10 @@ sharkd_session_process_tap(char *buf, const jsmntok_t *tokens, int count)
 		taps_count++;
 	}
 
-	fprintf(stderr, "sharkd_session_process_tap() count=%d\n", taps_count);
+	if(VERBOSE){
+		fprintf(stderr, "sharkd_session_process_tap() count=%d\n", taps_count);
+	}
+
 	if (taps_count == 0)
 		return;
 
@@ -4805,8 +4814,9 @@ sharkd_session_process_load_colorrules(char *buf, const jsmntok_t *tokens, int c
 	if (!tok_file)
 		return;
 
-	fprintf(stderr, "load_colorrules: filename=%s\n", tok_file);
-
+	if(VERBOSE){
+		fprintf(stderr, "load_colorrules: filename=%s\n", tok_file);
+	}
 
 	if (!color_filters_init_from_file(&err_msg, NULL, tok_file)) {
 		sharkd_json_simple_reply(1, NULL);
@@ -4874,8 +4884,11 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 			return;
 		}
 
-		struct timeval  tv1, tv2;
-		gettimeofday(&tv1, NULL);
+		if(MEASURE_PERFORMANCE){
+			struct timeval  tv1, tv2;
+			gettimeofday(&tv1, NULL);
+		}
+
 
 		if (!strcmp(tok_req, "load"))
 			sharkd_session_process_load(buf, tokens, count);
@@ -4920,9 +4933,11 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 		else
 			fprintf(stderr, "::: req = %s\n", tok_req);
 
-		gettimeofday(&tv2, NULL);
-		fprintf (stderr, "%s time = %f seconds\n", tok_req, 
-			(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec));
+		if(MEASURE_PERFORMANCE){
+			gettimeofday(&tv2, NULL);
+			fprintf (stderr, "%s time = %f seconds\n", tok_req, 
+				(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec));
+		}
 
 		/* reply for every command are 0+ lines of JSON reply (outputed above), finished by empty new line */
 		json_dumper_finish(&dumper);
@@ -4952,7 +4967,9 @@ sharkd_session_main(void)
 	jsmntok_t *tokens = NULL;
 	int tokens_max = -1;
 
-	fprintf(stderr, "Hello in child.\n");
+	if(VERBOSE){
+		fprintf(stderr, "Hello in child.\n");
+	}
 
 	dumper.output_file = stdout;
 
