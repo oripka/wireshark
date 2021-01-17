@@ -118,7 +118,8 @@ WS_DLL_PUBLIC void write_ek_enhanced_proto_tree(output_fields_t* fields,
                                        gchar **protocolfilter,
                                        pf_flags protocolfilter_flags,
                                        epan_dissect_t *edt,
-                                       column_info *cinfo, FILE *fh
+                                       column_info *cinfo, FILE *fh,
+                                       const char *index_name
                                        );
 
 WS_DLL_PUBLIC void write_psml_preamble(column_info *cinfo, FILE *fh);
