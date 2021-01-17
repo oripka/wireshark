@@ -364,8 +364,8 @@ write_ek_enhanced_proto_tree(output_fields_t* fields,
     json_dumper_begin_object(&dumper);
     // json_dumper_set_member_name(&dumper, "index");
     // json_dumper_begin_object(&dumper);
-    json_dumper_set_member_name(dumper, "_index");
-    json_dumper_value_string(dumper, index_name);
+    json_dumper_set_member_name(&dumper, "_index");
+    json_dumper_value_string(&dumper, index_name);
     //json_dumper_set_member_name(&dumper, "_type");
     //json_dumper_value_string(&dumper, "doc");
     //json_dumper_end_object(&dumper);
@@ -375,7 +375,7 @@ write_ek_enhanced_proto_tree(output_fields_t* fields,
     //json_dumper_finish(&dumper);
 
     //json_dumper_begin_object(&dumper);
-    json_dumper_set_member_name(dumper, "_source");
+    json_dumper_set_member_name(&dumper, "_source");
     /* Timestamp added for time indexing in Elasticsearch */
     json_dumper_set_member_name(&dumper, "timestamp");
     json_dumper_value_anyf(&dumper, "\"%" G_GUINT64_FORMAT "%03d\"", (guint64)edt->pi.abs_ts.secs, edt->pi.abs_ts.nsecs/1000000);
