@@ -102,6 +102,7 @@ static void print_escaped_csv(FILE *fh, const char *unescaped_string);
 
 typedef void (*proto_node_value_writer)(proto_node *, write_json_data *);
 static void write_json_index(json_dumper *dumper, epan_dissect_t *edt);
+static void write_json_index_enhanced(json_dumper *dumper, epan_dissect_t *edt, const char *index_name);
 static void write_json_proto_node_list(GSList *proto_node_list_head, write_json_data *data);
 static void write_json_proto_node(GSList *node_values_head,
                                   const char *suffix,
@@ -340,12 +341,73 @@ write_pdml_proto_tree(output_fields_t* fields, gchar **protocolfilter, pf_flags 
 }
 
 void
+write_ek_enhanced_proto_tree(output_fields_t* fields,
+                    gboolean print_summary, gboolean print_hex,
+                    gchar **protocolfilter,
+                    pf_flags protocolfilter_flags, epan_dissect_t *edt,
+                    column_info *cinfo,
+                    FILE *fh,
+                    const char *index_name
+                    )
+{
+    g_assert(edt);
+    g_assert(fh);
+
+    write_json_data data;
+
+    json_dumper dumper = {
+        .output_file = fh,
+        .flags = JSON_DUMPER_DOT_TO_UNDERSCORE
+    };
+
+    data.dumper = &dumper;
+
+    // json_dumper_begin_object(&dumper);
+    // json_dumper_set_member_name(&dumper, "index");
+    // json_dumper_begin_object(&dumper);
+    // write_json_index_enhanced(&dumper, edt, index_name);
+    // json_dumper_set_member_name(&dumper, "_type");
+    // json_dumper_value_string(&dumper, "doc");
+    // json_dumper_end_object(&dumper);
+    // json_dumper_end_object(&dumper);
+    // json_dumper_finish(&dumper);
+
+    json_dumper_begin_object(&dumper);
+
+    /* Timestamp added for time indexing in Elasticsearch */
+    json_dumper_set_member_name(&dumper, "timestamp");
+    json_dumper_value_anyf(&dumper, "\"%" G_GUINT64_FORMAT "%03d\"", (guint64)edt->pi.abs_ts.secs, edt->pi.abs_ts.nsecs/1000000);
+
+    if (print_summary)
+        write_ek_summary(edt->pi.cinfo, &data);
+
+    if (edt->tree) {
+
+        if (fields == NULL || fields->fields == NULL) {
+            /* Write out all fields */
+            data.src_list = edt->pi.data_src;
+            data.filter = protocolfilter;
+            data.filter_flags = protocolfilter_flags;
+            data.print_hex = print_hex;
+            proto_tree_write_node_ek(edt->tree, &data);
+        } else {
+            /* Write out specified fields */
+            write_specified_fields(FORMAT_EK, fields, edt, cinfo, NULL, data.dumper);
+        }
+
+    }
+    json_dumper_end_object(&dumper);
+    json_dumper_finish(&dumper);
+}
+
+void
 write_ek_proto_tree(output_fields_t* fields,
                     gboolean print_summary, gboolean print_hex,
                     gchar **protocolfilter,
                     pf_flags protocolfilter_flags, epan_dissect_t *edt,
                     column_info *cinfo,
-                    FILE *fh)
+                    FILE *fh
+                    )
 {
     g_assert(edt);
     g_assert(fh);
@@ -695,6 +757,18 @@ write_json_finale(json_dumper *dumper)
     json_dumper_end_array(dumper);
     json_dumper_finish(dumper);
 }
+
+static void
+write_json_index_enhanced(json_dumper *dumper, epan_dissect_t *edt, const char *index_name)
+{
+    gchar* str;
+
+    json_dumper_set_member_name(dumper, "_index");
+    str = g_strdup(index_name);
+    json_dumper_value_string(dumper, str);
+    g_free(str);
+}
+
 
 static void
 write_json_index(json_dumper *dumper, epan_dissect_t *edt)

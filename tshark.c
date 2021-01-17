@@ -147,6 +147,7 @@
 #define LONGOPT_SKIP_PACKETS (65536 + 1003)
 #define LONGOPT_DECODE_ONLY (65536 + 1004)
 #define LONGOPT_PRINT_ONLY (65536 + 1005)
+#define LONGOPT_INDEX_NAME (65536 + 1006)
 
 #if 0
 #define tshark_debug(...) g_warning(__VA_ARGS__)
@@ -706,6 +707,7 @@ main(int argc, char *argv[])
     {"skip-packets", required_argument, NULL, LONGOPT_SKIP_PACKETS},
     {"decode-only", required_argument, NULL, LONGOPT_DECODE_ONLY},
     {"print-only", required_argument, NULL, LONGOPT_PRINT_ONLY},
+    {"index-name", required_argument, NULL, LONGOPT_INDEX_NAME},
     {0, 0, 0, 0 }
   };
   gboolean             arg_error = FALSE;
@@ -732,6 +734,7 @@ main(int argc, char *argv[])
   volatile gboolean    out_file_name_res = FALSE;
   volatile int         in_file_type = WTAP_TYPE_AUTO;
   gchar               *volatile cf_name = NULL;
+  gchar               *volatile index_name = NULL;
   gchar               *rfilter = NULL;
   gchar               *dfilter = NULL;
 #ifdef HAVE_PCAP_OPEN_DEAD
@@ -1470,6 +1473,9 @@ main(int argc, char *argv[])
       break;
     case LONGOPT_DECODE_ONLY: /* decode only certain packets */
       add_string_selection(optarg);
+      break;
+    case LONGOPT_INDEX_NAME: /* set elastic search index name */
+      index_name = g_strdup(optarg);
       break;
     default:
     case '?':        /* Bad flag - print usage message */
@@ -2283,6 +2289,7 @@ main(int argc, char *argv[])
 
 clean_exit:
   g_free(cf_name);
+  g_free(index_name)
   destroy_print_stream(print_stream);
   g_free(output_file_name);
 #ifdef HAVE_LIBPCAP
