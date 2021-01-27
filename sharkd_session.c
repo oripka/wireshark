@@ -935,7 +935,11 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			if (!all_digits(col_item->col_data)){
 				sharkd_json_value_string(NULL, col_item->col_data);
 				continue;				
+			} else{
+				sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+				continue;
 			}
+
 
 			/* "" values are always represented by "" not be the empty string which
 			 * JSON parsers do not like */
