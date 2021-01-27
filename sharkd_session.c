@@ -785,18 +785,18 @@ int all_digits(const char *string){
 	int dots = 0;
 
     if( *string == 0)              // empty string - wrong
-         return 1;
+         return 0;
 
     for( ; *string != 0; string++) // scan the string till its end (a zero byte (char)0)
 		if(*string == '.')		   // multiple dots are not digits
 			dots++;
         else if (!isdigit(*string))     // test for a digit
-            return 1;              // not a digit - return
+            return 0;              // not a digit - return
 
 		if(dots > 1)
-			return 1
+			return 0
 
-    return 0;                      // all characters are digits
+    return 1;                      // all characters are digits
 }
 
 /**
