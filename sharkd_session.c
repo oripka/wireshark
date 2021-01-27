@@ -794,7 +794,7 @@ int all_digits(const char *string){
             return 0;              // not a digit - return
 
 		if(dots > 1)
-			return 0
+			return 0;
 
     return 1;                      // all characters are digits
 }
