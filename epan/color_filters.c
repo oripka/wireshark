@@ -294,6 +294,35 @@ color_filter_list_clone(GSList *cfl)
 }
 
 static gboolean
+color_filters_get_from_path(gchar** err_msg, color_filter_add_cb_func add_cb, const gchar *path)
+{
+    FILE     *f;
+    int       ret;
+
+    /* start the list with the temporary colorizing rules */
+    color_filters_add_tmp(&color_filter_list);
+
+    if ((f = ws_fopen(path, "r")) == NULL) {
+        return FALSE;
+    }
+
+    /*
+     * We've opened it; try to read it.
+     */
+    ret = read_filters_file(path, f, &color_filter_list, add_cb);
+    if (ret != 0) {
+        *err_msg = g_strdup_printf("Error reading filter file\n\"%s\": %s.",
+                                   path, g_strerror(errno));
+        fclose(f);
+        return FALSE;
+    }
+
+    /* Success. */
+    fclose(f);
+    return TRUE;
+}
+
+static gboolean
 color_filters_get(gchar** err_msg, color_filter_add_cb_func add_cb)
 {
     gchar    *path;
@@ -343,6 +372,18 @@ color_filters_get(gchar** err_msg, color_filter_add_cb_func add_cb)
 
 /* Initialize the filter structures (reading from file) for general running, including app startup */
 gboolean
+color_filters_init_from_file(gchar** err_msg, color_filter_add_cb_func add_cb, const gchar* path)
+{
+    /* delete all currently existing filters */
+    color_filter_list_delete(&color_filter_list);
+
+    /* now try to construct the filters list */
+    return color_filters_get_from_path(err_msg, add_cb, path);
+}
+
+
+/* Initialize the filter structures (reading from file) for general running, including app startup */
+gboolean
 color_filters_init(gchar** err_msg, color_filter_add_cb_func add_cb)
 {
     /* delete all currently existing filters */
@@ -351,6 +392,8 @@ color_filters_init(gchar** err_msg, color_filter_add_cb_func add_cb)
     /* now try to construct the filters list */
     return color_filters_get(err_msg, add_cb);
 }
+
+
 
 gboolean
 color_filters_reload(gchar** err_msg, color_filter_add_cb_func add_cb)

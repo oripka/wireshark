@@ -6338,7 +6338,7 @@ hfinfo_remove_from_gpa_name_map(const header_field_info *hfinfo)
 /* -------------------------- */
 const gchar *
 proto_custom_set(proto_tree* tree, GSList *field_ids, gint occurrence,
-		 gchar *result, gchar *expr, const int size)
+		 gchar *result, gchar *expr, const int size, enum ftenum *type)
 {
 	guint32             number;
 	guint64             number64;
@@ -6372,6 +6372,7 @@ proto_custom_set(proto_tree* tree, GSList *field_ids, gint occurrence,
 		if (!hfinfo)
 			return "";
 
+		*type = hfinfo->type;
 		if (occurrence < 0) {
 			/* Search other direction */
 			while (hfinfo->same_name_prev_id != -1) {
@@ -6426,7 +6427,7 @@ proto_custom_set(proto_tree* tree, GSList *field_ids, gint occurrence,
 
 				if (offset_e && (offset_e < (size - 2)))
 					expr[offset_e++] = ',';
-
+				
 				switch (hfinfo->type) {
 
 					case FT_NONE:

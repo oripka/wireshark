@@ -46,8 +46,9 @@
 /* for windows support TCP sockets */
 # define SHARKD_TCP_SUPPORT
 #else
-/* for other system support only local sockets */
+# define SHARKD_TCP_SUPPORT
 # define SHARKD_UNIX_SUPPORT
+# define SHARKD_TCP_SUPPORT
 #endif
 
 static int _use_stdinout = 0;
@@ -160,8 +161,10 @@ socket_init(char *path)
 int
 sharkd_init(int argc, char **argv)
 {
+#ifdef DAEMONIZE
 #ifndef _WIN32
 	pid_t pid;
+#endif
 #endif
 	socket_handle_t fd;
 
@@ -197,6 +200,7 @@ sharkd_init(int argc, char **argv)
 		_server_fd = fd;
 	}
 
+#ifdef DAEMONIZE
 	if (!_use_stdinout)
 	{
 		/* all good - try to daemonize */
@@ -212,7 +216,7 @@ sharkd_init(int argc, char **argv)
 		}
 #endif
 	}
-
+#endif
 	return 0;
 }
 
