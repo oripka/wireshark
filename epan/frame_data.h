@@ -92,6 +92,7 @@ typedef struct _frame_data {
   nstime_t     shift_offset; /**< How much the abs_tm of the frame is shifted */
   guint32      frame_ref_num; /**< Previous reference frame (0 if this is one) */
   guint32      prev_dis_num; /**< Previous displayed frame (0 if first one) */
+
 } frame_data;
 DIAG_ON_PEDANTIC
 
