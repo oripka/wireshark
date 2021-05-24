@@ -273,7 +273,7 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 
 	/* Attempt to (re-)calculate color filters (if any). */
 	if (pinfo->fd->need_colorize) {
-		color_filter = color_filters_colorize_packet(file_data->color_edt);
+		color_filter = color_filters_all_colorize_packet(file_data->color_edt);
 		pinfo->fd->color_filter = color_filter;
 		pinfo->fd->need_colorize = 0;
 	} else {
