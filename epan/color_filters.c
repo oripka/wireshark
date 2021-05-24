@@ -575,7 +575,7 @@ color_filters_all_colorize_packet(epan_dissect_t *edt)
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
             
 
-                fprintf(stderr, "%i", rulenum);
+                fprintf(stderr, "XXXXX %i\n", rulenum);
                 if (!firstset){
                     first = colorf;
                 } else{
