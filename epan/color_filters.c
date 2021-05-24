@@ -553,6 +553,48 @@ color_filters_prime_edt(epan_dissect_t *edt)
         g_slist_foreach(color_filter_list, prime_edt, edt);
 }
 
+
+/* * Return the color_t for later use */
+const color_filter_t *
+color_filters_all_colorize_packet(epan_dissect_t *edt)
+{
+    GSList         *curr;
+    color_filter_t *colorf;
+    color_filter_t *first;
+    gboolean  firstset = FALSE;
+    gint rulenum = 0;
+
+    /* If we have color filters, "search" for the matching one. */
+    if ((edt->tree != NULL) && (color_filters_used())) {
+        curr = color_filter_list;
+
+        while(curr != NULL) {
+            colorf = (color_filter_t *)curr->data;
+            if ( (!firstset) && (!colorf->disabled) &&
+                 (colorf->c_colorfilter != NULL) &&
+                 dfilter_apply_edt(colorf->c_colorfilter, edt)) {
+            
+
+                fprintf(stderr, "%i", rulenum);
+                if (!firstset){
+                    first = colorf;
+                } else{
+                    ;
+                }
+            } 
+            curr = g_slist_next(curr);
+            rulenum++;
+        }
+    }
+
+    if(firstset){
+        return first;
+    }
+
+    return NULL;
+}
+
+
 /* * Return the color_t for later use */
 const color_filter_t *
 color_filters_colorize_packet(epan_dissect_t *edt)

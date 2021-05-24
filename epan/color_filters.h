@@ -112,6 +112,14 @@ color_filters_reset_tmp(gchar **err_msg);
  */
 WS_DLL_PUBLIC void color_filters_prime_edt(struct epan_dissect *edt);
 
+/** Colorize a specific packet with all coloring rules.
+ *
+ * @param edt the dissected packet
+ * @return the matching color filter or NULL
+ */
+WS_DLL_PUBLIC const color_filter_t *
+color_filters_all_colorize_packet(struct epan_dissect *edt);
+
 /** Colorize a specific packet.
  *
  * @param edt the dissected packet
