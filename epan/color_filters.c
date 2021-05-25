@@ -23,11 +23,13 @@
 #include <wsutil/file_util.h>
 
 #include <epan/packet.h>
+
 #include "color_filters.h"
 #include "file.h"
 #include <epan/dfilter/dfilter.h>
 #include <epan/prefs.h>
 #include <epan/epan_dissect.h>
+#include <epan/frame_data.h>
 
 #define RED_COMPONENT(x)   (guint16) (((((x) >> 16) & 0xff) * 65535 / 255))
 #define GREEN_COMPONENT(x) (guint16) (((((x) >>  8) & 0xff) * 65535 / 255))
@@ -556,13 +558,14 @@ color_filters_prime_edt(epan_dissect_t *edt)
 
 /* * Return the color_t for later use */
 const color_filter_t *
-color_filters_all_colorize_packet(epan_dissect_t *edt)
+color_filters_all_colorize_packet(epan_dissect_t *edt, packet_info *pinfo)
 {
     GSList         *curr;
     color_filter_t *colorf;
     color_filter_t *first;
     gboolean  firstset = FALSE;
-    gint rulenum = 0;
+    guint32 rulenum = 0;
+    guint num_colorrules_matched = 0;
 
     /* If we have color filters, "search" for the matching one. */
     if ((edt->tree != NULL) && (color_filters_used())) {
@@ -573,19 +576,23 @@ color_filters_all_colorize_packet(epan_dissect_t *edt)
             if ( (!firstset) && (!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
-            
-
-                fprintf(stderr, "XXXXX %i\n", rulenum);
+                     
+                if(num_colorrules_matched < MAX_COLORRULES_MATCHED){
+                    pinfo->fd->colorrules_matched[num_colorrules_matched] = rulenum;
+                    num_colorrules_matched++;
+                    fprintf(stderr, "XXXXX %i\n", rulenum);
+                }
+ 
                 if (!firstset){
                     first = colorf;
-                } else{
-                    ;
                 }
             } 
             curr = g_slist_next(curr);
             rulenum++;
         }
     }
+
+    pinfo->fd->num_colorrules_matched = num_colorrules_matched;
 
     if(firstset){
         return first;
