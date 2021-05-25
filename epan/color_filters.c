@@ -574,14 +574,16 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
 
-            printf("Evaluating: %s -> %u\n", colorf->filter_name, rulenum);
+            //printf("Evaluating: %s -> %u\n", colorf->filter_name, rulenum);
             if ((!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
                      
                 if(num_colorrules_matched < max){
-                    matches[num_colorrules_matched] = rulenum;
-                    printf("Matched %s -> %u\n", colorf->filter_name, rulenum);
+                    // first then are ___conversation_color_filter___01
+                    // so we need to substract 10
+                    matches[num_colorrules_matched] = rulenum - 10;
+                    //printf("Matched %s -> %u\n", colorf->filter_name, rulenum);
                     num_colorrules_matched++;
                     *nummatched = num_colorrules_matched;
                 }
