@@ -585,7 +585,7 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
  
                 if (!firstset){
                     firstset= TRUE;
-                    first = colorf;
+                    first = (color_filter_t *)curr->data;
                 }
             } 
             curr = g_slist_next(curr);

@@ -937,6 +937,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 			guint8 colorrules_matched[MAX_COLORRULES_MATCHED] = {0};
 			guint32 nummatched = 0;
+			
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, colorrules_matched, &nummatched, MAX_COLORRULES_MATCHED);
 			
 			// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
