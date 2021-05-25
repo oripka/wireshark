@@ -573,7 +573,7 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
 
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
-            if ( (!firstset) && (!colorf->disabled) &&
+            if ((!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
                      
