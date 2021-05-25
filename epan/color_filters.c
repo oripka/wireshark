@@ -591,8 +591,6 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
         }
     }
 
-    pinfo->fd->num_colorrules_matched = num_colorrules_matched;
-
     if(firstset){
         return first;
     }
