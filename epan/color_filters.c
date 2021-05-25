@@ -558,13 +558,13 @@ color_filters_prime_edt(epan_dissect_t *edt)
 
 /* * Return the color_t for later use */
 const color_filter_t *
-color_filters_all_colorize_packet(epan_dissect_t *edt, packet_info *pinfo)
+color_filters_all_colorize_packet(epan_dissect_t *edt, guint8[] matches, guint32 max)
 {
     GSList         *curr;
     color_filter_t *colorf;
     color_filter_t *first;
     gboolean  firstset = FALSE;
-    guint32 rulenum = 0;
+    guint8 rulenum = 0;
     guint num_colorrules_matched = 0;
 
     /* If we have color filters, "search" for the matching one. */
@@ -577,10 +577,9 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, packet_info *pinfo)
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
                      
-                if(num_colorrules_matched < MAX_COLORRULES_MATCHED){
+                if(num_colorrules_matched < max){
                     pinfo->fd->colorrules_matched[num_colorrules_matched] = rulenum;
                     num_colorrules_matched++;
-                    fprintf(stderr, "XXXXX %i\n", rulenum);
                 }
  
                 if (!firstset){

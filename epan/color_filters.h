@@ -118,7 +118,7 @@ WS_DLL_PUBLIC void color_filters_prime_edt(struct epan_dissect *edt);
  * @return the matching color filter or NULL
  */
 WS_DLL_PUBLIC const color_filter_t *
-color_filters_all_colorize_packet(struct epan_dissect *edt, packet_info *pinfo);
+color_filters_all_colorize_packet(struct epan_dissect *edt, guint8[] matches, guint32 max)
 
 /** Colorize a specific packet.
  *
