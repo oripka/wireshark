@@ -939,7 +939,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 			guint32 nummatched = 0;
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, colorrules_matched, &nummatched, MAX_COLORRULES_MATCHED);
 			
-			// 6 chars * 20 rules => 80, 128 should be enough
+			// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
 
 			wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*nummatched)+4, 0);
 
@@ -949,6 +949,9 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 				} else {
 					if(i>0){
 						wmem_strbuf_append_c(val2, ',');
+					}
+					if(colorrules_matched[i] > 99999){
+						break;
 					}
 					wmem_strbuf_append_printf(val2, "%u", colorrules_matched[i]);
 					//wmem_strbuf_append(val, colorrules_matched[i]);
