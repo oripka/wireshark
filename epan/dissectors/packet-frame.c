@@ -939,8 +939,41 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, colorrules_matched, MAX_COLORRULES_MATCHED);
 			
-			proto_tree_add_bytes_with_length(fh_tree, hf_frame_color_rules_all,
-										tvb, 0, 0, colorrules_matched, MAX_COLORRULES_MATCHED);
+			wmem_strbuf_t *val = wmem_strbuf_sized_new(wmem_packet_scope(), 128, 0);
+
+			for(int i =0; i< MAX_COLORRULES_MATCHED; i++)
+				if(colorrules_matched[i] == 0){
+					break;
+				} else {
+					wmem_strbuf_append_printf(strbuf, ", %u", colorrules_matched[i]);
+					//wmem_strbuf_append(val, colorrules_matched[i]);
+					wmem_strbuf_append_c(val, ':');
+				}
+				
+			}
+			ensure_tree_item(fh_tree, 1);
+			ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val));
+			proto_item_set_generated(ti);			
+
+			// if (proto_field_is_referenced(tree, hf_frame_protocols)) {
+			// 	wmem_strbuf_t *val = wmem_strbuf_sized_new(wmem_packet_scope(), 128, 0);
+			// 	wmem_list_frame_t *frame;
+			// 	/* skip the first entry, it's always the "frame" protocol */
+			// 	frame = wmem_list_frame_next(wmem_list_head(pinfo->layers));
+			// 	if (frame) {
+			// 		wmem_strbuf_append(val, proto_get_protocol_filter_name(GPOINTER_TO_UINT(wmem_list_frame_data(frame))));
+			// 		frame = wmem_list_frame_next(frame);
+			// 	}
+			// 	while (frame) {
+			// 		wmem_strbuf_append_c(val, ':');
+			// 		wmem_strbuf_append(val, proto_get_protocol_filter_name(GPOINTER_TO_UINT(wmem_list_frame_data(frame))));
+			// 		frame = wmem_list_frame_next(frame);
+			// 	}
+			// 	ensure_tree_item(fh_tree, 1);
+			// 	ti = proto_tree_add_string(fh_tree, hf_frame_protocols, tvb, 0, 0, wmem_strbuf_get_str(val));
+			// 	proto_item_set_generated(ti);
+			// }
+
 
 		} else {
 			color_filter = color_filters_colorize_packet(fr_data->color_edt);
@@ -1223,9 +1256,9 @@ proto_register_frame(void)
 		    NULL, HFILL }},
 
 		{ &hf_frame_color_rules_all,
-		  { "Unknown", "frame.colorrules_matched",
-		    FT_UINT_BYTES, SEP_SPACE, NULL, 0x0,
-		    NULL, HFILL }},
+		  { "Coloringrules in frame", "frame.colorrules_matched",
+		    FT_STRING, BASE_NONE, NULL, 0x0,
+		    "Colorrules that matched", HFILL }},
 	};
 
 	static hf_register_info hf_encap =
