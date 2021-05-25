@@ -939,8 +939,9 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, colorrules_matched, MAX_COLORRULES_MATCHED);
 			
-			// 4 chars * 20 rules => 80, 128 should be enough
-			wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), 128, 0);
+			// 6 chars * 20 rules => 80, 128 should be enough
+
+			wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*MAX_COLORRULES_MATCHED)+4, 0);
 
 			for(int i =0; i< MAX_COLORRULES_MATCHED; i++){
 				if(colorrules_matched[i] == 0){
