@@ -580,7 +580,7 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
                 if(num_colorrules_matched < max){
                     matches[num_colorrules_matched] = rulenum;
                     num_colorrules_matched++;
-                    *nummatched = num_colorrules_matched
+                    *nummatched = num_colorrules_matched;
                 }
  
                 if (!firstset){
