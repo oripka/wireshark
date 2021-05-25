@@ -937,7 +937,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 			guint8 colorrules_matched[MAX_COLORRULES_MATCHED] = {0};
 			guint32 nummatched = 0;
-			
+
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, colorrules_matched, &nummatched, MAX_COLORRULES_MATCHED);
 			
 			// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
@@ -1113,6 +1113,11 @@ proto_register_frame(void)
 		    FT_STRING, BASE_NONE, NULL, 0x0,
 		    "Protocols carried by this frame", HFILL }},
 
+		{ &hf_frame_color_rules_all,
+		  { "Coloringrules in frame", "frame.colorrules_matched",
+		    FT_STRING, BASE_NONE, NULL, 0x0,
+		    "Colorrules that matched", HFILL }},
+
 		{ &hf_frame_color_filter_name,
 		  { "Coloring Rule Name", "frame.coloring_rule.name",
 		    FT_STRING, BASE_NONE, NULL, 0x0,
@@ -1243,12 +1248,7 @@ proto_register_frame(void)
 		{ &hf_frame_verdict_unknown,
 		  { "Unknown", "frame.verdict.unknown",
 		    FT_BYTES, SEP_SPACE, NULL, 0x0,
-		    NULL, HFILL }},
-
-		{ &hf_frame_color_rules_all,
-		  { "Coloringrules in frame", "frame.colorrules_matched",
-		    FT_STRING, BASE_NONE, NULL, 0x0,
-		    "Colorrules that matched", HFILL }},
+		    NULL, HFILL }}
 	};
 
 	static hf_register_info hf_encap =
