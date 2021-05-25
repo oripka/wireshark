@@ -930,7 +930,6 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	}
 
 	/* Attempt to (re-)calculate color filters (if any). */
-
 	if(evaluate_all_colorrules){
 
 		#define MAX_COLORRULES_MATCHED 20
@@ -958,7 +957,9 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 			}
 		}
 
-		pinfo->fd->colorrules_matched = wmem_strbuf_get_str(val2);
+		ensure_tree_item(fh_tree, 1);
+		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
+		proto_item_set_generated(ti);
 
 	} else {
 		color_filter = color_filters_colorize_packet(fr_data->color_edt);
@@ -968,10 +969,6 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 
 	if (color_filter) {
-
-		ensure_tree_item(fh_tree, 1);
-		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, pinfo->fd->colorrules_matched);
-		proto_item_set_generated(ti);
 
 		ensure_tree_item(fh_tree, 1);
 		item = proto_tree_add_string(fh_tree, hf_frame_color_filter_name, tvb,
