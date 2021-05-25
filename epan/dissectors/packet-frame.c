@@ -114,6 +114,7 @@ static gboolean generate_md5_hash   = FALSE;
 static gboolean generate_epoch_time = TRUE;
 static gboolean generate_bits_field = TRUE;
 static gboolean disable_packet_size_limited_in_summary = FALSE;
+static gboolean evaluate_all_colorrules = FALSE;
 
 static const value_string p2p_dirs[] = {
 	{ P2P_DIR_UNKNOWN, "Unknown" },
@@ -929,7 +930,11 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 	/* Attempt to (re-)calculate color filters (if any). */
 	if (pinfo->fd->need_colorize) {
-		color_filter = color_filters_colorize_packet(fr_data->color_edt);
+		if(evaluate_all_colorrules){
+			color_filter = color_filters_colorize_packet(fr_data->color_edt);	
+		} else {
+			color_filter = color_filters_colorize_packet(fr_data->color_edt);
+		}
 		pinfo->fd->color_filter = color_filter;
 		pinfo->fd->need_colorize = 0;
 	} else {
@@ -1291,6 +1296,11 @@ proto_register_frame(void)
 	    "Disable 'packet size limited during capture' message in summary",
 	    "Whether or not 'packet size limited during capture' message in shown in Info column.",
 	    &disable_packet_size_limited_in_summary);
+
+	prefs_register_bool_preference(frame_module, "evaluate_all_colorrules",
+	    "Evaluate all colorrules",
+	    "Whether or not to evaluate all colorrules not just the first one.",
+	    &evaluate_all_colorrules);
 
 	frame_tap=register_tap("frame");
 }
