@@ -963,26 +963,6 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 			ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
 			proto_item_set_generated(ti);			
 
-			// if (proto_field_is_referenced(tree, hf_frame_protocols)) {
-			// 	wmem_strbuf_t *val = wmem_strbuf_sized_new(wmem_packet_scope(), 128, 0);
-			// 	wmem_list_frame_t *frame;
-			// 	/* skip the first entry, it's always the "frame" protocol */
-			// 	frame = wmem_list_frame_next(wmem_list_head(pinfo->layers));
-			// 	if (frame) {
-			// 		wmem_strbuf_append(val, proto_get_protocol_filter_name(GPOINTER_TO_UINT(wmem_list_frame_data(frame))));
-			// 		frame = wmem_list_frame_next(frame);
-			// 	}
-			// 	while (frame) {
-			// 		wmem_strbuf_append_c(val, ':');
-			// 		wmem_strbuf_append(val, proto_get_protocol_filter_name(GPOINTER_TO_UINT(wmem_list_frame_data(frame))));
-			// 		frame = wmem_list_frame_next(frame);
-			// 	}
-			// 	ensure_tree_item(fh_tree, 1);
-			// 	ti = proto_tree_add_string(fh_tree, hf_frame_protocols, tvb, 0, 0, wmem_strbuf_get_str(val));
-			// 	proto_item_set_generated(ti);
-			// }
-
-
 		} else {
 			color_filter = color_filters_colorize_packet(fr_data->color_edt);
 		}
@@ -991,6 +971,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	} else {
 		color_filter = pinfo->fd->color_filter;
 	}
+
 	if (color_filter) {
 		ensure_tree_item(fh_tree, 1);
 		item = proto_tree_add_string(fh_tree, hf_frame_color_filter_name, tvb,
