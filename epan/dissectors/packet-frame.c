@@ -939,20 +939,20 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, colorrules_matched, MAX_COLORRULES_MATCHED);
 			
-			wmem_strbuf_t *val = wmem_strbuf_sized_new(wmem_packet_scope(), 128, 0);
+			wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), 128, 0);
 
-			for(int i =0; i< MAX_COLORRULES_MATCHED; i++)
+			for(int i =0; i< MAX_COLORRULES_MATCHED; i++){
 				if(colorrules_matched[i] == 0){
 					break;
 				} else {
-					wmem_strbuf_append_printf(val, ", %u", colorrules_matched[i]);
+					wmem_strbuf_append_printf(val2, ", %u", colorrules_matched[i]);
 					//wmem_strbuf_append(val, colorrules_matched[i]);
-					wmem_strbuf_append_c(val, ':');
+					wmem_strbuf_append_c(val2, ':');
 				}
-				
 			}
+
 			ensure_tree_item(fh_tree, 1);
-			ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val));
+			ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
 			proto_item_set_generated(ti);			
 
 			// if (proto_field_is_referenced(tree, hf_frame_protocols)) {
