@@ -930,21 +930,24 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	}
 
 	/* Attempt to (re-)calculate color filters (if any). */
-	if(evaluate_all_colorrules){
+	if (pinfo->fd->need_colorize) {
+		if(evaluate_all_colorrules){
+			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
+		} else {
+			color_filter = color_filters_colorize_packet(fr_data->color_edt);
+		}
+		pinfo->fd->color_filter = color_filter;
+		pinfo->fd->need_colorize = 0;
+	} else {
+		color_filter = pinfo->fd->color_filter;
+	}
 
-		#define MAX_COLORRULES_MATCHED 20
-
-		guint8 colorrules_matched[MAX_COLORRULES_MATCHED] = {0};
-		guint32 nummatched = 0;
-
-		color_filter = color_filters_all_colorize_packet(fr_data->color_edt, colorrules_matched, &nummatched, MAX_COLORRULES_MATCHED);
-		
+	if(pinfo->fd->nummatched > 0){
 		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
-
-		wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*nummatched)+4, 0);
+		wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4, 0);
 
 		for(int i =0; i< MAX_COLORRULES_MATCHED; i++){
-			if(colorrules_matched[i] == 0){
+			if(pinfo->fd->colorrules_matched[i] == 0){
 				break;
 			} else {
 				if(i>0){
@@ -953,20 +956,14 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 				if(colorrules_matched[i] > 99999){
 					break;
 				}
-				wmem_strbuf_append_printf(val2, "%u", colorrules_matched[i]);
+				wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
 			}
 		}
 
 		ensure_tree_item(fh_tree, 1);
 		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
 		proto_item_set_generated(ti);
-
-	} else {
-		color_filter = color_filters_colorize_packet(fr_data->color_edt);
 	}
-	pinfo->fd->color_filter = color_filter;
-	pinfo->fd->need_colorize = 0;
-
 
 	if (color_filter) {
 
