@@ -930,8 +930,8 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	}
 
 	/* Attempt to (re-)calculate color filters (if any). */
+	pinfo->fd->nummatched = 0;
 	if (pinfo->fd->need_colorize) {
-		pinfo->fd->nummatched = 0;
 		if(evaluate_all_colorrules){
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
 		} else {
