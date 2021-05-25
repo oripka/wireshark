@@ -945,7 +945,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 				if(colorrules_matched[i] == 0){
 					break;
 				} else {
-					wmem_strbuf_append_printf(strbuf, ", %u", colorrules_matched[i]);
+					wmem_strbuf_append_printf(val, ", %u", colorrules_matched[i]);
 					//wmem_strbuf_append(val, colorrules_matched[i]);
 					wmem_strbuf_append_c(val, ':');
 				}
