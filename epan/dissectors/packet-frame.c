@@ -960,20 +960,23 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 				}
 			}
 
-			ensure_tree_item(fh_tree, 1);
-			ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
-			proto_item_set_generated(ti);			
-
+			pinfo->fd->colorrules_matched = wmem_strbuf_get_str(val2);
+	
 		} else {
 			color_filter = color_filters_colorize_packet(fr_data->color_edt);
 		}
 		pinfo->fd->color_filter = color_filter;
-		pinfo->fd->need_colorize = 1;
+		pinfo->fd->need_colorize = 0;
 	} else {
 		color_filter = pinfo->fd->color_filter;
 	}
 
 	if (color_filter) {
+
+		ensure_tree_item(fh_tree, 1);
+		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, pinfo->fd->colorrules_matched);
+		proto_item_set_generated(ti);	
+
 		ensure_tree_item(fh_tree, 1);
 		item = proto_tree_add_string(fh_tree, hf_frame_color_filter_name, tvb,
 					     0, 0, color_filter->filter_name);

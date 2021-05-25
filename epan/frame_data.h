@@ -87,6 +87,7 @@ typedef struct _frame_data {
   unsigned int has_phdr_comment : 1; /** 1 = there's comment for this packet */
   unsigned int has_user_comment : 1; /** 1 = user set (also deleted) comment for this packet */
   unsigned int need_colorize    : 1; /**< 1 = need to (re-)calculate packet color */
+  gchar * colorrules_matched;
   unsigned int tsprec           : 4; /**< Time stamp precision -2^tsprec gives up to femtoseconds */
   nstime_t     abs_ts;       /**< Absolute timestamp */
   nstime_t     shift_offset; /**< How much the abs_tm of the frame is shifted */
