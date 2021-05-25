@@ -954,7 +954,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 				if(i>0){
 					wmem_strbuf_append_c(val2, ',');
 				}
-				if(colorrules_matched[i] > 99999){
+				if(pinfo->fd->colorrules_matched[i] > 99999){
 					break;
 				}
 				wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
