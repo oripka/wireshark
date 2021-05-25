@@ -564,7 +564,7 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
     color_filter_t *colorf;
     color_filter_t *first;
     gboolean  firstset = FALSE;
-    guint8 rulenum = 0;
+    guint8 rulenum = 1;
     guint num_colorrules_matched = 0;
 
     /* If we have color filters, "search" for the matching one. */
