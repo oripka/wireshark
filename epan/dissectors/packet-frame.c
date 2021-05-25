@@ -934,22 +934,13 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		if(evaluate_all_colorrules){
 
 			#define MAX_COLORRULES_MATCHED 20
-			guint8  num_colorrules_matched;
+
 			guint8 colorrules_matched[MAX_COLORRULES_MATCHED];
 
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, colorrules_matched, MAX_COLORRULES_MATCHED);
 			
 			proto_tree_add_bytes_with_length(fh_tree, hf_frame_color_rules_all,
 										tvb, 0, 0, colorrules_matched, MAX_COLORRULES_MATCHED);
-
-			for(int i = 0; i<MAX_COLORRULES_MATCHED; i++ ){
-				guint32 cur = colorrules_matched[i]
-				if (cur == 0){
-					break;
-				} else {
-					
-				}
-			}
 
 		} else {
 			color_filter = color_filters_colorize_packet(fr_data->color_edt);
