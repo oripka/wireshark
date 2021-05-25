@@ -935,7 +935,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 			#define MAX_COLORRULES_MATCHED 20
 
-			guint8 colorrules_matched[MAX_COLORRULES_MATCHED];
+			guint8 colorrules_matched[MAX_COLORRULES_MATCHED] = {0};
 
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, colorrules_matched, MAX_COLORRULES_MATCHED);
 			
@@ -945,7 +945,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 				if(colorrules_matched[i] == 0){
 					break;
 				} else {
-					wmem_strbuf_append_printf(val2, ", %u", colorrules_matched[i]);
+					wmem_strbuf_append_printf(val2, "%u", colorrules_matched[i]);
 					//wmem_strbuf_append(val, colorrules_matched[i]);
 					wmem_strbuf_append_c(val2, ':');
 				}
