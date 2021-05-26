@@ -567,17 +567,15 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
     guint8 rulenum = 1;
     guint num_colorrules_matched = 0;
 
-    //printf("color_filters_all_colorize_packet\n");
 
     /* If we have color filters, "search" for the matching one. */
     if ((edt->tree != NULL) && (color_filters_used())) {
-        //printf("color_filters_all_colorize_packet - 2\n");
+
         curr = color_filter_list;
 
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
 
-            //printf("Evaluating: %s -> %u\n", colorf->filter_name, rulenum);
             if ((!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
@@ -586,7 +584,6 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
                     // first then are ___conversation_color_filter___01
                     // so we need to substract 10
                     matches[num_colorrules_matched] = rulenum - 10;
-                    //printf("Matched %s -> %u\n", colorf->filter_name, matches[num_colorrules_matched]);
                     num_colorrules_matched++;
                     *nummatched = num_colorrules_matched;
                 }
@@ -605,7 +602,6 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
         return first;
     }
 
-    printf("color_filters_all_colorize_packet - finish\n");
     return NULL;
 }
 

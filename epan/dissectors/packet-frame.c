@@ -946,7 +946,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		color_filter = pinfo->fd->color_filter;
 	}
 
-	//printf("Number of matches %u\n",pinfo->fd->nummatched);
+
 	if(pinfo->fd->nummatched > 0){
 		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
 		wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4, 0);
@@ -962,7 +962,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 		ensure_tree_item(fh_tree, 1);
 		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
-		//printf("Output string: %s\n", wmem_strbuf_get_str(val2));
+
 		proto_item_set_generated(ti);
 	}
 
