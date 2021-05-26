@@ -934,14 +934,15 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 	#define UNMATCHED 666
 	guint num_colorrules_matched = UNMATCHED;
+	pinfo->fd->all_rules_evaluated = 0
 
 	if (pinfo->fd->need_colorize) {	
-		pinfo->fd->nummatched = 0;
 		printf("Right before match code\n");
-		
 		if(evaluate_all_colorrules){
 			printf("Evaluating all colorrules\n");
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
+			pinfo->fd->all_rules_evaluated = 1;
+			pinfo->fd->nummatched = num_colorrules_matched;
 		} else {
 			printf("Evaluating only one rule\n");
 			color_filter = color_filters_colorize_packet(fr_data->color_edt);
@@ -953,13 +954,10 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		color_filter = pinfo->fd->color_filter;
 	}
 
-	if(num_colorrules_matched == UNMATCHED){
-		// already evaluated -> must be in pinfo->fd->nummatched
-	} else {
-		// set the evaluated value
-		pinfo->fd->nummatched = num_colorrules_matched;
+	if(pinfo->fd->all_rules_evaluated == 0){
+		pinfo->fd->nummatched = 0;
 	}
-	
+
 	printf("Number of matches %u\n",pinfo->fd->nummatched);
 	if(pinfo->fd->nummatched > 0){
 		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
@@ -971,9 +969,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 			if(i>0){
 				wmem_strbuf_append_c(val2, ',');
 			}
-
 			wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
-
 		}
 
 		ensure_tree_item(fh_tree, 1);
