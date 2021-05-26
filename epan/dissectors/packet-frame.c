@@ -932,10 +932,15 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	/* Attempt to (re-)calculate color filters (if any). */
 	
 	//if (pinfo->fd->need_colorize) {
+
+
+	printf("Right before match code %s -> %u\n", colorf->filter_name, matches[num_colorrules_matched]);
 	pinfo->fd->nummatched = 0;
 	if(evaluate_all_colorrules){
+		printf("Evaluating all colorrules\n");
 		color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
 	} else {
+		printf("Evaluating only one rule\n");
 		color_filter = color_filters_colorize_packet(fr_data->color_edt);
 	}
 	pinfo->fd->color_filter = color_filter;
@@ -944,6 +949,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	//	color_filter = pinfo->fd->color_filter;
 	//}
 
+	printf("Number of matches %u\n",pinfo->fd->nummatched );
 	if(pinfo->fd->nummatched > 0){
 		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
 		wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4, 0);
@@ -961,6 +967,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 		ensure_tree_item(fh_tree, 1);
 		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
+		printf("Output string: %s\n", wmem_strbuf_get_str(val2));
 		proto_item_set_generated(ti);
 	}
 
