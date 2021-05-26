@@ -931,9 +931,12 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 	/* Attempt to (re-)calculate color filters (if any). */
 	
+	
+	printf("Need to colorize?\n")
 	if (pinfo->fd->need_colorize) {
-		printf("Right before match code\n");
 		pinfo->fd->nummatched = 0;
+		printf("Right before match code\n");
+		
 		if(evaluate_all_colorrules){
 			printf("Evaluating all colorrules\n");
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
@@ -944,6 +947,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		pinfo->fd->color_filter = color_filter;
 		pinfo->fd->need_colorize = 0;
 	} else {
+		printf("No need to colorize\n");
 		color_filter = pinfo->fd->color_filter;
 	}
 
