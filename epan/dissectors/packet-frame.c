@@ -931,35 +931,31 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 	/* Attempt to (re-)calculate color filters (if any). */
 	
-	if (pinfo->fd->need_colorize) {
-		pinfo->fd->nummatched = 0;
-		if(evaluate_all_colorrules){
-			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
-		} else {
-			color_filter = color_filters_colorize_packet(fr_data->color_edt);
-		}
-		pinfo->fd->color_filter = color_filter;
-		pinfo->fd->need_colorize = 0;
+	//if (pinfo->fd->need_colorize) {
+	pinfo->fd->nummatched = 0;
+	if(evaluate_all_colorrules){
+		color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
 	} else {
-		color_filter = pinfo->fd->color_filter;
+		color_filter = color_filters_colorize_packet(fr_data->color_edt);
 	}
+	pinfo->fd->color_filter = color_filter;
+	pinfo->fd->need_colorize = 0;
+	//} else {
+	//	color_filter = pinfo->fd->color_filter;
+	//}
 
 	if(pinfo->fd->nummatched > 0){
 		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
 		wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4, 0);
 
 		for(int i =0; i< pinfo->fd->nummatched; i++){
-			if(pinfo->fd->colorrules_matched[i] == 0){
-				break;
-			} else {
-				if(i>0){
-					wmem_strbuf_append_c(val2, ',');
-				}
-				if(pinfo->fd->colorrules_matched[i] > 99999){
-					break;
-				}
-				wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
+			if(i>0){
+				wmem_strbuf_append_c(val2, ',');
 			}
+			if(pinfo->fd->colorrules_matched[i] > 99999){
+				break;
+			}
+			wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
 		}
 
 		ensure_tree_item(fh_tree, 1);
