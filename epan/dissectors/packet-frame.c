@@ -931,23 +931,22 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 	/* Attempt to (re-)calculate color filters (if any). */
 	
-	//if (pinfo->fd->need_colorize) {
-
-
-	printf("Right before match code\n");
-	pinfo->fd->nummatched = 0;
-	if(evaluate_all_colorrules){
-		printf("Evaluating all colorrules\n");
-		color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
+	if (pinfo->fd->need_colorize) {
+		printf("Right before match code\n");
+		pinfo->fd->nummatched = 0;
+		if(evaluate_all_colorrules){
+			printf("Evaluating all colorrules\n");
+			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
+		} else {
+			printf("Evaluating only one rule\n");
+			color_filter = color_filters_colorize_packet(fr_data->color_edt);
+		}
+		pinfo->fd->color_filter = color_filter;
+		pinfo->fd->need_colorize = 0;
 	} else {
-		printf("Evaluating only one rule\n");
-		color_filter = color_filters_colorize_packet(fr_data->color_edt);
+		printf("No need to recolorize\n");
+		color_filter = pinfo->fd->color_filter;
 	}
-	pinfo->fd->color_filter = color_filter;
-	pinfo->fd->need_colorize = 0;
-	//} else {
-	//	color_filter = pinfo->fd->color_filter;
-	//}
 
 	printf("Number of matches %u\n",pinfo->fd->nummatched );
 	if(pinfo->fd->nummatched > 0){
