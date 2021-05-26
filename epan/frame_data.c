@@ -211,6 +211,7 @@ frame_data_init(frame_data *fdata, guint32 num, const wtap_rec *rec,
   fdata->has_phdr_comment = (rec->opt_comment != NULL);
   fdata->has_user_comment = 0;
   fdata->need_colorize = 0;
+  fdata->colorrules_evaluated = 0;
   fdata->color_filter = NULL;
   fdata->shift_offset.secs = 0;
   fdata->shift_offset.nsecs = 0;
