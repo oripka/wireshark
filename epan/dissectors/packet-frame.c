@@ -930,10 +930,12 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	}
 
 	/* Attempt to (re-)calculate color filters (if any). */
-	
+	printf("Before colorization\n");
 	if (pinfo->fd->need_colorize) {
 		printf("Right before match code\n");
+
 		pinfo->fd->nummatched = 0;
+
 		if(evaluate_all_colorrules){
 			printf("Evaluating all colorrules\n");
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
@@ -961,7 +963,6 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 			}
 
 			wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
-
 		}
 
 		ensure_tree_item(fh_tree, 1);
