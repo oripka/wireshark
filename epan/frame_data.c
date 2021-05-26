@@ -164,7 +164,6 @@ frame_data_init(frame_data *fdata, guint32 num, const wtap_rec *rec,
   fdata->visited = 0;
   fdata->marked = 0;
   fdata->nummatched = 0;
-  fdata->all_rules_evaluated = 0;
   fdata->ref_time = 0;
   fdata->ignored = 0;
   fdata->has_ts = (rec->presence_flags & WTAP_HAS_TS) ? 1 : 0;

@@ -931,12 +931,11 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 	/* Attempt to (re-)calculate color filters (if any). */
 	guint num_colorrules_matched = 0;
-	//pinfo->fd->all_rules_evaluated = 0;
+
 
 	if (pinfo->fd->need_colorize) {	
 		if(evaluate_all_colorrules){
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
-			pinfo->fd->all_rules_evaluated = 1;
 			pinfo->fd->nummatched = num_colorrules_matched;
 		} else {
 			color_filter = color_filters_colorize_packet(fr_data->color_edt);

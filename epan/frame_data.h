@@ -95,7 +95,6 @@ typedef struct _frame_data {
   #define MAX_COLORRULES_MATCHED 20
   guint8       colorrules_matched[MAX_COLORRULES_MATCHED];
   guint32 nummatched;
-  unsigned int all_rules_evaluated    : 1; /** need to evaluate all rules */
 } frame_data;
 DIAG_ON_PEDANTIC
 
