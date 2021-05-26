@@ -963,7 +963,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 		ensure_tree_item(fh_tree, 1);
 		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
-		printf("Output string: %s\n", wmem_strbuf_get_str(val2));
+		//printf("Output string: %s\n", wmem_strbuf_get_str(val2));
 		proto_item_set_generated(ti);
 	}
 
