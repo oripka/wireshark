@@ -934,7 +934,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	//if (pinfo->fd->need_colorize) {
 
 
-	printf("Right before match code %s -> %u\n", colorf->filter_name, matches[num_colorrules_matched]);
+	printf("Right before match code\n");
 	pinfo->fd->nummatched = 0;
 	if(evaluate_all_colorrules){
 		printf("Evaluating all colorrules\n");
