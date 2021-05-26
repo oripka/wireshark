@@ -947,9 +947,8 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	if(pinfo->fd->nummatched > 0){
 		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
 		wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4, 0);
-		if(i>0){
-			wmem_strbuf_append_c(val2, ' ');
-		}
+
+		wmem_strbuf_append_c(val2, ' ');
 
 		for(guint32 i =0; i< pinfo->fd->nummatched; i++){
 			if(i>0){
