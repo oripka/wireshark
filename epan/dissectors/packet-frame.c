@@ -932,14 +932,17 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	/* Attempt to (re-)calculate color filters (if any). */
 	pinfo->fd->nummatched = 0;
 
+	#define UNMATCHED 666
+	guint num_colorrules_matched = UNMATCHED;
+
 	if (pinfo->fd->need_colorize) {	
-		//printf("Right before match code\n");
+		printf("Right before match code\n");
 		
 		if(evaluate_all_colorrules){
-			//printf("Evaluating all colorrules\n");
-			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &(pinfo->fd->nummatched), MAX_COLORRULES_MATCHED);
+			printf("Evaluating all colorrules\n");
+			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
 		} else {
-			//printf("Evaluating only one rule\n");
+			printf("Evaluating only one rule\n");
 			color_filter = color_filters_colorize_packet(fr_data->color_edt);
 		}
 		pinfo->fd->color_filter = color_filter;
@@ -949,7 +952,16 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		color_filter = pinfo->fd->color_filter;
 	}
 
-	printf("Number of matches %u\n",pinfo->fd->nummatched );
+	if(evaluate_all_colorrules){
+		if(num_colorrules_matched == UNMATCHED){
+			// already evaluated -> must be in pinfo->fd->nummatched
+		} else {
+			// set the evaluated value
+			pinfo->fd->nummatched = num_colorrules_matched;
+		}
+	}
+
+	printf("Number of matches %u\n",pinfo->fd->nummatched);
 	if(pinfo->fd->nummatched > 0){
 		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
 		wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4, 0);

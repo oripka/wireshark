@@ -567,17 +567,17 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
     guint8 rulenum = 1;
     guint num_colorrules_matched = 0;
 
-    //printf("color_filters_all_colorize_packet\n");
+    printf("color_filters_all_colorize_packet\n");
 
     /* If we have color filters, "search" for the matching one. */
     if ((edt->tree != NULL) && (color_filters_used())) {
-        //printf("color_filters_all_colorize_packet - 2\n");
+        printf("color_filters_all_colorize_packet - 2\n");
         curr = color_filter_list;
 
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
 
-            //printf("Evaluating: %s -> %u\n", colorf->filter_name, rulenum);
+            printf("Evaluating: %s -> %u\n", colorf->filter_name, rulenum);
             if ((!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
