@@ -952,7 +952,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	}
 
 	if(pinfo->fd->all_rules_evaluated == 0){
-		printf("No rules evaluated setting nummatched\n")
+		printf("No rules evaluated setting nummatched\n");
 		pinfo->fd->nummatched = 0;
 	}
 
