@@ -930,11 +930,8 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	}
 
 	/* Attempt to (re-)calculate color filters (if any). */
-	
-
-	#define UNMATCHED 666
-	guint num_colorrules_matched = UNMATCHED;
-	pinfo->fd->all_rules_evaluated = 0
+	guint num_colorrules_matched = 0;
+	pinfo->fd->all_rules_evaluated = 0;
 
 	if (pinfo->fd->need_colorize) {	
 		printf("Right before match code\n");
@@ -950,11 +947,12 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		pinfo->fd->color_filter = color_filter;
 		pinfo->fd->need_colorize = 0;
 	} else {
-		//printf("No need to colorize\n");
+		printf("No need to colorize\n");
 		color_filter = pinfo->fd->color_filter;
 	}
 
 	if(pinfo->fd->all_rules_evaluated == 0){
+		printf("No rules evaluated setting nummatched\n")
 		pinfo->fd->nummatched = 0;
 	}
 
