@@ -935,11 +935,9 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 
 	// if need_colorize set or we want to evaluate all rules and they are not yet evaluated
 	// this happends if packet details are requested before a packet list run
-	printf("Do we colorize?\n");
+
 	if (pinfo->fd->colorrules_evaluated != 1 && (pinfo->fd->need_colorize || evaluate_all_colorrules)) {	
-		printf("Yes-1\n");
 		if(evaluate_all_colorrules){
-			printf("Yes-2\n");
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
 			pinfo->fd->nummatched = num_colorrules_matched;
 			pinfo->fd->colorrules_evaluated = 1;
@@ -949,11 +947,9 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		pinfo->fd->color_filter = color_filter;
 		pinfo->fd->need_colorize = 0;
 	} else {
-		printf("No\n");
 		color_filter = pinfo->fd->color_filter;
 	}
 
-	printf("No matches %u\n", pinfo->fd->nummatched);
 	if(pinfo->fd->nummatched > 0){
 
 		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
