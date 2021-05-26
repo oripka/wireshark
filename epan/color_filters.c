@@ -583,7 +583,7 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
                     // first then are ___conversation_color_filter___01
                     // so we need to substract 10
                     matches[num_colorrules_matched] = rulenum - 10;
-                    printf("Matched %s -> %u\n", colorf->filter_name, rulenum);
+                    printf("Matched %s -> %u\n", colorf->filter_name, matches[num_colorrules_matched]);
                     num_colorrules_matched++;
                     *nummatched = num_colorrules_matched;
                 }
