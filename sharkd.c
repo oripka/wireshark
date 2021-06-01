@@ -423,7 +423,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
     cf->provider.prev_cap = NULL;
     
     // last update
-    snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"progress\" : %ld}\n", nump);
+    snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"progress\" : %ld}\n", nump-1);
     if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
       fprintf(stderr, "[-] Client disconnected writing, exiting process. Error code %s\n",  strerror(errno));
       close(output_file);
