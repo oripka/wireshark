@@ -382,7 +382,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
           exit(1);
         }
 
-        if (recv(output_file,&peekbuffer,1,MSG_PEEK | MSG_DONTWAIT) < 1) {
+        if (recv(output_file,&peekbuffer,1,MSG_PEEK | MSG_DONTWAIT) < 1 && errno != EAGAIN) {
           fprintf(stderr, "[-] Client disconnected reading, exiting process. Error code %s\n",  strerror(errno));
           close(output_file);
           exit(1);
