@@ -108,6 +108,8 @@ main(int argc, char *argv[])
   e_prefs             *prefs_p;
   int                  ret = EXIT_SUCCESS;
 
+
+
   cmdarg_err_init(failure_warning_message, failure_message_cont);
 
   /*
@@ -358,6 +360,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
     ws_buffer_init(&buf, 1514);
 
     while (wtap_read(cf->provider.wth, &rec, &buf, &err, &err_info, &data_offset)) {
+
       if (process_packet(cf, edt, data_offset, &rec, &buf, nump)) {
         /* Stop reading if we have the maximum number of packets;
          * When the -c option has not been used, max_packet_count
