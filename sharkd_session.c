@@ -575,7 +575,7 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 
 	TRY
 	{
-		err = sharkd_load_cap_file(dumper->output_file);
+		err = sharkd_load_cap_file(dumper.output_file);
 	}
 	CATCH(OutOfMemoryError)
 	{
