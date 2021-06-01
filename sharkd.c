@@ -369,7 +369,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
 
       if(nump % STATUS_EVERY_N_PACKETS == 0 ){
         snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"progress\" : %ld}\n", nump);
-        if (send(output_file, "{\"status\" : ", strlen(progressbuf), 0) == -1) {
+        if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
           perror("[-] Client disconnected, exiting process.");
           exit(1);
         }
