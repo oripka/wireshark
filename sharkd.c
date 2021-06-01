@@ -337,7 +337,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
 
   char progressbuf[PROGRESS_BUFFER_SIZE];
   struct timeval tv;
-  tv.tv_sec = 20;
+  tv.tv_sec = 3;
   tv.tv_usec = 0;
   setsockopt(output_file, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(struct timeval))
 
