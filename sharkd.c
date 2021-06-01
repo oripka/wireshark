@@ -320,6 +320,8 @@ process_packet(capture_file *cf, epan_dissect_t *edt,
   return passed;
 }
 
+#define STATUS_EVERY_N_PACKETS 10000
+#define PROGRESS_BUFFER_SIZE 100
 
 static int
 load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int output_file)
@@ -331,6 +333,8 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
   Buffer       buf;
   epan_dissect_t *edt = NULL;
   gint64       nump = 1;
+
+  char progressbuf[PROGRESS_BUFFER_SIZE];
 
   {
     /* Allocate a frame_data_sequence for all the frames. */
@@ -363,10 +367,14 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
 
     while (wtap_read(cf->provider.wth, &rec, &buf, &err, &err_info, &data_offset)) {
 
-      if (send(output_file, " ", 1, 0) == -1) {
-        perror("[-]Error in sending file.");
-        exit(1);
+      if(nump % STATUS_EVERY_N_PACKETS == 0 ){
+        snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"progress\" : %d}\n", nump);
+        if (send(output_file, "{\"status\" : ", 1, 0) == -1) {
+          perror("[-] Client disconnected, exiting process.");
+          exit(1);
+        }
       }
+
 
       if (process_packet(cf, edt, data_offset, &rec, &buf, nump)) {
         /* Stop reading if we have the maximum number of packets;
