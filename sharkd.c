@@ -320,7 +320,7 @@ process_packet(capture_file *cf, epan_dissect_t *edt,
 
 
 static int
-load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
+load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count,FILE *output_file)
 {
   int          err;
   gchar       *err_info = NULL;
@@ -515,9 +515,9 @@ sharkd_cf_open(const char *fname, unsigned int type, gboolean is_tempfile, int *
 }
 
 int
-sharkd_load_cap_file(void)
+sharkd_load_cap_file(FILE *output_file)
 {
-  return load_cap_file(&cfile, 0, 0);
+  return load_cap_file(&cfile, 0, 0, output_file);
 }
 
 frame_data *
