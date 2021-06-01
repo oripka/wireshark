@@ -377,13 +377,13 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
         snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"progress\" : %ld}\n", nump);
 
         if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
-          perror("[-] Client disconnected writing, exiting process. Error code %d", errno);
+          printf("[-] Client disconnected writing, exiting process. Error code %d", errno);
           close(output_file);
           exit(1);
         }
 
         if (recv(output_file,&peekbuffer,1,MSG_PEEK | MSG_DONTWAIT) < 1) {
-          perror("[-] Client disconnected reading, exiting process. Error code %d", errno);
+          printf("[-] Client disconnected reading, exiting process. Error code %d", errno);
           close(output_file);
           exit(1);
         }
