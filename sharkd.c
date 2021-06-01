@@ -368,7 +368,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
     while (wtap_read(cf->provider.wth, &rec, &buf, &err, &err_info, &data_offset)) {
 
       if(nump % STATUS_EVERY_N_PACKETS == 0 ){
-        snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"progress\" : %d}\n", nump);
+        snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"progress\" : %u}\n", nump);
         if (send(output_file, "{\"status\" : ", 1, 0) == -1) {
           perror("[-] Client disconnected, exiting process.");
           exit(1);
