@@ -4973,10 +4973,6 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 	}
 }
 
-void sigpipe_handler(int signum){
-		printf("Caught signal SIGPIPE %d\n",signum);
-}
-
 int
 sharkd_session_main(void)
 {
@@ -4996,8 +4992,6 @@ sharkd_session_main(void)
 	/* mmdbresolve was stopped before fork(), force starting it */
 	uat_get_table_by_name("MaxMind Database Paths")->post_update_cb();
 #endif
-
-	signal(SIGPIPE, sigpipe_handler);
 
 	while (fgets(buf, sizeof(buf), stdin))
 	{

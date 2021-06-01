@@ -336,6 +336,10 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
   gint64       nump = 1;
 
   char progressbuf[PROGRESS_BUFFER_SIZE];
+  struct timeval tv;
+  tv.tv_sec = 20;
+  tv.tv_usec = 0;
+  setsockopt(output_file, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(struct timeval))
 
   {
     /* Allocate a frame_data_sequence for all the frames. */
@@ -375,7 +379,6 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
           exit(1);
         }
       }
-
 
       if (process_packet(cf, edt, data_offset, &rec, &buf, nump)) {
         /* Stop reading if we have the maximum number of packets;
