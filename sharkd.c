@@ -387,7 +387,6 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
           close(output_file);
           exit(1);
         }
-
       }
 
       if (process_packet(cf, edt, data_offset, &rec, &buf, nump)) {
