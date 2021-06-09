@@ -3515,6 +3515,7 @@ sharkd_session_process_iograph(char *buf, const jsmntok_t *tokens, int count)
 		if (!ws_strtou32(tok_interval, NULL, &interval_ms) || interval_ms == 0)
 		{
 			fprintf(stderr, "Invalid interval parameter: %s.\n", tok_interval);
+			sharkd_json_simple_reply(1,"Invalid interval parameter");
 			return;
 		}
 	}
@@ -3683,6 +3684,8 @@ sharkd_session_process_intervals(char *buf, const jsmntok_t *tokens, int count)
 		if (!ws_strtou32(tok_interval, NULL, &interval_ms) || interval_ms == 0)
 		{
 			fprintf(stderr, "Invalid interval parameter: %s.\n", tok_interval);
+			
+			sharkd_json_simple_reply(1,"Invalid interval parameter");
 			return;
 		}
 	}
@@ -3693,6 +3696,7 @@ sharkd_session_process_intervals(char *buf, const jsmntok_t *tokens, int count)
 
 		filter_item = sharkd_session_filter_data(tok_filter);
 		if (!filter_item)
+			sharkd_json_simple_reply(1,"Invalid filter parameter");
 			return;
 		filter_data = filter_item->filtered;
 	}

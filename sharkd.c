@@ -374,6 +374,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
     while (wtap_read(cf->provider.wth, &rec, &buf, &err, &err_info, &data_offset)) {
 
       if(nump % STATUS_EVERY_N_PACKETS == 0 ){
+        // 2-> loading
         snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"err\" : 2, \"progress\" : %ld}\n\n", nump-1);
 
         if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
@@ -421,7 +422,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
     cf->provider.prev_dis = NULL;
     cf->provider.prev_cap = NULL;
     
-    // last update
+    // last update 3 -> LOADED
     snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"err\" : 3, \"progress\" : %ld}\n\n", nump-1);
     if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
       //fprintf(stderr, "[-] Client disconnected writing, exiting process. Error code %s\n",  strerror(errno));
