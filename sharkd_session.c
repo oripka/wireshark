@@ -948,7 +948,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		sharkd_dissect_columns(fdata, ref_frame, prev_dis_num, cinfo, (fdata->color_filter == NULL));
 
 
-		matching.bytes += fdata->pkt_len
+		matching.bytes += fdata->pkt_len;
 		matching.frames += 1;
 
 		if(justcountnow == TRUE){
