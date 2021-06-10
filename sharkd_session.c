@@ -1324,6 +1324,8 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 
 
 	sharkd_json_value_anyf("frames_total", "%u", cfile.count);
+	sharkd_json_value_anyf("limit", "%u", limit);
+	
 	json_dumper_end_object(&dumper);
 	json_dumper_finish(&dumper);
 
