@@ -833,9 +833,22 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 	const char *tok_limit  = json_find_attr(buf, tokens, count, "limit");
 	const char *tok_refs   = json_find_attr(buf, tokens, count, "refs");
 
+	struct
+	{
+		unsigned int frames;
+		guint64 bytes;
+	} displayed, matching;
+
+	displayed.frames = 0;
+	displayed.bytes  = 0;
+
+	matching.frames = 0;
+	matching.bytes  = 0;
+
 	const guint8 *filter_data = NULL;
 
 	int col;
+	gboolean justcountnow = FALSE;
 
 	guint32 framenum, prev_dis_num = 0;
 	guint32 current_ref_frame = 0, next_ref_frame = G_MAXUINT32;
@@ -883,7 +896,8 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			return;
 	}
 
-	sharkd_json_array_open(NULL);
+	json_dumper_begin_object(&dumper);
+	sharkd_json_array_open("packets");
 	for (framenum = 1; framenum <= cfile.count; framenum++)
 	{
 		frame_data *fdata;
@@ -933,9 +947,19 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		fdata = sharkd_get_frame(framenum);
 		sharkd_dissect_columns(fdata, ref_frame, prev_dis_num, cinfo, (fdata->color_filter == NULL));
 
+
+		matching.bytes += fdata->pkt_len
+		matching.frames += 1;
+
+		if(justcountnow == TRUE){
+			continue
+		}
+
 		json_dumper_begin_object(&dumper);
 
 		sharkd_json_array_open("c");
+
+
 		for (col = 0; col < cinfo->num_cols; ++col)
 		{
 			const col_item_t *col_item = &cinfo->columns[col];
@@ -1283,10 +1307,23 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		json_dumper_end_object(&dumper);
 		prev_dis_num = framenum;
 
-		if (limit && --limit == 0)
-			break;
+		if (limit && --limit == 0){
+			displayed.bytes  = matching.bytes;
+			displayed.frames = displayed.frames;
+			justcountnow = TRUE;
+			//break;
+		}
 	}
 	sharkd_json_array_close();
+	sharkd_json_value_anyf("frames_displayed", "%u", displayed.frames);
+	sharkd_json_value_anyf("bytes_displayed", "%" G_GUINT64_FORMAT, displayed.bytes);
+
+	sharkd_json_value_anyf("frames_matching", "%u", matching.frames);
+	sharkd_json_value_anyf("bytes_matching", "%" G_GUINT64_FORMAT, matching.bytes);
+
+
+	sharkd_json_value_anyf("frames_total", "%u", cfile.count);
+	json_dumper_end_object(&dumper);
 	json_dumper_finish(&dumper);
 
 	if (cinfo != &cfile.cinfo)
