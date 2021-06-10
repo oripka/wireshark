@@ -955,6 +955,9 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			continue;
 		}
 
+		displayed.bytes  = matching.bytes;
+		displayed.frames = displayed.frames;
+
 		json_dumper_begin_object(&dumper);
 
 		sharkd_json_array_open("c");
@@ -1308,8 +1311,6 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		prev_dis_num = framenum;
 
 		if (limit && --limit == 0){
-			displayed.bytes  = matching.bytes;
-			displayed.frames = displayed.frames;
 			justcountnow = TRUE;
 			//break;
 		}
