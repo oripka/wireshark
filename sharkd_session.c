@@ -956,7 +956,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		}
 
 		displayed.bytes  = matching.bytes;
-		displayed.frames = displayed.frames;
+		displayed.frames = matching.frames;
 
 		json_dumper_begin_object(&dumper);
 
