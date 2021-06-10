@@ -952,7 +952,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		matching.frames += 1;
 
 		if(justcountnow == TRUE){
-			continue
+			continue;
 		}
 
 		json_dumper_begin_object(&dumper);
@@ -3073,7 +3073,7 @@ sharkd_session_process_frame_cb_tree(epan_dissect_t *edt, proto_tree *tree, tvbu
 		{
 			char *filter;
 
-			sharkd_json_value_anyf("bitmask", "\"%x\"", finfo->hfinfo->bitmask);
+			sharkd_json_value_anyf("bitmask", "\"%"G_GUINT64_FORMAT"\"", finfo->hfinfo->bitmask);
 
 			if (finfo->hfinfo->type == FT_PROTOCOL)
 			{
@@ -3931,11 +3931,12 @@ sharkd_session_process_frame(char *buf, const jsmntok_t *tokens, int count)
 static void
 sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int count)
 {
-	const char *tok_frame = json_find_attr(buf, tokens, count, "frame");
-	const char *tok_ref_frame = json_find_attr(buf, tokens, count, "ref_frame");
-	const char *tok_prev_frame = json_find_attr(buf, tokens, count, "prev_frame");
+	//const char *tok_frame = json_find_attr(buf, tokens, count, "frame");
+	//const char *tok_ref_frame = json_find_attr(buf, tokens, count, "ref_frame");
+	//const char *tok_prev_frame = json_find_attr(buf, tokens, count, "prev_frame");
 
-	guint32 framenum, ref_frame_num, prev_dis_num, min, max;
+	//guint32 ref_frame_num, prev_dis_num;
+	guint32 framenum, min, max;
 	guint32 dissect_flags = SHARKD_DISSECT_FLAG_NULL;
 
 	struct sharkd_frame_request_data req_data;
