@@ -1320,8 +1320,8 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 				justcountnow = TRUE;
 			} else {
 			/* else we stop here not to waste time counting */
-				matching.bytes += 0;
-				matching.frames += cfile.count;	
+				matching.bytes = 0;
+				matching.frames = cfile.count;	
 				break;
 			}
 			//break;
