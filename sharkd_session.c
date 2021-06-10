@@ -854,6 +854,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 	guint32 current_ref_frame = 0, next_ref_frame = G_MAXUINT32;
 	guint32 skip;
 	guint32 limit;
+	guint32 setlimit;
 
 	column_info *cinfo = &cfile.cinfo;
 	column_info user_cinfo;
@@ -889,6 +890,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		if (!ws_strtou32(tok_limit, NULL, &limit))
 			return;
 	}
+	setlimit = limit;
 
 	if (tok_refs)
 	{
@@ -1324,8 +1326,8 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 
 
 	sharkd_json_value_anyf("frames_total", "%u", cfile.count);
-	sharkd_json_value_anyf("limit", "%u", limit);
-	
+	sharkd_json_value_anyf("limit", "%u", setlimit);
+
 	json_dumper_end_object(&dumper);
 	json_dumper_finish(&dumper);
 
