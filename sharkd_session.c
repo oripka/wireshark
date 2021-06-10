@@ -1316,7 +1316,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			
 			/* if we have a filter we count how many remaining packets match */
 			
-			if(tok_filter && tok_skip_display_count != NULL){
+			if(tok_filter && tok_skip_display_count == NULL){
 				justcountnow = TRUE;
 			} else {
 			/* else we stop here not to waste time counting */
