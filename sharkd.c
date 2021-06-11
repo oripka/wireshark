@@ -325,7 +325,7 @@ process_packet(capture_file *cf, epan_dissect_t *edt,
 #define PROGRESS_BUFFER_SIZE 100
 
 static int
-load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int output_file)
+load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int output_file, gboolean showprogress)
 {
   int          err;
   gchar       *err_info = NULL;
@@ -373,7 +373,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
 
     while (wtap_read(cf->provider.wth, &rec, &buf, &err, &err_info, &data_offset)) {
 
-      if(nump % STATUS_EVERY_N_PACKETS == 0 ){
+      if(nump % STATUS_EVERY_N_PACKETS == 0 && showprogress){
         // 2-> loading
         snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"err\" : 2, \"progress\" : %ld}\n\n", nump-1);
 
@@ -422,12 +422,14 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
     cf->provider.prev_dis = NULL;
     cf->provider.prev_cap = NULL;
     
-    // last update 3 -> LOADED
-    snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"err\" : 3, \"progress\" : %ld}\n\n", nump-1);
-    if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
-      //fprintf(stderr, "[-] Client disconnected writing, exiting process. Error code %s\n",  strerror(errno));
-      close(output_file);
-      exit(1);
+    if(showprogress){
+      // last update 3 -> LOADED
+      snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"err\" : 3, \"progress\" : %ld}\n\n", nump-1);
+      if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
+        //fprintf(stderr, "[-] Client disconnected writing, exiting process. Error code %s\n",  strerror(errno));
+        close(output_file);
+        exit(1);
+      }
     }
 
   }
@@ -553,9 +555,9 @@ sharkd_cf_open(const char *fname, unsigned int type, gboolean is_tempfile, int *
 }
 
 int
-sharkd_load_cap_file(int output_file)
+sharkd_load_cap_file(int output_file , gboolean showprogress)
 {
-  return load_cap_file(&cfile, 0, 0, output_file);
+  return load_cap_file(&cfile, 0, 0, output_file, showprogress);
 }
 
 frame_data *

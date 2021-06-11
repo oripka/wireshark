@@ -552,7 +552,13 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 {
 
 	const char *tok_file = json_find_attr(buf, tokens, count, "file");
+	const char *tok_progress = json_find_attr(buf, tokens, count, "progress");
 	int err = 0;
+	gboolean showprogress = FALSE;
+
+	if(tok_progress){
+		showprogress = TRUE
+	}
 
 	parse_selected_frames(buf, tokens, count);
 	parse_add_print_only(buf, tokens, count);
@@ -576,7 +582,7 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 	TRY
 	{
 		int ofh =  fileno(dumper.output_file);
-		err = sharkd_load_cap_file(ofh);
+		err = sharkd_load_cap_file(ofh, showprogress);
 	}
 	CATCH(OutOfMemoryError)
 	{

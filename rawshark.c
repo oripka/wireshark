@@ -134,7 +134,7 @@ static print_format_e print_format = PR_FMT_TEXT;
 static gboolean want_pcap_pkthdr;
 
 cf_status_t raw_cf_open(capture_file *cf, const char *fname);
-static gboolean load_cap_file(capture_file *cf);
+static gboolean load_cap_file(capture_file *cf, gboolean showprogress);
 static gboolean process_packet(capture_file *cf, epan_dissect_t *edt, gint64 offset,
                                wtap_rec *rec, Buffer *buf);
 static void show_print_file_io_error(int err);
