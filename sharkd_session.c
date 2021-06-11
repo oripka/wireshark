@@ -557,7 +557,7 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 	gboolean showprogress = FALSE;
 
 	if(tok_progress){
-		showprogress = TRUE
+		showprogress = TRUE;
 	}
 
 	parse_selected_frames(buf, tokens, count);
