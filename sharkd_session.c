@@ -832,7 +832,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 	const char *tok_skip   = json_find_attr(buf, tokens, count, "skip");
 	const char *tok_limit  = json_find_attr(buf, tokens, count, "limit");
 	const char *tok_refs   = json_find_attr(buf, tokens, count, "refs");
-	const char *tok_skip_display_count   = json_find_attr(buf, tokens, count, "skipdisplaycount");
+	const char *tok_skip_match_count   = json_find_attr(buf, tokens, count, "skipmatchcount");
 	struct
 	{
 		unsigned int frames;
@@ -1316,7 +1316,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			
 			/* if we have a filter we count how many remaining packets match */
 			
-			if(tok_filter && tok_skip_display_count == NULL){
+			if(tok_filter && tok_skip_match_count == NULL){
 				justcountnow = TRUE;
 			} else {
 			/* else we stop here not to waste time counting */
