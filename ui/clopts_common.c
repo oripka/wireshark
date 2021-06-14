@@ -330,6 +330,7 @@ add_selection_new(char *sel, guint *maxs, guint * current, struct select_item_ra
 
     selection[*current].inclusive = FALSE;
     ws_strtou32(sel, NULL, &(selection[*current].first));
+    ws_strtou32(sel, NULL, &(selection[*current].second));
     if (selection[*current].first > *maxs)
       *maxs = selection[*current].first;
 
