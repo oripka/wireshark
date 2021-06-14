@@ -4008,7 +4008,7 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 		max = selections[siter].second;
 
 		if (min > max){
-			return
+			return;
 		}
 
 

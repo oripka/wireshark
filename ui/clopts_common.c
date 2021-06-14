@@ -386,7 +386,7 @@ parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct se
 	while (pch != NULL && (g_ascii_isdigit(*pch) || *pch == '-'))
 	{
 		// printf("%s\n", pch);
-    *numselections++;
+    *numselections = *numselections + 1;
 		add_selection_new(pch, &maxs, &current, selections, maxlen);
 		pch = strtok(NULL, " ");
 	}
