@@ -3957,18 +3957,6 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 	//const char *tok_prev_frame = json_find_attr(buf, tokens, count, "prev_frame");
 
 	//guint32 ref_frame_num, prev_dis_num;
-	guint32 framenum, min, max;
-	guint32 dissect_flags = SHARKD_DISSECT_FLAG_NULL;
-
-	struct sharkd_frame_request_data req_data;
-
-	static struct select_item_range selections[10];
-
-	parse_frame_range(buf, tokens, count, selections, 10);
-
-	// just one, keep it simple for now
-	min = selections[0].first;
-	max = selections[0].second;
 
 	/*
 	if (!tok_frame || !ws_strtou32(tok_frame, NULL, &framenum) || framenum == 0)
@@ -3982,6 +3970,15 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 	if (tok_prev_frame && (!ws_strtou32(tok_prev_frame, NULL, &prev_dis_num) || prev_dis_num >= framenum))
 		return;
 	*/
+
+	guint32 framenum, min, max, siter, numselections;
+	guint32 dissect_flags = SHARKD_DISSECT_FLAG_NULL;
+
+	struct sharkd_frame_request_data req_data;
+
+	#define MAX_FRAME_RANGE_SELECTIONS 100
+	static struct select_item_range selections[MAX_FRAME_RANGE_SELECTIONS];
+	
 	if (json_find_attr(buf, tokens, count, "proto") != NULL)
 		dissect_flags |= SHARKD_DISSECT_FLAG_PROTO_TREE;
 	if (json_find_attr(buf, tokens, count, "bytes") != NULL)
@@ -4001,13 +3998,29 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 	sharkd_json_array_open("frames");
 
 
-	fprintf(stderr, "Min: %i max: %i\n", min, max);
-	for (framenum = min; framenum <=  max; framenum++){
-		fprintf(stderr, "Printing ...%i\n", framenum);
-		json_dumper_begin_object(&dumper);
-		sharkd_dissect_request(framenum, (framenum != 1) ? 1 : 0, framenum - 1, &sharkd_session_process_frame_ranges_cb, dissect_flags, &req_data);
-		json_dumper_end_object(&dumper);
+	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
+
+	
+
+	for( siter = 0; siter < numselections; siter++){
+		// just one, keep it simple for now
+		min = selections[siter].first;
+		max = selections[siter].second;
+
+		if (min > max){
+			return
+		}
+
+
+		fprintf(stderr, "Min: %i max: %i\n", min, max);
+		for (framenum = min; framenum <=  max; framenum++){
+			fprintf(stderr, "Printing ...%i\n", framenum);
+			json_dumper_begin_object(&dumper);
+			sharkd_dissect_request(framenum, (framenum != 1) ? 1 : 0, framenum - 1, &sharkd_session_process_frame_ranges_cb, dissect_flags, &req_data);
+			json_dumper_end_object(&dumper);
+		}
 	}
+
 		
 	sharkd_json_array_close();
 

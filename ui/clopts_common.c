@@ -366,11 +366,13 @@ add_selection_new(char *sel, guint *maxs, guint * current, struct select_item_ra
 }
 
 void
-parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item_range selections[], size_t selectionlen)
+parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item_range selections[], size_t maxlen, guint32 *numselections)
 {
 	char *pch;
   guint current = 0;
   guint maxs = 0;
+  *numselections = 0;
+
 	char *tok_frames = (char *)json_find_attr(buf, tokens, count, "range");
   if(verbose)
 	  fprintf(stderr, "decode: range=%s\n", tok_frames);
@@ -384,7 +386,8 @@ parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct se
 	while (pch != NULL && (g_ascii_isdigit(*pch) || *pch == '-'))
 	{
 		// printf("%s\n", pch);
-		add_selection_new(pch, &maxs, &current, selections, selectionlen);
+    *numselections++;
+		add_selection_new(pch, &maxs, &current, selections, maxlen);
 		pch = strtok(NULL, " ");
 	}
 }
