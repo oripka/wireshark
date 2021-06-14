@@ -3997,10 +3997,7 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 
 	sharkd_json_array_open("frames");
 
-
 	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
-
-	
 
 	for( siter = 0; siter < numselections; siter++){
 		// just one, keep it simple for now
@@ -4008,13 +4005,16 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 		max = selections[siter].second;
 
 		if (min > max){
+			sharkd_json_array_close();
+			sharkd_json_value_anyf("err", "1");
+			json_dumper_end_object(&dumper);
+			json_dumper_finish(&dumper);
 			return;
 		}
 
-
-		fprintf(stderr, "Min: %i max: %i\n", min, max);
+		//fprintf(stderr, "Min: %i max: %i\n", min, max);
 		for (framenum = min; framenum <=  max; framenum++){
-			fprintf(stderr, "Printing ...%i\n", framenum);
+			//fprintf(stderr, "Printing ...%i\n", framenum);
 			json_dumper_begin_object(&dumper);
 			sharkd_dissect_request(framenum, (framenum != 1) ? 1 : 0, framenum - 1, &sharkd_session_process_frame_ranges_cb, dissect_flags, &req_data);
 			json_dumper_end_object(&dumper);
