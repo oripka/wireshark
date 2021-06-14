@@ -3405,6 +3405,8 @@ sharkd_session_process_frame_ranges_cb(epan_dissect_t *edt, proto_tree *tree, st
 	if (fdata->marked)
 		sharkd_json_value_anyf("m", "true");
 
+	sharkd_json_value_anyf("f", "%u", fdata->num);
+
 	if (fdata->color_filter)
 	{
 		sharkd_json_value_stringf("bg", "%x", color_t_to_rgb(&fdata->color_filter->bg_color));
