@@ -4001,6 +4001,7 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 	sharkd_json_array_open("frames");
 
 
+	fprintf(stderr, "Min: %i max: %i\n", min, max);
 	for (framenum = min; framenum <=  max; framenum++){
 		fprintf(stderr, "Printing ...%i\n", framenum);
 		json_dumper_begin_object(&dumper);
