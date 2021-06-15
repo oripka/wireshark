@@ -566,12 +566,10 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 	if(VERBOSE){
 		fprintf(stderr, "load: filename=%s\n", tok_file);
 	}
-	
 
 	if (!tok_file)
 		return;
 
-	fprintf(stderr, "load: filename=%s\n", tok_file);
 
 	if (sharkd_cf_open(tok_file, WTAP_TYPE_AUTO, FALSE, &err) != CF_OK)
 	{
@@ -5059,6 +5057,8 @@ sharkd_session_main(void)
 	char buf[2 * 1024];
 	jsmntok_t *tokens = NULL;
 	int tokens_max = -1;
+
+
 
 	if(VERBOSE){
 		fprintf(stderr, "Hello in child.\n");
