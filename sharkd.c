@@ -110,8 +110,7 @@ main(int argc, char *argv[])
   e_prefs             *prefs_p;
   int                  ret = EXIT_SUCCESS;
 
-
-
+  
   cmdarg_err_init(failure_warning_message, failure_message_cont);
 
   /*
