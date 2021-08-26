@@ -4014,6 +4014,9 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 
 		//fprintf(stderr, "Min: %i max: %i\n", min, max);
 		for (framenum = min; framenum <=  max; framenum++){
+			if(framenum > cfile.count){ // do not go beyound number of frames in trace
+				break;
+			}
 			//fprintf(stderr, "Printing ...%i\n", framenum);
 			json_dumper_begin_object(&dumper);
 			sharkd_dissect_request(framenum, (framenum != 1) ? 1 : 0, framenum - 1, &sharkd_session_process_frame_ranges_cb, dissect_flags, &req_data);
