@@ -4014,7 +4014,7 @@ sharkd_session_process_frame_range(const char *buf, const jsmntok_t *tokens, int
 
 		//fprintf(stderr, "Min: %i max: %i\n", min, max);
 		for (framenum = min; framenum <=  max; framenum++){
-			if(framenum > cfile.count){ // do not go beyound number of frames in trace
+			if(framenum > cfile.count){ // do not go beyond number of frames in trace
 				break;
 			}
 			//fprintf(stderr, "Printing ...%i\n", framenum);
