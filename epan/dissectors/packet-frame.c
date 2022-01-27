@@ -929,31 +929,32 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		ENDTRY;
 	}
 
-	/* Attempt to (re-)calculate color filters (if any). */
-	guint32 num_colorrules_matched = 0;
-
 	// if need_colorize set or we want to evaluate all rules and they are not yet evaluated
 	// this happends if packet details are requested before a packet list run
+	guint32 num_colorrules_matched = 0;
 
-	evaluate_all_colorrules = FALSE;
+	evaluate_all_colorrules = TRUE;
 	if ((pinfo->fd->need_colorize || evaluate_all_colorrules)) {
 		if(evaluate_all_colorrules){
+	/* Attempt to (re-)calculate color filters (if any). */
+
 			fprintf(stderr, "[+] Evaluating colorrules for frame %" G_GUINT32_FORMAT "\n", pinfo->fd->num);
+
+
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
 
 			if(pinfo->fd->nummatched > 0 ){
 				fprintf(stderr, "[+] Rules were already matched was %" G_GUINT32_FORMAT ", now %" G_GUINT32_FORMAT "\n", pinfo->fd->nummatched, num_colorrules_matched);
 			}
 
-			if(num_colorrules_matched > pinfo->fd->nummatched){
-				pinfo->fd->nummatched = num_colorrules_matched;
-			}
+			// if(num_colorrules_matched > pinfo->fd->nummatched){
+			// 	pinfo->fd->nummatched = num_colorrules_matched;
+			// }
 
 			if(num_colorrules_matched > 0 ){
 				fprintf(stderr, "[+] Rules matched %" G_GUINT32_FORMAT "\n", num_colorrules_matched);
 			}
 			
-			pinfo->fd->colorrules_evaluated = 1;
 		} else {
 			fprintf(stderr, "[+] Not evaluating all color rules\n");
 			color_filter = color_filters_colorize_packet(fr_data->color_edt);
@@ -964,26 +965,26 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		color_filter = pinfo->fd->color_filter;
 	}
 
-	if(pinfo->fd->nummatched > 0){
+	// if(pinfo->fd->nummatched > 0){
 
-		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
-		wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4, 0);
+	// 	// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
+	// 	wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4, 0);
 
-		wmem_strbuf_append_c(val2, ' ');
+	// 	wmem_strbuf_append_c(val2, ' ');
 
-		for(guint32 i =0; i< pinfo->fd->nummatched; i++){
-			if(i>0){
-				wmem_strbuf_append_c(val2, ',');
-			}
-			wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
-		}
+	// 	for(guint32 i =0; i< pinfo->fd->nummatched; i++){
+	// 		if(i>0){
+	// 			wmem_strbuf_append_c(val2, ',');
+	// 		}
+	// 		wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
+	// 	}
 
-		fprintf(stderr, "[+] Coloring rules for frame are: %s\n", wmem_strbuf_get_str(val2));
-		ensure_tree_item(fh_tree, 1);
-		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
+	// 	fprintf(stderr, "[+] Coloring rules for frame are: %s\n", wmem_strbuf_get_str(val2));
+	// 	ensure_tree_item(fh_tree, 1);
+	// 	ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
 
-		proto_item_set_generated(ti);
-	}
+	// 	proto_item_set_generated(ti);
+	// }
 
 	if (color_filter) {
 

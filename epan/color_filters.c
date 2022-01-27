@@ -558,14 +558,14 @@ color_filters_prime_edt(epan_dissect_t *edt)
 
 /* * Return the color_t for later use */
 const color_filter_t *
-color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 *nummatched, guint32 max)
+color_filters_all_colorize_packet(epan_dissect_t *edt, guint32 *matches, guint32 *nummatched, guint32 max)
 {
     GSList         *curr;
     color_filter_t *colorf;
     color_filter_t *first;
     gboolean  firstset = FALSE;
-    guint8 rulenum = 1;
-    guint num_colorrules_matched = 0;
+    guint32 rulenum = 1;
+    guint32 num_colorrules_matched = 0;
 
 
     /* If we have color filters, "search" for the matching one. */
@@ -588,7 +588,6 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
                     // so we need to substract 10
                     matches[num_colorrules_matched] = rulenum - 10;
                     num_colorrules_matched++;
-                    *nummatched = num_colorrules_matched;
                 }
  
                 if (!firstset){
@@ -600,6 +599,8 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
             rulenum++;
         }
     }
+
+    *nummatched = num_colorrules_matched;
 
     if(firstset){
         return first;
