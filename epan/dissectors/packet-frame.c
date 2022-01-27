@@ -938,7 +938,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		if(evaluate_all_colorrules){
 	/* Attempt to (re-)calculate color filters (if any). */
 
-			fprintf(stderr, "[+] Evaluating colorrules for frame %" G_GUINT32_FORMAT "\n", pinfo->fd->num);
+			//fprintf(stderr, "[+] Evaluating colorrules for frame %" G_GUINT32_FORMAT "\n", pinfo->fd->num);
 
 
 			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
