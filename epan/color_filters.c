@@ -576,14 +576,14 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint8 *matches, guint32 
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
 
-            fprintf(stderr, "Applying %s\n" , colorf->filter_name);
+            //fprintf(stderr, "Checking %s\n" , colorf->filter_name);
             if ((!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
 
-                fprintf(stderr, "Matched %s\n" , colorf->filter_name);
+                //fprintf(stderr, "Matched %s\n" , colorf->filter_name);
                 if(num_colorrules_matched < max){
-                    fprintf(stderr, "Adding %s\n" , colorf->filter_name);
+                    //fprintf(stderr, "Adding %s\n" , colorf->filter_name);
                     // first then are ___conversation_color_filter___01
                     // so we need to substract 10
                     matches[num_colorrules_matched] = rulenum - 10;
@@ -625,6 +625,7 @@ color_filters_colorize_packet(epan_dissect_t *edt)
             if ( (!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
+                fprintf(stderr, "Matched %s\n" , colorf->filter_name);
                 return colorf;
             }
             curr = g_slist_next(curr);
