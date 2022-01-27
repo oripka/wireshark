@@ -939,9 +939,16 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	if(evaluate_all_colorrules){
 		fprintf(stderr, "[+] Evaluating colorrules for frame %" G_GUINT32_FORMAT "\n", pinfo->fd->num);
 		color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
-		pinfo->fd->nummatched = num_colorrules_matched;
-		fprintf(stderr, "[+] Rules matched %" G_GUINT32_FORMAT "\n", num_colorrules_matched);
 
+		if(pinfo->fd->nummatched > 0 ){
+			fprintf(stderr, "[+] Rules were already matched was %" G_GUINT32_FORMAT ", now %" G_GUINT32_FORMAT "\n", pinfo->fd->nummatched, num_colorrules_matched);
+		}
+
+		pinfo->fd->nummatched = num_colorrules_matched;
+		if(num_colorrules_matched > 0 ){
+			fprintf(stderr, "[+] Rules matched %" G_GUINT32_FORMAT "\n", num_colorrules_matched);
+		}
+		
 		pinfo->fd->colorrules_evaluated = 1;
 	} else {
 		fprintf(stderr, "[+] Not evaluating all color rules\n");
@@ -967,6 +974,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 			wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
 		}
 
+		fprintf("[+] Coloring rules for frame are: %s\n", val2)
 		ensure_tree_item(fh_tree, 1);
 		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
 
