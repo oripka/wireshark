@@ -958,7 +958,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		color_filter = color_filters_colorize_packet(fr_data->color_edt);
 	}
 	pinfo->fd->color_filter = color_filter;
-	//pinfo->fd->need_colorize = 0;
+	pinfo->fd->need_colorize = 0;
 	/*} else {
 		color_filter = pinfo->fd->color_filter;
 	}*/
