@@ -30,8 +30,6 @@
 
 #include <epan/color_filters.h>
 
-
-#include <stdio.h>
 #include "file-file.h"
 
 void proto_register_file(void);
@@ -272,34 +270,6 @@ dissect_file_record(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 		}
 		ENDTRY;
 	}
-
-	guint32 num_colorrules_matched = 0;
-	fprintf(stderr, "[++] Evaluating colorrules for frame %" G_GUINT32_FORMAT "\n", pinfo->fd->num);
-	color_filter = color_filters_all_colorize_packet(file_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
-
-	if(pinfo->fd->nummatched > 0 ){
-		fprintf(stderr, "[++] Rules were already matched was %" G_GUINT32_FORMAT ", now %" G_GUINT32_FORMAT "\n", pinfo->fd->nummatched, num_colorrules_matched);
-	}
-
-	if(num_colorrules_matched > 0 ){
-		fprintf(stderr, "[++] Rules matched %" G_GUINT32_FORMAT "\n", num_colorrules_matched);
-	}
-
-	if(pinfo->fd->nummatched > 0){
-		wmem_strbuf_t *val2 = wmem_strbuf_sized_new(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4, 0);
-		wmem_strbuf_append_c(val2, ' ');
-
-		for(guint32 i =0; i< pinfo->fd->nummatched; i++){
-			if(i>0){
-				wmem_strbuf_append_c(val2, ',');
-			}
-			wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
-		}
-
-		fprintf(stderr, "[++] Coloring rules for frame are: %s\n", wmem_strbuf_get_str(val2));
-	}
-
-
 
 	/* Attempt to (re-)calculate color filters (if any). */
 	if (pinfo->fd->need_colorize) {

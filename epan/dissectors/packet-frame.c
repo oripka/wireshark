@@ -935,33 +935,33 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	// if need_colorize set or we want to evaluate all rules and they are not yet evaluated
 	// this happends if packet details are requested before a packet list run
 
-	/*if (pinfo->fd->colorrules_evaluated == 0 && (pinfo->fd->need_colorize || evaluate_all_colorrules)) {	*/
-	if(evaluate_all_colorrules){
-		fprintf(stderr, "[+] Evaluating colorrules for frame %" G_GUINT32_FORMAT "\n", pinfo->fd->num);
-		color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
+	if (pinfo->fd->colorrules_evaluated == 0 && (pinfo->fd->need_colorize || evaluate_all_colorrules)) {
+		if(evaluate_all_colorrules){
+			fprintf(stderr, "[+] Evaluating colorrules for frame %" G_GUINT32_FORMAT "\n", pinfo->fd->num);
+			color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
 
-		if(pinfo->fd->nummatched > 0 ){
-			fprintf(stderr, "[+] Rules were already matched was %" G_GUINT32_FORMAT ", now %" G_GUINT32_FORMAT "\n", pinfo->fd->nummatched, num_colorrules_matched);
-		}
+			if(pinfo->fd->nummatched > 0 ){
+				fprintf(stderr, "[+] Rules were already matched was %" G_GUINT32_FORMAT ", now %" G_GUINT32_FORMAT "\n", pinfo->fd->nummatched, num_colorrules_matched);
+			}
 
-		if(num_colorrules_matched > pinfo->fd->nummatched){
-			pinfo->fd->nummatched = num_colorrules_matched;
-		}
+			if(num_colorrules_matched > pinfo->fd->nummatched){
+				pinfo->fd->nummatched = num_colorrules_matched;
+			}
 
-		if(num_colorrules_matched > 0 ){
-			fprintf(stderr, "[+] Rules matched %" G_GUINT32_FORMAT "\n", num_colorrules_matched);
+			if(num_colorrules_matched > 0 ){
+				fprintf(stderr, "[+] Rules matched %" G_GUINT32_FORMAT "\n", num_colorrules_matched);
+			}
+			
+			pinfo->fd->colorrules_evaluated = 1;
+		} else {
+			fprintf(stderr, "[+] Not evaluating all color rules\n");
+			color_filter = color_filters_colorize_packet(fr_data->color_edt);
 		}
-		
-		pinfo->fd->colorrules_evaluated = 1;
+		pinfo->fd->color_filter = color_filter;
+		pinfo->fd->need_colorize = 0;
 	} else {
-		fprintf(stderr, "[+] Not evaluating all color rules\n");
-		color_filter = color_filters_colorize_packet(fr_data->color_edt);
-	}
-	pinfo->fd->color_filter = color_filter;
-	pinfo->fd->need_colorize = 0;
-	/*} else {
 		color_filter = pinfo->fd->color_filter;
-	}*/
+	}
 
 	if(pinfo->fd->nummatched > 0){
 
