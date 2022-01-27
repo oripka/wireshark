@@ -944,7 +944,10 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 			fprintf(stderr, "[+] Rules were already matched was %" G_GUINT32_FORMAT ", now %" G_GUINT32_FORMAT "\n", pinfo->fd->nummatched, num_colorrules_matched);
 		}
 
-		pinfo->fd->nummatched = num_colorrules_matched;
+		if(num_colorrules_matched > pinfo->fd->nummatched){
+			pinfo->fd->nummatched = num_colorrules_matched;
+		}
+
 		if(num_colorrules_matched > 0 ){
 			fprintf(stderr, "[+] Rules matched %" G_GUINT32_FORMAT "\n", num_colorrules_matched);
 		}
