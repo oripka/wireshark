@@ -616,6 +616,9 @@ color_filters_colorize_packet(epan_dissect_t *edt)
     GSList         *curr;
     color_filter_t *colorf;
 
+    color_filter_t *first;
+    gboolean  firstset = FALSE;
+
     /* If we have color filters, "search" for the matching one. */
     if ((edt->tree != NULL) && (color_filters_used())) {
         curr = color_filter_list;
@@ -628,12 +631,24 @@ color_filters_colorize_packet(epan_dissect_t *edt)
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
                 fprintf(stderr, "Matched %s\n" , colorf->filter_name);
-                return colorf;
+
+                if (!firstset){
+                    firstset= TRUE;
+                    first = (color_filter_t *)curr->data;
+                }
+
+                //return colorf;
             }
             curr = g_slist_next(curr);
         }
-    }
 
+
+    }
+    
+    if(firstset){
+        return first;
+    }
+    
     return NULL;
 }
 
