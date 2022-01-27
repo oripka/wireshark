@@ -974,7 +974,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 			wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
 		}
 
-		fprintf(stderr, "[+] Coloring rules for frame are: %s\n", val2);
+		fprintf(stderr, "[+] Coloring rules for frame are: %s\n", wmem_strbuf_get_str(val2));
 		ensure_tree_item(fh_tree, 1);
 		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
 
