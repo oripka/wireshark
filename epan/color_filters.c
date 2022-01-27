@@ -620,6 +620,7 @@ color_filters_colorize_packet(epan_dissect_t *edt)
     if ((edt->tree != NULL) && (color_filters_used())) {
         curr = color_filter_list;
 
+        fprintf(stderr, "Checking %s\n" , colorf->filter_name);
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
             if ( (!colorf->disabled) &&
