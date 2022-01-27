@@ -935,7 +935,7 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	// if need_colorize set or we want to evaluate all rules and they are not yet evaluated
 	// this happends if packet details are requested before a packet list run
 
-	evaluate_all_colorrules = FALSE
+	evaluate_all_colorrules = FALSE;
 	if ((pinfo->fd->need_colorize || evaluate_all_colorrules)) {
 		if(evaluate_all_colorrules){
 			fprintf(stderr, "[+] Evaluating colorrules for frame %" G_GUINT32_FORMAT "\n", pinfo->fd->num);
