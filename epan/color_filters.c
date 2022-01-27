@@ -556,32 +556,32 @@ color_filters_prime_edt(epan_dissect_t *edt)
 }
 
 
+
 /* * Return the color_t for later use */
 const color_filter_t *
 color_filters_all_colorize_packet(epan_dissect_t *edt, guint32 *matches, guint32 *nummatched, guint32 max)
 {
     GSList         *curr;
     color_filter_t *colorf;
+
     color_filter_t *first;
     gboolean  firstset = FALSE;
-    guint32 rulenum = 1;
     guint32 num_colorrules_matched = 0;
-
+    guint32 rulenum = 1;
 
     /* If we have color filters, "search" for the matching one. */
     if ((edt->tree != NULL) && (color_filters_used())) {
-
         curr = color_filter_list;
 
+        
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
-
-            fprintf(stderr, "Checking %s\n" , colorf->filter_name);
-            if ((!colorf->disabled) &&
+            //fprintf(stderr, "Checking %s\n" , colorf->filter_name);
+            if ( (!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
-
-                fprintf(stderr, "Matched %s\n" , colorf->filter_name);
+                //fprintf(stderr, "Matched %s\n" , colorf->filter_name);
+                
                 if(num_colorrules_matched < max){
                     //fprintf(stderr, "Adding %s\n" , colorf->filter_name);
                     // first then are ___conversation_color_filter___01
@@ -589,23 +589,26 @@ color_filters_all_colorize_packet(epan_dissect_t *edt, guint32 *matches, guint32
                     matches[num_colorrules_matched] = rulenum - 10;
                     num_colorrules_matched++;
                 }
- 
+
                 if (!firstset){
                     firstset= TRUE;
                     first = (color_filter_t *)curr->data;
                 }
-            } 
+
+                //return colorf;
+            }
             curr = g_slist_next(curr);
             rulenum++;
         }
+
+
     }
-
-    *nummatched = num_colorrules_matched;
-
+    
     if(firstset){
+        *nummatched = num_colorrules_matched;
         return first;
     }
-
+    
     return NULL;
 }
 
@@ -627,11 +630,11 @@ color_filters_colorize_packet(epan_dissect_t *edt)
         
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
-            fprintf(stderr, "Checking %s\n" , colorf->filter_name);
+            //fprintf(stderr, "Checking %s\n" , colorf->filter_name);
             if ( (!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
-                fprintf(stderr, "Matched %s\n" , colorf->filter_name);
+                //fprintf(stderr, "Matched %s\n" , colorf->filter_name);
 
                 if (!firstset){
                     firstset= TRUE;
