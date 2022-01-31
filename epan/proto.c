@@ -6664,7 +6664,7 @@ proto_item_fill_display_label(field_info *finfo, gchar *display_label_str, const
 /* -------------------------- */
 const gchar *
 proto_custom_set(proto_tree* tree, GSList *field_ids, gint occurrence,
-		 gchar *result, gchar *expr, const int size)
+		 gchar *result, gchar *expr, const int size, enum ftenum *type)
 {
 	guint32             number;
 	guint64             number64;
@@ -6693,6 +6693,7 @@ proto_custom_set(proto_tree* tree, GSList *field_ids, gint occurrence,
 		if (!hfinfo)
 			return "";
 
+		*type = hfinfo->type;
 		if (occurrence < 0) {
 			/* Search other direction */
 			while (hfinfo->same_name_prev_id != -1) {

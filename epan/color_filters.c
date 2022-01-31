@@ -31,6 +31,7 @@
 #include <epan/dfilter/dfilter.h>
 #include <epan/prefs.h>
 #include <epan/epan_dissect.h>
+#include <epan/frame_data.h>
 
 #define RED_COMPONENT(x)   (guint16) (((((x) >> 16) & 0xff) * 65535 / 255))
 #define GREEN_COMPONENT(x) (guint16) (((((x) >>  8) & 0xff) * 65535 / 255))
@@ -297,6 +298,35 @@ color_filter_list_clone(GSList *cfl)
 }
 
 static gboolean
+color_filters_get_from_path(gchar** err_msg, color_filter_add_cb_func add_cb, const gchar *path)
+{
+    FILE     *f;
+    int       ret;
+
+    /* start the list with the temporary colorizing rules */
+    color_filters_add_tmp(&color_filter_list);
+
+    if ((f = ws_fopen(path, "r")) == NULL) {
+        return FALSE;
+    }
+
+    /*
+     * We've opened it; try to read it.
+     */
+    ret = read_filters_file(path, f, &color_filter_list, add_cb);
+    if (ret != 0) {
+        *err_msg = g_strdup_printf("Error reading filter file\n\"%s\": %s.",
+                                   path, g_strerror(errno));
+        fclose(f);
+        return FALSE;
+    }
+
+    /* Success. */
+    fclose(f);
+    return TRUE;
+}
+
+static gboolean
 color_filters_get(gchar** err_msg, color_filter_add_cb_func add_cb)
 {
     gchar    *path;
@@ -343,6 +373,18 @@ color_filters_get(gchar** err_msg, color_filter_add_cb_func add_cb)
     g_free(path);
     return TRUE;
 }
+
+/* Initialize the filter structures (reading from file) for general running, including app startup */
+gboolean
+color_filters_init_from_file(gchar** err_msg, color_filter_add_cb_func add_cb, const gchar* path)
+{
+    /* delete all currently existing filters */
+    color_filter_list_delete(&color_filter_list);
+
+    /* now try to construct the filters list */
+    return color_filters_get_from_path(err_msg, add_cb, path);
+}
+
 
 /* Initialize the filter structures (reading from file) for general running, including app startup */
 gboolean
@@ -515,24 +557,98 @@ color_filters_prime_edt(epan_dissect_t *edt)
 
 /* * Return the color_t for later use */
 const color_filter_t *
-color_filters_colorize_packet(epan_dissect_t *edt)
+color_filters_all_colorize_packet(epan_dissect_t *edt, guint32 *matches, guint32 *nummatched, guint32 max)
 {
     GSList         *curr;
     color_filter_t *colorf;
+
+    color_filter_t *first;
+    gboolean  firstset = FALSE;
+    guint32 num_colorrules_matched = 0;
+    guint32 rulenum = 1;
 
     /* If we have color filters, "search" for the matching one. */
     if ((edt->tree != NULL) && (color_filters_used())) {
         curr = color_filter_list;
 
+
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
+            //fprintf(stderr, "Checking %s\n" , colorf->filter_name);
             if ( (!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
-                return colorf;
+                //fprintf(stderr, "Matched %s\n" , colorf->filter_name);
+
+                if(num_colorrules_matched < max){
+                    //fprintf(stderr, "Adding %s\n" , colorf->filter_name);
+                    // first then are ___conversation_color_filter___01
+                    // so we need to substract 10
+                    matches[num_colorrules_matched] = rulenum - 10;
+                    num_colorrules_matched++;
+                }
+
+                if (!firstset){
+                    firstset= TRUE;
+                    first = (color_filter_t *)curr->data;
+                }
+
+                //return colorf;
+            }
+            curr = g_slist_next(curr);
+            rulenum++;
+        }
+
+
+    }
+
+    if(firstset){
+        *nummatched = num_colorrules_matched;
+        return first;
+    }
+
+    return NULL;
+}
+
+
+/* * Return the color_t for later use */
+const color_filter_t *
+color_filters_colorize_packet(epan_dissect_t *edt)
+{
+    GSList         *curr;
+    color_filter_t *colorf;
+
+    color_filter_t *first;
+    gboolean  firstset = FALSE;
+
+    /* If we have color filters, "search" for the matching one. */
+    if ((edt->tree != NULL) && (color_filters_used())) {
+        curr = color_filter_list;
+
+
+        while(curr != NULL) {
+            colorf = (color_filter_t *)curr->data;
+            //fprintf(stderr, "Checking %s\n" , colorf->filter_name);
+            if ( (!colorf->disabled) &&
+                 (colorf->c_colorfilter != NULL) &&
+                 dfilter_apply_edt(colorf->c_colorfilter, edt)) {
+                //fprintf(stderr, "Matched %s\n" , colorf->filter_name);
+
+                if (!firstset){
+                    firstset= TRUE;
+                    first = (color_filter_t *)curr->data;
+                }
+
+                //return colorf;
             }
             curr = g_slist_next(curr);
         }
+
+
+    }
+
+    if(firstset){
+        return first;
     }
 
     return NULL;

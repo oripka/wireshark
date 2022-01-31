@@ -732,9 +732,9 @@ const gchar *
 epan_custom_set(epan_dissect_t *edt, GSList *field_ids,
 			     gint occurrence,
 			     gchar *result,
-			     gchar *expr, const int size )
+			     gchar *expr, const int size, enum ftenum *type)
 {
-	return proto_custom_set(edt->tree, field_ids, occurrence, result, expr, size);
+	return proto_custom_set(edt->tree, field_ids, occurrence, result, expr, size, type);
 }
 
 void

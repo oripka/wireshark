@@ -112,6 +112,16 @@ WS_DLL_PUBLIC void write_ek_proto_tree(output_fields_t* fields,
                                        epan_dissect_t *edt,
                                        column_info *cinfo, FILE *fh);
 
+WS_DLL_PUBLIC void write_ek_enhanced_proto_tree(output_fields_t* fields,
+                                       gboolean print_summary,
+                                       gboolean print_hex_data,
+                                       gchar **protocolfilter,
+                                       pf_flags protocolfilter_flags,
+                                       epan_dissect_t *edt,
+                                       column_info *cinfo, FILE *fh,
+                                       const char *index_name
+                                       );
+
 WS_DLL_PUBLIC void write_psml_preamble(column_info *cinfo, FILE *fh);
 WS_DLL_PUBLIC void write_psml_columns(epan_dissect_t *edt, FILE *fh, gboolean use_color);
 WS_DLL_PUBLIC void write_psml_finale(FILE *fh);
