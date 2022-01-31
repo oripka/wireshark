@@ -166,8 +166,7 @@ typedef enum {
   WRITE_FIELDS,   /* User defined list of fields */
   WRITE_JSON,     /* JSON */
   WRITE_JSON_RAW, /* JSON only raw hex */
-  WRITE_EK        /* JSON bulk insert to Elasticsearch */
-  WRITE_EK,      /* JSON bulk insert to Elasticsearch */
+  WRITE_EK,       /* JSON bulk insert to Elasticsearch */
   WRITE_EK_ENHANCED /* JSON bulk insert into Elasticsearch enhanced */
   /* Add CSV and the like here */
 } output_action_e;
@@ -718,10 +717,10 @@ main(int argc, char *argv[])
     {"no-duplicate-keys", ws_no_argument, NULL, LONGOPT_NO_DUPLICATE_KEYS},
     {"elastic-mapping-filter", ws_required_argument, NULL, LONGOPT_ELASTIC_MAPPING_FILTER},
     {"capture-comment", ws_required_argument, NULL, LONGOPT_CAPTURE_COMMENT},
-    {"skip-packets", required_argument, NULL, LONGOPT_SKIP_PACKETS},
-    {"decode-only", required_argument, NULL, LONGOPT_DECODE_ONLY},
-    {"print-only", required_argument, NULL, LONGOPT_PRINT_ONLY},
-    {"index-name", required_argument, NULL, LONGOPT_INDEX_NAME},
+    {"skip-packets", ws_required_argument, NULL, LONGOPT_SKIP_PACKETS},
+    {"decode-only", ws_required_argument, NULL, LONGOPT_DECODE_ONLY},
+    {"print-only", ws_required_argument, NULL, LONGOPT_PRINT_ONLY},
+    {"index-name", ws_required_argument, NULL, LONGOPT_INDEX_NAME},
     {0, 0, 0, 0 }
   };
   gboolean             arg_error = FALSE;
