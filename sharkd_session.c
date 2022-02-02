@@ -4503,9 +4503,12 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 			}
 			//fprintf(stderr, "Printing ...%i\n", framenum);
 
+			json_dumper_begin_object(&dumper);
 			status = sharkd_dissect_request(framenum, (framenum != 1) ? 1 : 0, framenum - 1,
 				&rec, &rec_buf, cinfo, dissect_flags,
 				&sharkd_session_process_frame_ranges_cb, &req_data, &err, &err_info);
+			json_dumper_end_object(&dumper);
+
 			switch (status) {
 
 			case DISSECT_REQUEST_SUCCESS:
