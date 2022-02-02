@@ -370,23 +370,26 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{NULL,         "params",     1, JSMN_OBJECT,       SHARKD_JSON_OBJECT,   OPTIONAL},
 
 		// Valid methods
-		{"method",     "analyse",    1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "bye",        1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "check",      1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "complete",   1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "download",   1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "dumpconf",   1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "follow",     1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "frame",      1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "frames",     1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "info",       1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "intervals",  1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "iograph",    1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "load",       1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "setcomment", 1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "setconf",    1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "status",     1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "tap",        1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "analyse",    		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "bye",        		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "check",      		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "complete",   		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "download",   		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "dumpconf",   		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "follow",     		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "frame",      		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "frames",     		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "info",       		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "intervals", 		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "iograph",   	 	1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "load",     	  		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "setcomment", 		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "setconf",    		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "status",    	 	1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "tap",        		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "framerange", 		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "decodeas",   		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "load_colorrules",	1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 
 		// Parameters and their method context
 		{"check",      "field",      2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
@@ -397,6 +400,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{"dumpconf",   "pref",       2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"follow",     "follow",     2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
 		{"follow",     "filter",     2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
+
 		{"frame",      "frame",      2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, MANDATORY},
 		{"frame",      "proto",      2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
 		{"frame",      "ref_frame",  2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
@@ -410,6 +414,23 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{"frames",     "skip",       2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
 		{"frames",     "limit",      2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
 		{"frames",     "refs",       2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+
+		{"framerange",     	"range",      2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
+		{"framerange",      "proto",      2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",      "columns",    2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",      "color",      2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",      "bytes",      2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",      "hidden",     2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",     	"column*",    2, JSMN_UNDEFINED,    SHARKD_JSON_ANY,      OPTIONAL},
+		{"framerange",     	"filter",     2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"framerange",     	"skip",       2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
+		{"framerange",     	"limit",      2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
+		{"framerange",     	"refs",       2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		
+	
+		{"load_colorrules",	"file",		  2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, MANDATORY},
+
+
 		{"intervals",  "interval",   2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
 		{"intervals",  "filter",     2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"iograph",    "interval",   2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
@@ -435,6 +456,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{"iograph",    "filter8",    2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"iograph",    "filter9",    2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"load",       "file",       2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
+		{"load",       "progress",   2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"setcomment", "frame",      2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, MANDATORY},
 		{"setcomment", "comment",    2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"setconf",    "name",       2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
@@ -455,6 +477,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{"tap",        "tap13",      2, JSMN_STRING,       SHARKD_JSON_STRING, OPTIONAL},
 		{"tap",        "tap14",      2, JSMN_STRING,       SHARKD_JSON_STRING, OPTIONAL},
 		{"tap",        "tap15",      2, JSMN_STRING,       SHARKD_JSON_STRING, OPTIONAL},
+
 
 		// End of the name_array
 		{NULL,         NULL,         0, JSMN_STRING,       SHARKD_ARRAY_END,   OPTIONAL},
