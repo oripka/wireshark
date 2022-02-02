@@ -4313,7 +4313,6 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 	req_data.display_hidden = (json_find_attr(buf, tokens, count, "v") != NULL);
 
-	
 
 	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
 
@@ -4321,7 +4320,6 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 	wtap_rec_init(&rec);
 	ws_buffer_init(&rec_buf, 1514);
-
 
 	for( siter = 0; siter < numselections; siter++){
 		// just one, keep it simple for now
