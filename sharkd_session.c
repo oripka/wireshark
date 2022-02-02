@@ -428,8 +428,8 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{"framerange",     	"refs",       2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		
 	
-		{"load_colorrules",	"file",		  2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, MANDATORY},
-
+		{"load_colorrules",	"file",		  2, JSMN_PRIMITIVE,    SHARKD_JSON_STRING, MANDATORY},
+		{"load_colorrules",	"json",		  2, JSMN_UNDEFINED,    SHARKD_JSON_ANY, OPTIONAL},
 
 		{"intervals",  "interval",   2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
 		{"intervals",  "filter",     2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
