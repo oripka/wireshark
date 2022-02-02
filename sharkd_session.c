@@ -1571,9 +1571,6 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 	wtap_rec_init(&rec);
 	ws_buffer_init(&rec_buf, 1514);
 
-	json_dumper_begin_object(&dumper);
-	sharkd_json_array_open("packets");
-
 	for (guint32 framenum = 1; framenum <= cfile.count; framenum++)
 	{
 		frame_data *fdata;
@@ -1677,8 +1674,6 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 
 	sharkd_json_value_anyf("frames_total", "%u", cfile.count);
 	sharkd_json_value_anyf("limit", "%u", setlimit);
-
-	json_dumper_end_object(&dumper);
 
 	sharkd_json_result_array_epilogue();
 
@@ -4318,10 +4313,11 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 	req_data.display_hidden = (json_find_attr(buf, tokens, count, "v") != NULL);
 
+	
 
-	json_dumper_begin_object(&dumper);
-	sharkd_json_array_open("frames");
 	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
+
+	sharkd_json_result_array_prologue(rpcid);
 
 	wtap_rec_init(&rec);
 	ws_buffer_init(&rec_buf, 1514);
@@ -4333,7 +4329,6 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 		max = selections[siter].second;
 
 		if (min > max){
-			sharkd_json_array_close();
 			sharkd_json_error(
 				rpcid, -8004, NULL,
 				"Invalid frame - The frame number requested is out of range"
@@ -4347,7 +4342,6 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 				break;
 			}
 			//fprintf(stderr, "Printing ...%i\n", framenum);
-			json_dumper_begin_object(&dumper);
 
 			status = sharkd_dissect_request(framenum, (framenum != 1) ? 1 : 0, framenum - 1,
 				&rec, &rec_buf, cinfo, dissect_flags,
@@ -4375,16 +4369,11 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 				break;
 			}
 
-			json_dumper_end_object(&dumper);
 		}
 	}
 
+	sharkd_json_result_array_epilogue();
 
-	
-
-	sharkd_json_array_close();
-	json_dumper_end_object(&dumper);
-	json_dumper_finish(&dumper);
 	wtap_rec_cleanup(&rec);
 	ws_buffer_free(&rec_buf);
 }
