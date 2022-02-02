@@ -247,7 +247,7 @@ static void
 sharkd_json_simple_ok(guint32 id)
 {
 	sharkd_json_result_prologue(id);
-	sharkd_json_value_string("status", "0");
+	sharkd_json_value_string("status", "OK");
 	sharkd_json_result_epilogue();
 }
 
@@ -3578,8 +3578,6 @@ sharkd_session_process_frame_cb(epan_dissect_t *edt, proto_tree *tree, struct ep
 
 	sharkd_json_result_prologue(rpcid);
 
-	sharkd_json_value_anyf("err", "0");	
-
 	if (fdata->has_modified_block)
 		pkt_block = sharkd_get_modified_block(fdata);
 	else
@@ -4322,7 +4320,6 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 
 	json_dumper_begin_object(&dumper);
-	sharkd_json_value_anyf("err", "0");
 	sharkd_json_array_open("frames");
 	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
 
@@ -4337,9 +4334,10 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 		if (min > max){
 			sharkd_json_array_close();
-			sharkd_json_value_anyf("err", "1");
-			json_dumper_end_object(&dumper);
-			json_dumper_finish(&dumper);
+			sharkd_json_error(
+				rpcid, -8004, NULL,
+				"Invalid frame - The frame number requested is out of range"
+			);
 			return;
 		}
 
@@ -4665,7 +4663,10 @@ sharkd_session_process_decodeas(char *buf, const jsmntok_t *tokens, int count)
 	ret = !decode_as_command_option_extended(tok_entry, TRUE, &dumper);
 
 	if(ret == FALSE){
-		sharkd_json_value_anyf("err", "%d", ret);
+		sharkd_json_error(
+			rpcid, -32601, NULL,
+			"Can not set decodas"
+		);
 	}
 
 	json_dumper_end_object(&dumper);
