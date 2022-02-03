@@ -389,7 +389,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
   
       if(nump % STATUS_EVERY_N_PACKETS == 0 && showprogress){
         // undefined id
-        snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"jsonrpc\": \"2.0\", \"id\" : 1, \"result\" : { \"status\" : \"loading\",  \"progress\" :  %ld}\n\n", nump-1);
+        snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"jsonrpc\": \"2.0\", \"id\" : 1, \"result\" : { \"status\" : \"loading\",  \"progress\" :  %ld}\n", nump-1);
 
         if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
           //fprintf(stderr, "[-] Client disconnected writing, exiting process. Error code %s\n",  strerror(errno));
@@ -439,7 +439,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int
 
     if(showprogress){
       // last update 3 -> LOADED
-      snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"jsonrpc\": \"2.0\", \"id\" : 1, \"result\" : { \"status\" : \"loaded\",  \"progress\" :  %ld}\n\n", nump-1);
+      snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"jsonrpc\": \"2.0\", \"id\" : 1, \"result\" : { \"status\" : \"loaded\",  \"progress\" :  %ld}\n", nump-1);
       if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
         //fprintf(stderr, "[-] Client disconnected writing, exiting process. Error code %s\n",  strerror(errno));
         close(output_file);
