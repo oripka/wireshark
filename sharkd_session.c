@@ -1631,21 +1631,6 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 	
 			displayed.bytes  = matching.bytes;
 			displayed.frames = matching.frames;
-	
-			if (limit && --limit == 0){
-				
-				/* if we have a filter we count how many remaining packets match */
-				
-				if(tok_filter && tok_skip_match_count == NULL){
-					justcountnow = TRUE;
-				} else {
-				/* else we stop here not to waste time counting */
-					matching.bytes = 0;
-					matching.frames = cfile.count;	
-					break;
-				}
-				//break;
-			}
 
 			break;
 
@@ -1662,8 +1647,21 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			break;
 		}
 
-		if (limit && --limit == 0)
-			break;
+		if (limit && --limit == 0){
+			
+			/* if we have a filter we count how many remaining packets match */
+			
+			if(tok_filter && tok_skip_match_count == NULL){
+				justcountnow = TRUE;
+			} else {
+			/* else we stop here not to waste time counting */
+				matching.bytes = 0;
+				matching.frames = cfile.count;	
+				break;
+			}
+			//break;
+		}
+
 	}
 	sharkd_json_array_close();
 
