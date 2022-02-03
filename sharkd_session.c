@@ -4429,9 +4429,17 @@ sharkd_session_process_frame(char *buf, const jsmntok_t *tokens, int count)
 static void
 sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count)
 {
+	// TODO in order to support time references and delta time displayed and delta times
+	// we need to set tok_ref_frame and tok_prev_frame correctly
+
+	// part of it needs to be handled by the frontend
+	// giving us the last frame before the current requested -> difficult
+	// the frontend has to do the correct request based on the packet list and its filters
+
+
 	// const char *tok_frame = json_find_attr(buf, tokens, count, "frame");
 	// const char *tok_ref_frame = json_find_attr(buf, tokens, count, "ref_frame");
-	// const char *tok_prev_frame = json_find_attr(buf, tokens, count, "prev_frame");
+	//const char *tok_prev_frame = json_find_attr(buf, tokens, count, "prev_frame");
 
 	column_info *cinfo = NULL;
 
@@ -4521,6 +4529,9 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 			//fprintf(stderr, "Printing ...%i\n", framenum);
 
 			json_dumper_begin_object(&dumper);
+
+
+			// ref_frame_num, prev_dis_num
 			status = sharkd_dissect_request(framenum, (framenum != 1) ? 1 : 0, framenum - 1,
 				&rec, &rec_buf, cinfo, dissect_flags,
 				&sharkd_session_process_frame_ranges_cb, &req_data, &err, &err_info);
