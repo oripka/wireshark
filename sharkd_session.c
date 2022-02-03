@@ -1566,11 +1566,12 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			return;
 	}
 
-	sharkd_json_result_array_prologue(rpcid);
+	sharkd_json_result_prologue(rpcid);
 
 	wtap_rec_init(&rec);
 	ws_buffer_init(&rec_buf, 1514);
 
+	sharkd_json_array_open("packets");
 	for (guint32 framenum = 1; framenum <= cfile.count; framenum++)
 	{
 		frame_data *fdata;
@@ -1664,8 +1665,8 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		if (limit && --limit == 0)
 			break;
 	}
-	
-	json_dumper_begin_object(&dumper);
+	sharkd_json_array_close();
+
 	sharkd_json_value_anyf("frames_displayed", "%u", displayed.frames);
 	sharkd_json_value_anyf("bytes_displayed", "%" G_GUINT64_FORMAT, displayed.bytes);
 
@@ -1675,8 +1676,10 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 
 	sharkd_json_value_anyf("frames_total", "%u", cfile.count);
 	sharkd_json_value_anyf("limit", "%u", setlimit);
-	json_dumper_end_object(&dumper);
-	sharkd_json_result_array_epilogue();
+
+
+	sharkd_json_result_epilogue();
+
 
 	if (cinfo != &cfile.cinfo)
 		col_cleanup(cinfo);
