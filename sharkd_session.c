@@ -429,7 +429,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		
 	
 		{"load_colorrules",	"file",		  2, JSMN_STRING,    SHARKD_JSON_STRING, MANDATORY},
-		{"load_colorrules",	"json",		  2, JSMN_UNDEFINED,    SHARKD_JSON_ANY, OPTIONAL},
+		{"load_colorrules",	"json",		  2, JSMN_STRING,    SHARKD_JSON_STRING, OPTIONAL},
 
 		{"intervals",  "interval",   2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
 		{"intervals",  "filter",     2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
@@ -677,6 +677,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 			}
 		}
 
+		/* ignore for now because the code above can't handle arrays
 		if (!match)
 		{
 			sharkd_json_error(
@@ -684,7 +685,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 				"%s is not a valid member name", attr_name
 			);
 			return FALSE;
-		}
+		}*/
 	}
 
 	/* check for mandatory members */
