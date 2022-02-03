@@ -1664,7 +1664,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		if (limit && --limit == 0)
 			break;
 	}
-
+	
 	sharkd_json_value_anyf("frames_displayed", "%u", displayed.frames);
 	sharkd_json_value_anyf("bytes_displayed", "%" G_GUINT64_FORMAT, displayed.bytes);
 
