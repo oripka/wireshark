@@ -4442,7 +4442,7 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 	column_info *cinfo = NULL;
 
-	guint32 ref_frame_num, prev_dis_num
+	guint32 ref_frame_num, prev_dis_num;
 
 	guint32 framenum, min, max, siter, numselections;
 	guint32 dissect_flags = SHARKD_DISSECT_FLAG_NULL;
