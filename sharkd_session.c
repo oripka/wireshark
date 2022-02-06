@@ -4472,6 +4472,7 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
 
+
 	ref_frame_num = (framenum != 1) ? 1 : 0;
 	if (tok_ref_frame)
 	{
