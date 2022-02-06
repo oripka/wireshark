@@ -4470,22 +4470,6 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 		}
 	}
 
-	// Q: do we actually need to dissect prev_dis_num or can we just put it in
-	// sharkd_dissect_request of a follow up frame?
-	prev_dis_num = framenum - 1;
-	if (tok_prev_frame)
-	{
-		ws_strtou32(tok_prev_frame, NULL, &prev_dis_num);
-		if (prev_dis_num >= framenum)
-		{
-			sharkd_json_error(
-				rpcid, -8002, NULL,
-				"Invalid prev_frame - The prev_frame occurs on or after the frame specified"
-			);
-			return;
-		}
-	}
-
 	if (json_find_attr(buf, tokens, count, "proto") != NULL)
 		dissect_flags |= SHARKD_DISSECT_FLAG_PROTO_TREE;
 	if (json_find_attr(buf, tokens, count, "bytes") != NULL)
@@ -4500,6 +4484,23 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 	req_data.display_hidden = (json_find_attr(buf, tokens, count, "v") != NULL);
 
 	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
+
+
+	// Q: do we actually need to dissect prev_dis_num or can we just put it in
+	// sharkd_dissect_request of a follow up frame?
+	prev_dis_num = framenum - 1;
+	if (tok_prev_frame)
+	{
+		ws_strtou32(tok_prev_frame, NULL, &prev_dis_num);
+		if (prev_dis_num >= selections[0].first)
+		{
+			sharkd_json_error(
+				rpcid, -8002, NULL,
+				"Invalid prev_frame - The prev_frame occurs on or after the frame specified"
+			);
+			return;
+		}
+	}
 
 	sharkd_json_result_array_prologue(rpcid);
 
