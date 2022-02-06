@@ -4456,19 +4456,6 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 	#define MAX_FRAME_RANGE_SELECTIONS 100
 	static struct select_item_range selections[MAX_FRAME_RANGE_SELECTIONS];
 
-	ref_frame_num = (framenum != 1) ? 1 : 0;
-	if (tok_ref_frame)
-	{
-		ws_strtou32(tok_ref_frame, NULL, &ref_frame_num);
-		if (ref_frame_num > framenum)
-		{
-			sharkd_json_error(
-				rpcid, -8001, NULL,
-				"Invalid ref_frame - The ref_frame occurs after the frame specified"
-			);
-			return;
-		}
-	}
 
 	if (json_find_attr(buf, tokens, count, "proto") != NULL)
 		dissect_flags |= SHARKD_DISSECT_FLAG_PROTO_TREE;
@@ -4485,6 +4472,19 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
 
+	ref_frame_num = (framenum != 1) ? 1 : 0;
+	if (tok_ref_frame)
+	{
+		ws_strtou32(tok_ref_frame, NULL, &ref_frame_num);
+		if (ref_frame_num > selections[0].first)
+		{
+			sharkd_json_error(
+				rpcid, -8001, NULL,
+				"Invalid ref_frame - The ref_frame occurs after the frame specified"
+			);
+			return;
+		}
+	}
 
 	// Q: do we actually need to dissect prev_dis_num or can we just put it in
 	// sharkd_dissect_request of a follow up frame?
