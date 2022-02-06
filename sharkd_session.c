@@ -4437,13 +4437,12 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 	// the frontend has to do the correct request based on the packet list and its filters
 
 
-	// const char *tok_frame = json_find_attr(buf, tokens, count, "frame");
-	// const char *tok_ref_frame = json_find_attr(buf, tokens, count, "ref_frame");
-	//const char *tok_prev_frame = json_find_attr(buf, tokens, count, "prev_frame");
+	const char *tok_ref_frame = json_find_attr(buf, tokens, count, "ref_frame");
+	const char *tok_prev_frame = json_find_attr(buf, tokens, count, "prev_frame");
 
 	column_info *cinfo = NULL;
 
-	//guint32 ref_frame_num, prev_dis_num
+	guint32 ref_frame_num, prev_dis_num
 
 	guint32 framenum, min, max, siter, numselections;
 	guint32 dissect_flags = SHARKD_DISSECT_FLAG_NULL;
@@ -4457,35 +4456,35 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 	#define MAX_FRAME_RANGE_SELECTIONS 100
 	static struct select_item_range selections[MAX_FRAME_RANGE_SELECTIONS];
 
-	// ws_strtou32(tok_frame, NULL, &framenum);  // we have already validated this
+	ref_frame_num = (framenum != 1) ? 1 : 0;
+	if (tok_ref_frame)
+	{
+		ws_strtou32(tok_ref_frame, NULL, &ref_frame_num);
+		if (ref_frame_num > framenum)
+		{
+			sharkd_json_error(
+				rpcid, -8001, NULL,
+				"Invalid ref_frame - The ref_frame occurs after the frame specified"
+			);
+			return;
+		}
+	}
 
-	// ref_frame_num = (framenum != 1) ? 1 : 0;
-	// if (tok_ref_frame)
-	// {
-	// 	ws_strtou32(tok_ref_frame, NULL, &ref_frame_num);
-	// 	if (ref_frame_num > framenum)
-	// 	{
-	// 		sharkd_json_error(
-	// 			rpcid, -8001, NULL,
-	// 			"Invalid ref_frame - The ref_frame occurs after the frame specified"
-	// 		);
-	// 		return;
-	// 	}
-	// }
-
-	// prev_dis_num = framenum - 1;
-	// if (tok_prev_frame)
-	// {
-	// 	ws_strtou32(tok_prev_frame, NULL, &prev_dis_num);
-	// 	if (prev_dis_num >= framenum)
-	// 	{
-	// 		sharkd_json_error(
-	// 			rpcid, -8002, NULL,
-	// 			"Invalid prev_frame - The prev_frame occurs on or after the frame specified"
-	// 		);
-	// 		return;
-	// 	}
-	// }
+	// Q: do we actually need to dissect prev_dis_num or can we just put it in
+	// sharkd_dissect_request of a follow up frame?
+	prev_dis_num = framenum - 1;
+	if (tok_prev_frame)
+	{
+		ws_strtou32(tok_prev_frame, NULL, &prev_dis_num);
+		if (prev_dis_num >= framenum)
+		{
+			sharkd_json_error(
+				rpcid, -8002, NULL,
+				"Invalid prev_frame - The prev_frame occurs on or after the frame specified"
+			);
+			return;
+		}
+	}
 
 	if (json_find_attr(buf, tokens, count, "proto") != NULL)
 		dissect_flags |= SHARKD_DISSECT_FLAG_PROTO_TREE;
@@ -4500,7 +4499,6 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 	req_data.display_hidden = (json_find_attr(buf, tokens, count, "v") != NULL);
 
-
 	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
 
 	sharkd_json_result_array_prologue(rpcid);
@@ -4510,6 +4508,8 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 	for( siter = 0; siter < numselections; siter++){
 		// just one, keep it simple for now
+		// TODO: implement multiple selections
+		// this also needs modifications in the prev_dis_num setting within each loop
 		min = selections[siter].first;
 		max = selections[siter].second;
 
@@ -4530,9 +4530,8 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 
 			json_dumper_begin_object(&dumper);
 
-
 			// ref_frame_num, prev_dis_num
-			status = sharkd_dissect_request(framenum, (framenum != 1) ? 1 : 0, framenum - 1,
+			status = sharkd_dissect_request(framenum, ref_frame_num, prev_dis_num,
 				&rec, &rec_buf, cinfo, dissect_flags,
 				&sharkd_session_process_frame_ranges_cb, &req_data, &err, &err_info);
 			json_dumper_end_object(&dumper);
@@ -4560,6 +4559,7 @@ sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count
 				break;
 			}
 
+			prev_dis_num = framenum;
 		}
 	}
 
