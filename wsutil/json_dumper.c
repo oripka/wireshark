@@ -71,7 +71,7 @@ json_puts_string(FILE *fp, const char *str, gboolean dot_to_underscore)
                 fputc('\\', fp);
             }
             if (dot_to_underscore && str[i] == '.')
-                fputc('_', fp);
+                fputc('#', fp);
             else
                 fputc(str[i], fp);
         }

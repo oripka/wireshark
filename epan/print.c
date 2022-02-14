@@ -340,6 +340,70 @@ write_pdml_proto_tree(output_fields_t* fields, gchar **protocolfilter, pf_flags 
 }
 
 void
+write_ek_enhanced_proto_tree(output_fields_t* fields,
+                    gboolean print_summary, gboolean print_hex,
+                    gchar **protocolfilter,
+                    pf_flags protocolfilter_flags, epan_dissect_t *edt,
+                    column_info *cinfo,
+                    FILE *fh,
+                    const char *index_name
+                    )
+{
+    g_assert(edt);
+    g_assert(fh);
+
+    write_json_data data;
+
+    json_dumper dumper = {
+        .output_file = fh,
+        .flags = JSON_DUMPER_DOT_TO_UNDERSCORE
+    };
+
+    data.dumper = &dumper;
+
+
+    json_dumper_begin_object(&dumper);
+    json_dumper_set_member_name(&dumper, "index");
+    json_dumper_begin_object(&dumper);
+
+    json_dumper_set_member_name(&dumper, "_index");
+    json_dumper_value_string(&dumper, index_name);
+
+    json_dumper_set_member_name(&dumper, "_type");
+    json_dumper_value_string(&dumper, "doc");
+    json_dumper_end_object(&dumper);
+    json_dumper_end_object(&dumper);
+    json_dumper_finish(&dumper);
+
+    json_dumper_begin_object(&dumper);
+    /* Timestamp added for time indexing in Elasticsearch */
+    json_dumper_set_member_name(&dumper, "timestamp");
+    json_dumper_value_anyf(&dumper, "\"%" G_GUINT64_FORMAT "%03d\"", (guint64)edt->pi.abs_ts.secs, edt->pi.abs_ts.nsecs/1000000);
+
+    if (print_summary)
+        write_ek_summary(edt->pi.cinfo, &data);
+
+    if (edt->tree) {
+
+        if (fields == NULL || fields->fields == NULL) {
+            /* Write out all fields */
+            data.src_list = edt->pi.data_src;
+            data.filter = protocolfilter;
+            data.filter_flags = protocolfilter_flags;
+            data.print_hex = print_hex;
+            proto_tree_write_node_ek(edt->tree, &data);
+        } else {
+            /* Write out specified fields */
+            write_specified_fields(FORMAT_EK, fields, edt, cinfo, NULL, data.dumper);
+        }
+
+    }
+    json_dumper_end_object(&dumper);
+    json_dumper_finish(&dumper);
+}
+
+
+void
 write_ek_proto_tree(output_fields_t* fields,
                     gboolean print_summary, gboolean print_hex,
                     gchar **protocolfilter,
@@ -378,8 +442,6 @@ write_ek_proto_tree(output_fields_t* fields,
         write_ek_summary(edt->pi.cinfo, &data);
 
     if (edt->tree) {
-        json_dumper_set_member_name(&dumper, "layers");
-        json_dumper_begin_object(&dumper);
 
         if (fields == NULL || fields->fields == NULL) {
             /* Write out all fields */
@@ -393,7 +455,6 @@ write_ek_proto_tree(output_fields_t* fields,
             write_specified_fields(FORMAT_EK, fields, edt, cinfo, NULL, data.dumper);
         }
 
-        json_dumper_end_object(&dumper);
     }
     json_dumper_end_object(&dumper);
     json_dumper_finish(&dumper);
@@ -1252,8 +1313,8 @@ ek_write_name(proto_node *pnode, gchar* suffix, write_json_data* pdata)
     gchar      *str;
 
     if (fi->hfinfo->parent != -1) {
-        header_field_info* parent = proto_registrar_get_nth(fi->hfinfo->parent);
-        str = g_strdup_printf("%s_%s%s", parent->abbrev, fi->hfinfo->abbrev, suffix ? suffix : "");
+        //header_field_info* parent = proto_registrar_get_nth(fi->hfinfo->parent);
+        str = g_strdup_printf("%s%s", fi->hfinfo->abbrev, suffix ? suffix : "");
         json_dumper_set_member_name(pdata->dumper, str);
     } else {
         str = g_strdup_printf("%s%s", fi->hfinfo->abbrev, suffix ? suffix : "");

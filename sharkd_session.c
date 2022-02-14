@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 
 #include <glib.h>
@@ -30,10 +31,12 @@
 #include <epan/color_filters.h>
 #include <epan/prefs.h>
 #include <epan/prefs-int.h>
+#include <epan/proto.h>
 #include <epan/uat-int.h>
 #include <wiretap/wtap.h>
 
 #include <epan/column.h>
+#include <epan/column-utils.h>
 
 #include <ui/ssl_key_export.h>
 
@@ -71,9 +74,14 @@
 #include <wsutil/pint.h>
 #include <wsutil/strtoi.h>
 
+#include <ui/clopts_common.h>
+#include "ui/decode_as_utils.h"
 #include "globals.h"
 
 #include "sharkd.h"
+
+#define MEASURE_PERFORMANCE 0
+#define VERBOSE 0
 
 struct sharkd_filter_item
 {
@@ -362,23 +370,26 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{NULL,         "params",     1, JSMN_OBJECT,       SHARKD_JSON_OBJECT,   OPTIONAL},
 
 		// Valid methods
-		{"method",     "analyse",    1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "bye",        1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "check",      1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "complete",   1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "download",   1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "dumpconf",   1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "follow",     1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "frame",      1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "frames",     1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "info",       1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "intervals",  1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "iograph",    1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "load",       1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "setcomment", 1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "setconf",    1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "status",     1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
-		{"method",     "tap",        1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "analyse",    		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "bye",        		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "check",      		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "complete",   		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "download",   		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "dumpconf",   		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "follow",     		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "frame",      		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "frames",     		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "info",       		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "intervals", 		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "iograph",   	 	1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "load",     	  		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "setcomment", 		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "setconf",    		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "status",    	 	1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "tap",        		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "framerange", 		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "decodeas",   		1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"method",     "load_colorrules",	1, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 
 		// Parameters and their method context
 		{"check",      "field",      2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
@@ -389,6 +400,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{"dumpconf",   "pref",       2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"follow",     "follow",     2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
 		{"follow",     "filter",     2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
+
 		{"frame",      "frame",      2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, MANDATORY},
 		{"frame",      "proto",      2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
 		{"frame",      "ref_frame",  2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
@@ -402,6 +414,23 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{"frames",     "skip",       2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
 		{"frames",     "limit",      2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
 		{"frames",     "refs",       2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+
+		{"framerange",     	"range",      2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
+		{"framerange",      "proto",      2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",      "columns",    2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",      "color",      2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",      "bytes",      2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",      "hidden",     2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  OPTIONAL},
+		{"framerange",     	"column*",    2, JSMN_UNDEFINED,    SHARKD_JSON_ANY,      OPTIONAL},
+		{"framerange",     	"filter",     2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+		{"framerange",     	"skip",       2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
+		{"framerange",     	"limit",      2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
+		{"framerange",     	"refs",       2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
+
+
+		{"load_colorrules",	"file",		  2, JSMN_STRING,    SHARKD_JSON_STRING, MANDATORY},
+		{"load_colorrules",	"json",		  2, JSMN_UNDEFINED,    SHARKD_JSON_ANY, OPTIONAL},
+
 		{"intervals",  "interval",   2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
 		{"intervals",  "filter",     2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"iograph",    "interval",   2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, OPTIONAL},
@@ -427,6 +456,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{"iograph",    "filter8",    2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"iograph",    "filter9",    2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"load",       "file",       2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
+		{"load",       "progress",   2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"setcomment", "frame",      2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, MANDATORY},
 		{"setcomment", "comment",    2, JSMN_STRING,       SHARKD_JSON_STRING,   OPTIONAL},
 		{"setconf",    "name",       2, JSMN_STRING,       SHARKD_JSON_STRING,   MANDATORY},
@@ -447,6 +477,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 		{"tap",        "tap13",      2, JSMN_STRING,       SHARKD_JSON_STRING, OPTIONAL},
 		{"tap",        "tap14",      2, JSMN_STRING,       SHARKD_JSON_STRING, OPTIONAL},
 		{"tap",        "tap15",      2, JSMN_STRING,       SHARKD_JSON_STRING, OPTIONAL},
+
 
 		// End of the name_array
 		{NULL,         NULL,         0, JSMN_STRING,       SHARKD_ARRAY_END,   OPTIONAL},
@@ -646,6 +677,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 			}
 		}
 
+		/* ignore for now because the code above can't handle arrays
 		if (!match)
 		{
 			sharkd_json_error(
@@ -653,7 +685,7 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)
 				"%s is not a valid member name", attr_name
 			);
 			return FALSE;
-		}
+		}*/
 	}
 
 	/* check for mandatory members */
@@ -1054,16 +1086,33 @@ sharkd_session_process_info(void)
  * Output object with attributes:
  *   (m) err - error code
  */
+
+
+#include <sys/time.h>
+
 static void
 sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 {
+
 	const char *tok_file = json_find_attr(buf, tokens, count, "file");
+	const char *tok_progress = json_find_attr(buf, tokens, count, "progress");
 	int err = 0;
+	gboolean showprogress = FALSE;
+
+	if(tok_progress){
+		showprogress = TRUE;
+	}
+
+	parse_selected_frames(buf, tokens, count);
+	parse_add_print_only(buf, tokens, count);
+
+	if(VERBOSE){
+		fprintf(stderr, "load: filename=%s\n", tok_file);
+	}
 
 	if (!tok_file)
 		return;
 
-	fprintf(stderr, "load: filename=%s\n", tok_file);
 
 	if (sharkd_cf_open(tok_file, WTAP_TYPE_AUTO, FALSE, &err) != CF_OK)
 	{
@@ -1076,7 +1125,8 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)
 
 	TRY
 	{
-		err = sharkd_load_cap_file();
+		int ofh =  fileno(dumper.output_file);
+		err = sharkd_load_cap_file(ofh, showprogress);
 	}
 	CATCH(OutOfMemoryError)
 	{
@@ -1319,6 +1369,25 @@ sharkd_session_create_columns(column_info *cinfo, const char *buf, const jsmntok
 	return cinfo;
 }
 
+
+int all_digits(const char *string){
+	int dots = 0;
+
+    if( *string == 0)              // empty string - wrong
+         return 0;
+
+    for( ; *string != 0; string++) // scan the string till its end (a zero byte (char)0)
+		if(*string == '.')		   // multiple dots are not digits
+			dots++;
+        else if (!isdigit(*string))     // test for a digit
+            return 0;              // not a digit - return
+
+		if(dots > 1)
+			return 0;
+
+    return 1;                      // all characters are digits
+}
+
 static void
 sharkd_session_process_frames_cb(epan_dissect_t *edt, proto_tree *tree _U_,
     struct epan_column_info *cinfo, const GSList *data_src _U_, void *data _U_)
@@ -1335,7 +1404,21 @@ sharkd_session_process_frames_cb(epan_dissect_t *edt, proto_tree *tree _U_,
 	{
 		const col_item_t *col_item = &cinfo->columns[col];
 
-		sharkd_json_value_string(NULL, col_item->col_data);
+		/* "" values are always represented by "" not be the empty string which
+			* JSON parsers do not like */
+		if (strcmp(col_item->col_data, "") == 0){
+			sharkd_json_value_string(NULL, col_item->col_data);
+			continue;
+		}
+
+		/* just quote all not numeric data */
+		if (all_digits(col_item->col_data)){
+			sharkd_json_value_anyf(NULL, "%s", col_item->col_data);
+			continue;
+		} else{
+			sharkd_json_value_string(NULL, col_item->col_data);
+			continue;
+		}
 	}
 	sharkd_json_array_close();
 
@@ -1371,6 +1454,8 @@ sharkd_session_process_frames_cb(epan_dissect_t *edt, proto_tree *tree _U_,
 	json_dumper_end_object(&dumper);
 }
 
+
+
 /**
  * sharkd_session_process_frames()
  *
@@ -1402,11 +1487,29 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 	const char *tok_limit  = json_find_attr(buf, tokens, count, "limit");
 	const char *tok_refs   = json_find_attr(buf, tokens, count, "refs");
 
+
+	const char *tok_skip_match_count   = json_find_attr(buf, tokens, count, "skipmatchcount");
+	struct
+	{
+		unsigned int frames;
+		guint64 bytes;
+	} displayed, matching;
+
+	displayed.frames = 0;
+	displayed.bytes  = 0;
+
+	matching.frames = 0;
+	matching.bytes  = 0;
+
 	const guint8 *filter_data = NULL;
 
-	guint32 next_ref_frame = G_MAXUINT32;
+	gboolean justcountnow = FALSE;
+
+	guint32 next_ref_frame = G_MAXUINT32, current_ref_frame = 0;
+	guint32 prev_dis_num = 0;
 	guint32 skip;
 	guint32 limit;
+	guint32 setlimit;
 
 	wtap_rec rec; /* Record metadata */
 	Buffer rec_buf;   /* Record data */
@@ -1457,6 +1560,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		if (!ws_strtou32(tok_limit, NULL, &limit))
 			return;
 	}
+	setlimit = limit;
 
 	if (tok_refs)
 	{
@@ -1464,11 +1568,12 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			return;
 	}
 
-	sharkd_json_result_array_prologue(rpcid);
+	sharkd_json_result_prologue(rpcid);
 
 	wtap_rec_init(&rec);
 	ws_buffer_init(&rec_buf, 1514);
 
+	sharkd_json_array_open("packets");
 	for (guint32 framenum = 1; framenum <= cfile.count; framenum++)
 	{
 		frame_data *fdata;
@@ -1476,12 +1581,15 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		int err;
 		gchar *err_info;
 
+		guint32 ref_frame = (framenum != 1) ? 1 : 0;
+
 		if (filter_data && !(filter_data[framenum / 8] & (1 << (framenum % 8))))
 			continue;
 
 		if (skip)
 		{
 			skip--;
+			prev_dis_num = framenum;
 			continue;
 		}
 
@@ -1489,11 +1597,16 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		{
 			if (framenum >= next_ref_frame)
 			{
+				current_ref_frame = next_ref_frame;
+
 				if (*tok_refs != ',')
 					next_ref_frame = G_MAXUINT32;
 
 				while (*tok_refs == ',' && framenum >= next_ref_frame)
 				{
+
+					current_ref_frame = next_ref_frame;
+
 					if (!ws_strtou32(tok_refs + 1, &tok_refs, &next_ref_frame))
 					{
 						fprintf(stderr, "sharkd_session_process_frames() wrong format for refs: %s\n", tok_refs);
@@ -1506,11 +1619,14 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 					next_ref_frame = G_MAXUINT32;
 				}
 			}
+
+			if (current_ref_frame)
+				ref_frame = current_ref_frame;
 		}
 
 		fdata = sharkd_get_frame(framenum);
 		status = sharkd_dissect_request(framenum,
-		    (framenum != 1) ? 1 : 0, framenum - 1,
+		    ref_frame, prev_dis_num,
 		    &rec, &rec_buf, cinfo,
 		    (fdata->color_filter == NULL) ? SHARKD_DISSECT_FLAG_COLOR : SHARKD_DISSECT_FLAG_NULL,
 		    &sharkd_session_process_frames_cb, NULL,
@@ -1518,6 +1634,17 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 		switch (status) {
 
 		case DISSECT_REQUEST_SUCCESS:
+
+			matching.bytes += fdata->pkt_len;
+			matching.frames += 1;
+
+			if(justcountnow == TRUE){
+				continue;
+			}
+
+			displayed.bytes  = matching.bytes;
+			displayed.frames = matching.frames;
+
 			break;
 
 		case DISSECT_REQUEST_NO_SUCH_FRAME:
@@ -1533,10 +1660,39 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 			break;
 		}
 
-		if (limit && --limit == 0)
-			break;
+		prev_dis_num = framenum;
+
+		if (limit && --limit == 0){
+
+			/* if we have a filter we count how many remaining packets match */
+
+			if(tok_filter && tok_skip_match_count == NULL){
+				justcountnow = TRUE;
+			} else {
+			/* else we stop here not to waste time counting */
+				matching.bytes = 0;
+				matching.frames = cfile.count;
+				break;
+			}
+			//break;
+		}
+
 	}
-	sharkd_json_result_array_epilogue();
+	sharkd_json_array_close();
+
+	sharkd_json_value_anyf("frames_displayed", "%u", displayed.frames);
+	sharkd_json_value_anyf("bytes_displayed", "%" G_GUINT64_FORMAT, displayed.bytes);
+
+	sharkd_json_value_anyf("frames_matching", "%u", matching.frames);
+	sharkd_json_value_anyf("bytes_matching", "%" G_GUINT64_FORMAT, matching.bytes);
+
+
+	sharkd_json_value_anyf("frames_total", "%u", cfile.count);
+	sharkd_json_value_anyf("limit", "%u", setlimit);
+
+
+	sharkd_json_result_epilogue();
+
 
 	if (cinfo != &cfile.cinfo)
 		col_cleanup(cinfo);
@@ -3129,6 +3285,12 @@ sharkd_session_process_tap(char *buf, const jsmntok_t *tokens, int count)
 	}
 
 	fprintf(stderr, "sharkd_session_process_tap() count=%d\n", taps_count);
+
+	if(VERBOSE){
+		fprintf(stderr, "sharkd_session_process_tap() count=%d\n", taps_count);
+	}
+
+
 	if (taps_count == 0)
 	{
 		sharkd_json_result_prologue(rpcid);
@@ -3325,6 +3487,8 @@ sharkd_session_process_frame_cb_tree(epan_dissect_t *edt, proto_tree *tree, tvbu
 		{
 			char *filter;
 
+			sharkd_json_value_anyf("bitmask", "\"%"G_GUINT64_FORMAT"\"", finfo->hfinfo->bitmask);
+
 			if (finfo->hfinfo->type == FT_PROTOCOL)
 			{
 				sharkd_json_value_string("t", "proto");
@@ -3415,6 +3579,168 @@ struct sharkd_frame_request_data
 };
 
 static void
+sharkd_session_process_frame_ranges_cb(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data)
+{
+	packet_info *pi = &edt->pi;
+	frame_data *fdata = pi->fd;
+	wtap_block_t pkt_block = NULL;
+
+	const struct sharkd_frame_request_data * const req_data = (const struct sharkd_frame_request_data * const) data;
+	const gboolean display_hidden = (req_data) ? req_data->display_hidden : FALSE;
+
+	if (fdata->has_modified_block)
+		pkt_block = sharkd_get_modified_block(fdata);
+	else
+		pkt_block = pi->rec->block;
+
+	if (pkt_block)
+	{
+		guint i;
+		guint n;
+		gchar *comment;
+
+		n = wtap_block_count_option(pkt_block, OPT_COMMENT);
+
+		sharkd_json_array_open("comment");
+		for (i = 0; i < n; i++) {
+			if (WTAP_OPTTYPE_SUCCESS == wtap_block_get_nth_string_option_value(pkt_block, OPT_COMMENT, i, &comment)) {
+				sharkd_json_value_string(NULL, comment);
+			}
+		}
+		sharkd_json_array_close();
+	}
+
+	if (tree)
+	{
+		tvbuff_t **tvbs = NULL;
+
+		/* arrayize data src, to speedup searching for ds_tvb index */
+		if (data_src && data_src->next /* only needed if there are more than one data source */)
+		{
+			guint count = g_slist_length((GSList *) data_src);
+			guint i;
+
+			tvbs = (tvbuff_t **) g_malloc0((count + 1) * sizeof(*tvbs));
+
+			for (i = 0; i < count; i++)
+			{
+				const struct data_source *src = (const struct data_source *) g_slist_nth_data((GSList *) data_src, i);
+
+				tvbs[i] = get_data_source_tvb(src);
+			}
+
+			tvbs[count] = NULL;
+		}
+
+		sharkd_json_value_anyf("tree", NULL);
+		sharkd_session_process_frame_cb_tree(edt, tree, tvbs, display_hidden);
+
+		g_free(tvbs);
+	}
+
+	if (cinfo)
+	{
+		int col;
+
+		sharkd_json_array_open("col");
+		for (col = 0; col < cinfo->num_cols; ++col)
+		{
+			const col_item_t *col_item = &cinfo->columns[col];
+
+			sharkd_json_value_string(NULL, col_item->col_data);
+		}
+		sharkd_json_array_close();
+	}
+
+	if (fdata->ignored)
+		sharkd_json_value_anyf("i", "true");
+
+	if (fdata->marked)
+		sharkd_json_value_anyf("m", "true");
+
+	sharkd_json_value_anyf("f", "%u", fdata->num);
+
+	if (fdata->color_filter)
+	{
+		sharkd_json_value_stringf("bg", "%x", color_t_to_rgb(&fdata->color_filter->bg_color));
+		sharkd_json_value_stringf("fg", "%x", color_t_to_rgb(&fdata->color_filter->fg_color));
+	}
+
+	if (data_src)
+	{
+		struct data_source *src = (struct data_source *) data_src->data;
+		gboolean ds_open = FALSE;
+
+		tvbuff_t *tvb;
+		guint length;
+
+		tvb = get_data_source_tvb(src);
+		length = tvb_captured_length(tvb);
+
+		if (length != 0)
+		{
+			const guchar *cp = tvb_get_ptr(tvb, 0, length);
+
+			/* XXX pi.fd->encoding */
+			sharkd_json_value_base64("bytes", cp, length);
+		}
+		else
+		{
+			sharkd_json_value_base64("bytes", "", 0);
+		}
+
+		data_src = data_src->next;
+		if (data_src)
+		{
+			sharkd_json_array_open("ds");
+			ds_open = TRUE;
+		}
+
+		while (data_src)
+		{
+			src = (struct data_source *) data_src->data;
+
+			json_dumper_begin_object(&dumper);
+
+			{
+				char *src_name = get_data_source_name(src);
+
+				sharkd_json_value_string("name", src_name);
+				wmem_free(NULL, src_name);
+			}
+
+			tvb = get_data_source_tvb(src);
+			length = tvb_captured_length(tvb);
+
+			if (length != 0)
+			{
+				const guchar *cp = tvb_get_ptr(tvb, 0, length);
+
+				/* XXX pi.fd->encoding */
+				sharkd_json_value_base64("bytes", cp, length);
+			}
+			else
+			{
+				sharkd_json_value_base64("bytes", "", 0);
+			}
+
+			json_dumper_end_object(&dumper);
+
+			data_src = data_src->next;
+		}
+
+		/* close ds, only if was opened */
+		if (ds_open)
+			sharkd_json_array_close();
+	}
+
+	sharkd_json_array_open("fol");
+	follow_iterate_followers(sharkd_follower_visit_layers_cb, pi);
+	sharkd_json_array_close();
+
+}
+
+static void
 sharkd_session_process_frame_cb(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data)
 {
 	packet_info *pi = &edt->pi;
@@ -3495,6 +3821,8 @@ sharkd_session_process_frame_cb(epan_dissect_t *edt, proto_tree *tree, struct ep
 
 	if (fdata->marked)
 		sharkd_json_value_anyf("m", "true");
+
+	sharkd_json_value_anyf("f", "%u", fdata->num);
 
 	if (fdata->color_filter)
 	{
@@ -4050,6 +4378,203 @@ sharkd_session_process_frame(char *buf, const jsmntok_t *tokens, int count)
 	ws_buffer_free(&rec_buf);
 }
 
+
+
+/**
+ * sharkd_session_process_frame_range()
+ *
+ * Process frame_range request
+ *
+ * Input:
+ *   (m) frame - requested frame number
+ *   (o) ref_frame - time reference frame number
+ *   (o) prev_frame - previously displayed frame number
+ *   (o) proto - set if output frame tree
+ *   (o) columns - set if output frame columns
+ *   (o) color - set if output color-filter bg/fg
+ *   (o) bytes - set if output frame bytes
+ *   (o) hidden - set if output hidden tree fields
+ *
+ * Output object with attributes:
+ *   (m) err   - 0 if succeed
+ *   (o) tree  - array of frame nodes with attributes:
+ *                  l - label
+ *                  t: 'proto', 'framenum', 'url' - type of node
+ *                  f - filter string
+ *                  s - severity
+ *                  e - subtree ett index
+ *                  n - array of subtree nodes
+ *                  h - two item array: (item start, item length)
+ *                  i - two item array: (appendix start, appendix length)
+ *                  p - [RESERVED] two item array: (protocol start, protocol length)
+ *                  ds- data src index
+ *                  url  - only for t:'url', url
+ *                  fnum - only for t:'framenum', frame number
+ *                  g - if field is generated by Wireshark
+ *                  v - if field is hidden
+ *
+ *   (o) col   - array of column data
+ *   (o) bytes - base64 of frame bytes
+ *   (o) ds    - array of other data srcs
+ *   (o) comment - frame comment
+ *   (o) fol   - array of follow filters:
+ *                  [0] - protocol
+ *                  [1] - filter string
+ *   (o) i   - if frame is ignored
+ *   (o) m   - if frame is marked
+ *   (o) bg  - color filter - background color in hex
+ *   (o) fg  - color filter - foreground color in hex
+ */
+
+static void
+sharkd_session_process_frame_range(char *buf, const jsmntok_t *tokens, int count)
+{
+	// TODO in order to support time references and delta time displayed and delta times
+	// we need to set tok_ref_frame and tok_prev_frame correctly
+
+	// part of it needs to be handled by the frontend
+	// giving us the last frame before the current requested -> difficult
+	// the frontend has to do the correct request based on the packet list and its filters
+
+
+	const char *tok_ref_frame = json_find_attr(buf, tokens, count, "ref_frame");
+	const char *tok_prev_frame = json_find_attr(buf, tokens, count, "prev_frame");
+
+	column_info *cinfo = NULL;
+
+	guint32 ref_frame_num, prev_dis_num;
+
+	guint32 framenum, min, max, siter, numselections;
+	guint32 dissect_flags = SHARKD_DISSECT_FLAG_NULL;
+	struct sharkd_frame_request_data req_data;
+	wtap_rec rec; /* Record metadata */
+	Buffer rec_buf;   /* Record data */
+	enum dissect_request_status status;
+	int err;
+	gchar *err_info;
+
+	#define MAX_FRAME_RANGE_SELECTIONS 100
+	static struct select_item_range selections[MAX_FRAME_RANGE_SELECTIONS];
+
+
+	if (json_find_attr(buf, tokens, count, "proto") != NULL)
+		dissect_flags |= SHARKD_DISSECT_FLAG_PROTO_TREE;
+	if (json_find_attr(buf, tokens, count, "bytes") != NULL)
+		dissect_flags |= SHARKD_DISSECT_FLAG_BYTES;
+	if (json_find_attr(buf, tokens, count, "columns") != NULL) {
+		dissect_flags |= SHARKD_DISSECT_FLAG_COLUMNS;
+		cinfo = &cfile.cinfo;
+	}
+	if (json_find_attr(buf, tokens, count, "color") != NULL)
+		dissect_flags |= SHARKD_DISSECT_FLAG_COLOR;
+
+	req_data.display_hidden = (json_find_attr(buf, tokens, count, "v") != NULL);
+
+	parse_frame_range(buf, tokens, count, selections, MAX_FRAME_RANGE_SELECTIONS, &numselections);
+
+
+	ref_frame_num = (framenum != 1) ? 1 : 0;
+	if (tok_ref_frame)
+	{
+		ws_strtou32(tok_ref_frame, NULL, &ref_frame_num);
+		if (ref_frame_num > selections[0].first)
+		{
+			sharkd_json_error(
+				rpcid, -8001, NULL,
+				"Invalid ref_frame - The ref_frame occurs after the frame specified"
+			);
+			return;
+		}
+	}
+
+	// Q: do we actually need to dissect prev_dis_num or can we just put it in
+	// sharkd_dissect_request of a follow up frame?
+	prev_dis_num = framenum - 1;
+	if (tok_prev_frame)
+	{
+		ws_strtou32(tok_prev_frame, NULL, &prev_dis_num);
+		if (prev_dis_num >= selections[0].first)
+		{
+			sharkd_json_error(
+				rpcid, -8002, NULL,
+				"Invalid prev_frame - The prev_frame occurs on or after the frame specified"
+			);
+			return;
+		}
+	}
+
+	sharkd_json_result_array_prologue(rpcid);
+
+	wtap_rec_init(&rec);
+	ws_buffer_init(&rec_buf, 1514);
+
+	for( siter = 0; siter < numselections; siter++){
+		// just one, keep it simple for now
+		// TODO: implement multiple selections
+		// this also needs modifications in the prev_dis_num setting within each loop
+		min = selections[siter].first;
+		max = selections[siter].second;
+
+		if (min > max){
+			sharkd_json_error(
+				rpcid, -8004, NULL,
+				"Invalid frame - The frame number requested is out of range"
+			);
+			return;
+		}
+
+		//fprintf(stderr, "Min: %i max: %i\n", min, max);
+		for (framenum = min; framenum <=  max; framenum++){
+			if(framenum > cfile.count){ // do not go beyond number of frames in trace
+				break;
+			}
+			//fprintf(stderr, "Printing ...%i\n", framenum);
+
+			json_dumper_begin_object(&dumper);
+
+			// ref_frame_num, prev_dis_num
+			status = sharkd_dissect_request(framenum, ref_frame_num, prev_dis_num,
+				&rec, &rec_buf, cinfo, dissect_flags,
+				&sharkd_session_process_frame_ranges_cb, &req_data, &err, &err_info);
+			json_dumper_end_object(&dumper);
+
+			switch (status) {
+
+			case DISSECT_REQUEST_SUCCESS:
+				/* success */
+				break;
+
+			case DISSECT_REQUEST_NO_SUCH_FRAME:
+				sharkd_json_error(
+					rpcid, -8003, NULL,
+					"Invalid frame - The frame number requested is out of range"
+				);
+				break;
+
+			case DISSECT_REQUEST_READ_ERROR:
+				sharkd_json_error(
+					rpcid, -8003, NULL,
+					/* XXX - show the error details */
+					"Read error - The frame could not be read from the file"
+				);
+				g_free(err_info);
+				break;
+			}
+
+			prev_dis_num = framenum;
+		}
+	}
+
+	sharkd_json_result_array_epilogue();
+
+	wtap_rec_cleanup(&rec);
+	ws_buffer_free(&rec_buf);
+}
+
+
+
+
+
 /**
  * sharkd_session_process_check()
  *
@@ -4283,6 +4808,56 @@ sharkd_session_process_complete(char *buf, const jsmntok_t *tokens, int count)
 
 	return 0;
 }
+
+
+/**
+ * sharkd_session_process_decodeas()
+ *
+ * Process decodeas request
+ *
+ * Input:
+ *   (m) entry  - decode as entry
+ *
+ * entry is as specified by tshark command line:
+ *
+ * Example: tshark -d tcp.port==8888,http will decode any traffic running over TCP port 8888 as HTTP.
+ * Example: tshark -d tcp.port==8888:3,http will decode any traffic running over TCP ports 8888, 8889 or 8890 as HTTP.
+ * Example: tshark -d tcp.port==8888-8890,http will decode any traffic running over TCP ports 8888, 8889 or 8890 as HTTP.
+ *
+ * Output object with attributes:
+ *   (m) err   - error code: 0 succeed
+ */
+static void
+sharkd_session_process_decodeas(char *buf, const jsmntok_t *tokens, int count)
+{
+	const char *tok_entry = json_find_attr(buf, tokens, count, "entry");
+
+	gboolean ret = FALSE;
+	char *errmsg = NULL;
+
+	if (!tok_entry || tok_entry[0] == '\0')
+		return;
+
+
+	json_dumper_begin_object(&dumper);
+
+	/* negate; everything fine of decode_as returns true, but here we return 0 */
+	ret = !decode_as_command_option_extended(tok_entry, TRUE, &dumper);
+
+	if(ret == FALSE){
+		sharkd_json_error(
+			rpcid, -32601, NULL,
+			"Can not set decodas"
+		);
+	}
+
+	json_dumper_end_object(&dumper);
+	json_dumper_finish(&dumper);
+
+
+	g_free(errmsg);
+}
+
 
 /**
  * sharkd_session_process_setcomment()
@@ -4955,6 +5530,48 @@ sharkd_session_process_download(char *buf, const jsmntok_t *tokens, int count)
 	}
 }
 
+
+
+
+/**
+ * sharkd_session_process_load_colorrules()
+ *
+ * Process load request
+ *
+ * Input:
+ *   (m) file - file to be loaded
+ *
+ * Output object with attributes:
+ *   (m) err - error code
+ */
+static void
+sharkd_session_process_load_colorrules(char *buf, const jsmntok_t *tokens, int count)
+{
+
+	const char *tok_file = json_find_attr(buf, tokens, count, "file");
+	char *err_msg = NULL;
+
+	if (!tok_file)
+		return;
+
+	if(VERBOSE){
+		fprintf(stderr, "load_colorrules: filename=%s\n", tok_file);
+	}
+
+	if (!color_filters_init_from_file(&err_msg, NULL, tok_file)) {
+		sharkd_json_error(
+				rpcid, -10003, NULL,
+				"sharkd_session_process_load_colorrules() error loading coloring rules %s", err_msg
+		);
+		g_free(err_msg);
+		return;
+	}
+
+	sharkd_json_simple_ok(rpcid);
+
+}
+
+
 static void
 sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 {
@@ -4972,6 +5589,13 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 				"No method found");
 			return;
 		}
+
+		// if(MEASURE_PERFORMANCE){
+		// 	struct timeval  tv1, tv2;
+		// 	gettimeofday(&tv1, NULL);
+		// }
+
+
 		if (!strcmp(tok_method, "load"))
 			sharkd_session_process_load(buf, tokens, count);
 		else if (!strcmp(tok_method, "status"))
@@ -5004,6 +5628,13 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 			sharkd_session_process_dumpconf(buf, tokens, count);
 		else if (!strcmp(tok_method, "download"))
 			sharkd_session_process_download(buf, tokens, count);
+		else if (!strcmp(tok_method, "framerange"))
+			sharkd_session_process_frame_range(buf, tokens, count);
+		else if (!strcmp(tok_method, "decodeas"))
+			sharkd_session_process_decodeas(buf, tokens, count);
+		else if (!strcmp(tok_method, "load_colorrules"))
+			sharkd_session_process_load_colorrules(buf, tokens, count);
+
 		else if (!strcmp(tok_method, "bye"))
 		{
 			sharkd_json_simple_ok(rpcid);
@@ -5017,6 +5648,11 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)
 			);
 		}
 	}
+	// if(MEASURE_PERFORMANCE){
+	// 	gettimeofday(&tv2, NULL);
+	// 	fprintf (stderr, "%s time = %f seconds\n", tok_req,
+	// 		(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 + (double) (tv2.tv_sec - tv1.tv_sec));
+	// }
 }
 
 int
@@ -5028,7 +5664,10 @@ sharkd_session_main(int mode_setting)
 
 	mode = mode_setting;
 
-	fprintf(stderr, "Hello in child.\n");
+
+	if(VERBOSE){
+		fprintf(stderr, "Hello in child.\n");
+	}
 
 	dumper.output_file = stdout;
 
