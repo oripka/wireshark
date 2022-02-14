@@ -934,6 +934,8 @@ sharkd_follower_visit_cb(const void *key _U_, void *value, void *user_data _U_)
  * Output object with attributes:
  *   (m) version - version number
  *
+ *   (m) versionfull - full version number
+ *
  *   (m) columns - available column formats, array of object with attributes:
  *                  'name'   - column name
  *                  'format' - column format-name
@@ -1022,6 +1024,8 @@ sharkd_session_process_info(void)
 	sharkd_json_array_close();
 
 	sharkd_json_value_string("version", get_ws_vcs_version_info_short());
+
+	sharkd_json_value_string("versionfull", get_ws_vcs_version_info());
 
 	sharkd_json_array_open("nstat");
 	i = 0;
