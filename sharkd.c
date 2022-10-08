@@ -252,7 +252,7 @@ sharkd_epan_new(capture_file *cf)
 
 static gboolean
 process_packet(capture_file *cf, epan_dissect_t *edt,
-        gint64 offset, wtap_rec *rec, Buffer *buf, gint64 nump))
+        gint64 offset, wtap_rec *rec, Buffer *buf, gint64 nump)
 {
     frame_data     fdlocal;
     gboolean       passed;
