@@ -52,6 +52,9 @@ typedef void (*color_filter_add_cb_func)(color_filter_t *colorf, gpointer user_d
 /** Init the color filters (incl. initial read from file). */
 WS_DLL_PUBLIC gboolean color_filters_init(gchar** err_msg, color_filter_add_cb_func add_cb);
 
+/** Init the color filters (incl. initial read from specified path). */
+WS_DLL_PUBLIC gboolean color_filters_init_from_file(gchar** err_msg, color_filter_add_cb_func add_cb, const gchar* path);
+
 /** Reload the color filters */
 WS_DLL_PUBLIC gboolean color_filters_reload(gchar** err_msg, color_filter_add_cb_func add_cb);
 
@@ -108,6 +111,14 @@ color_filters_reset_tmp(gchar **err_msg);
  * @param the epan dissector details
  */
 WS_DLL_PUBLIC void color_filters_prime_edt(struct epan_dissect *edt);
+
+/** Colorize a specific packet with all coloring rules.
+ *
+ * @param edt the dissected packet
+ * @return the matching color filter or NULL
+ */
+WS_DLL_PUBLIC const color_filter_t *
+color_filters_all_colorize_packet(struct epan_dissect *edt, guint32 *matches, guint32 *nummatched, guint32 max);
 
 /** Colorize a specific packet.
  *

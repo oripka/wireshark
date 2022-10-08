@@ -353,8 +353,9 @@ void col_custom_set_edt(epan_dissect_t *edt, column_info *cinfo)
         cinfo->col_expr.col_expr[i] = epan_custom_set(edt, col_item->col_custom_fields_ids,
                                      col_item->col_custom_occurrence,
                                      col_item->col_buf,
-                                     cinfo->col_expr.col_expr_val[i],
-                                     COL_MAX_LEN);
+                                     col_item->col_buf,
+                                     COL_MAX_LEN,
+                                     &(col_item->type));
     }
   }
 }

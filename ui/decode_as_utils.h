@@ -12,7 +12,8 @@
 #define __DECODE_AS_UTILS_H__
 
 #include "ws_symbol_export.h"
-
+#include <glib.h>
+#include <wsutil/json_dumper.h>
 /** @file
  *  "Decode As" / "User Specified Decodes" dialog box.
  *  @ingroup main_ui_group
@@ -29,6 +30,8 @@ extern "C" {
 #define DECODE_AS_ARG_TEMPLATE "<layer_type>==<selector>,<decode_as_protocol>"
 
 gboolean decode_as_command_option(const gchar *cl_param);
+
+gboolean decode_as_command_option_extended(const gchar *cl_param, gboolean asjsonlist, json_dumper *dumper);
 
 #ifdef __cplusplus
 }

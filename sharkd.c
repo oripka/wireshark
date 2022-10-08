@@ -17,6 +17,8 @@
 #include <limits.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #include <glib.h>
 
@@ -255,6 +257,9 @@ process_packet(capture_file *cf, epan_dissect_t *edt,
     frame_data     fdlocal;
     gboolean       passed;
 
+    gboolean dissect = selected_for_dissect(nump);
+    gboolean output_packet = printonly(nump);
+
     /* If we're not running a display filter and we're not printing any
        packet information, we don't need to do a dissection. This means
        that all packets can be marked as 'passed'. */
@@ -267,7 +272,7 @@ process_packet(capture_file *cf, epan_dissect_t *edt,
     /* If we're going to print packet information, or we're going to
        run a read filter, or display filter, or we're going to process taps, set up to
        do a dissection and do so. */
-    if (edt) {
+    if (edt && dissect) {
         if (gbl_resolv_flags.mac_name || gbl_resolv_flags.network_name ||
                 gbl_resolv_flags.transport_name)
             /* Grab any resolved addresses */
@@ -297,7 +302,7 @@ process_packet(capture_file *cf, epan_dissect_t *edt,
                 &fdlocal, NULL);
 
         /* Run the read filter if we have one. */
-        if (cf->rfcode)
+        if (cf->rfcode  && output_packet)
             passed = dfilter_apply_edt(cf->rfcode, edt);
     }
 
@@ -311,7 +316,7 @@ process_packet(capture_file *cf, epan_dissect_t *edt,
          * if we *are* doing dissection, then mark the dependent frames, but only
          * if a display filter was given and it matches this packet.
          */
-        if (edt && cf->dfcode) {
+        if (edt && cf->dfcode && output_packet) {
             if (dfilter_apply_edt(cf->dfcode, edt)) {
                 g_slist_foreach(edt->pi.dependent_frames, find_and_mark_frame_depended_upon, cf->provider.frames);
             }
@@ -324,15 +329,18 @@ process_packet(capture_file *cf, epan_dissect_t *edt,
         frame_data_destroy(&fdlocal);
     }
 
-    if (edt)
+    if (edt && dissect)
         epan_dissect_reset(edt);
 
     return passed;
 }
 
+/* progress updates send to client every 10000 bytes */
+#define STATUS_EVERY_N_PACKETS 10000
+#define PROGRESS_BUFFER_SIZE 100
 
 static int
-load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
+load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count, int output_file, gboolean showprogress)
 {
     int          err;
     gchar       *err_info = NULL;
@@ -340,6 +348,15 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
     wtap_rec     rec;
     Buffer       buf;
     epan_dissect_t *edt = NULL;
+
+    gint64       nump = 1;
+
+    char progressbuf[PROGRESS_BUFFER_SIZE];
+    char peekbuffer;
+    struct timeval tv;
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+    setsockopt(output_file, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(struct timeval));
 
     {
         /* Allocate a frame_data_sequence for all the frames. */
@@ -371,7 +388,26 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
         ws_buffer_init(&buf, 1514);
 
         while (wtap_read(cf->provider.wth, &rec, &buf, &err, &err_info, &data_offset)) {
-            if (process_packet(cf, edt, data_offset, &rec, &buf)) {
+           
+        if(nump % STATUS_EVERY_N_PACKETS == 0 && showprogress){
+            // undefined id
+            snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"jsonrpc\": \"2.0\", \"id\" : 1, \"result\" : { \"status\" : \"loading\",  \"progress\" :  %ld}}\n", nump-1);
+
+            if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
+            fprintf(stderr, "[-] Client disconnected writing, exiting process. Error code %s\n",  strerror(errno));
+            close(output_file);
+            exit(1);
+            }
+
+            if (recv(output_file,&peekbuffer,1,MSG_PEEK | MSG_DONTWAIT) < 1 && errno != EAGAIN) {
+            fprintf(stderr, "[-] Client disconnected reading, exiting process. Error code %s\n",  strerror(errno));
+            close(output_file);
+            exit(1);
+            }
+        }
+
+        if (process_packet(cf, edt, data_offset, &rec, &buf, nump)) {
+           
                 wtap_rec_reset(&rec);
                 /* Stop reading if we have the maximum number of packets;
                  * When the -c option has not been used, max_packet_count
@@ -383,6 +419,7 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
                     break;
                 }
             }
+            nump++;
         }
 
         if (edt) {
@@ -402,6 +439,24 @@ load_cap_file(capture_file *cf, int max_packet_count, gint64 max_byte_count)
 
         cf->provider.prev_dis = NULL;
         cf->provider.prev_cap = NULL;
+
+        if(showprogress && nump-1 != 0){
+        // last update 3 -> LOADED
+        snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"jsonrpc\": \"2.0\", \"id\" : 1, \"result\" : { \"status\" : \"loaded\",  \"progress\" :  %ld}}\n", nump-1);
+        if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
+            fprintf(stderr, "[-] Client disconnected writing, exiting process. Error code %s\n",  strerror(errno));
+            close(output_file);
+            exit(1);
+        }
+        } else {
+        snprintf(progressbuf, PROGRESS_BUFFER_SIZE, "{\"jsonrpc\": \"2.0\", \"id\" : 1, \"result\" : { \"status\" : \"error\",  \"progress\" :  %ld}}\n", nump-1);
+        if (send(output_file, progressbuf, strlen(progressbuf), 0) == -1) {
+            fprintf(stderr, "[-] Client disconnected writing, exiting process. Error code %s\n",  strerror(errno));
+            close(output_file);
+            exit(1);
+        }
+        }
+
     }
 
     if (err != 0) {
@@ -493,9 +548,9 @@ sharkd_cf_open(const char *fname, unsigned int type, gboolean is_tempfile, int *
 }
 
 int
-sharkd_load_cap_file(void)
+sharkd_load_cap_file(int output_file , gboolean showprogress)
 {
-    return load_cap_file(&cfile, 0, 0);
+    return load_cap_file(&cfile, 0, 0, output_file, showprogress);
 }
 
 frame_data *

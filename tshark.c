@@ -139,6 +139,17 @@
 #define LONGOPT_HEXDUMP                 LONGOPT_BASE_APPLICATION+7
 #define LONGOPT_SELECTED_FRAME          LONGOPT_BASE_APPLICATION+8
 
+/*
+ * values 128..65535 are capture+dissect options, 65536 is used by
+ * ui/commandline.c, so start tshark-specific options 1000 after this
+ */
+#define LONGOPT_SKIP_PACKETS LONGOPT_BASE_APPLICATION+10
+#define LONGOPT_DECODE_ONLY LONGOPT_BASE_APPLICATION+11
+#define LONGOPT_PRINT_ONLY LONGOPT_BASE_APPLICATION+12
+#define LONGOPT_INDEX_NAME LONGOPT_BASE_APPLICATION+13
+
+gchar *volatile index_name = NULL;
+
 capture_file cfile;
 
 static guint32 cum_bytes;
@@ -162,7 +173,8 @@ typedef enum {
     WRITE_FIELDS,   /* User defined list of fields */
     WRITE_JSON,     /* JSON */
     WRITE_JSON_RAW, /* JSON only raw hex */
-    WRITE_EK        /* JSON bulk insert to Elasticsearch */
+    WRITE_EK,        /* JSON bulk insert to Elasticsearch */
+    WRITE_EK_ENHANCED /* JSON bulk insert into Elasticsearch enhanced */
         /* Add CSV and the like here */
 } output_action_e;
 
@@ -253,7 +265,7 @@ static process_file_status_t process_cap_file(capture_file *, char *, int, gbool
 
 static gboolean process_packet_single_pass(capture_file *cf,
         epan_dissect_t *edt, gint64 offset, wtap_rec *rec, Buffer *buf,
-        guint tap_flags);
+        guint tap_flags, guint64 nump);
 static void show_print_file_io_error(void);
 static gboolean write_preamble(capture_file *cf);
 static gboolean print_packet(capture_file *cf, epan_dissect_t *edt);
@@ -505,6 +517,12 @@ print_usage(FILE *output)
     fprintf(output, "  -G [report]              dump one of several available reports and exit\n");
     fprintf(output, "                           default report=\"fields\"\n");
     fprintf(output, "                           use \"-G help\" for more help\n");
+    fprintf(output, "\n");
+    fprintf(output, "Packet extraction options:\n");
+    fprintf(output, "  --skip-packets <packet count>\n");
+    fprintf(output, "                           skip the first n packets from dissection\n");
+    fprintf(output, "  --decode-only <packet number n, packet number m>\n");
+    fprintf(output, "                           only dissect packts n,m,o...\n");
 #ifdef __linux__
     fprintf(output, "\n");
     fprintf(output, "Dumpcap can benefit from an enabled BPF JIT compiler if available.\n");
@@ -788,6 +806,10 @@ main(int argc, char *argv[])
         {"capture-comment", ws_required_argument, NULL, LONGOPT_CAPTURE_COMMENT},
         {"hexdump", ws_required_argument, NULL, LONGOPT_HEXDUMP},
         {"selected-frame", ws_required_argument, NULL, LONGOPT_SELECTED_FRAME},
+        {"skip-packets", ws_required_argument, NULL, LONGOPT_SKIP_PACKETS},
+        {"decode-only", ws_required_argument, NULL, LONGOPT_DECODE_ONLY},
+        {"print-only", ws_required_argument, NULL, LONGOPT_PRINT_ONLY},
+        {"index-name", ws_required_argument, NULL, LONGOPT_INDEX_NAME},
         {0, 0, 0, 0}
     };
     gboolean             arg_error = FALSE;
@@ -1458,6 +1480,10 @@ main(int argc, char *argv[])
                     output_action = WRITE_EK;
                     if (!print_summary)
                         print_details = TRUE;
+                } else if (strcmp(optarg, "eke") == 0) {
+                    output_action = WRITE_EK_ENHANCED;
+                    if (!print_summary)
+                        print_details = TRUE;
                 } else if (strcmp(ws_optarg, "jsonraw") == 0) {
                     output_action = WRITE_JSON_RAW;
                     print_details = TRUE;   /* Need details */
@@ -1626,6 +1652,15 @@ main(int argc, char *argv[])
                     goto clean_exit;
                 }
             break;
+            case LONGOPT_PRINT_ONLY: /* --print-only */
+                add_print_only(get_positive_int(optarg, "packet number"));
+                break;
+            case LONGOPT_DECODE_ONLY: /* decode only certain packets */
+                add_string_selection(optarg);
+                break;
+            case LONGOPT_INDEX_NAME:        /* Index name */
+                index_name = g_strdup(optarg);
+                break;
             default:
             case '?':        /* Bad flag - print usage message */
                 switch(ws_optopt) {
@@ -1665,7 +1700,7 @@ main(int argc, char *argv[])
     }
 
     /* If we specified output fields, but not the output field type... */
-    if ((WRITE_FIELDS != output_action && WRITE_XML != output_action && WRITE_JSON != output_action && WRITE_EK != output_action) && 0 != output_fields_num_fields(output_fields)) {
+    if ((WRITE_FIELDS != output_action && WRITE_XML != output_action && WRITE_JSON != output_action && WRITE_EK != output_action && WRITE_EK_ENHANCED != output_action) && 0 != output_fields_num_fields(output_fields)) {
         cmdarg_err("Output fields were specified with \"-e\", "
                 "but \"-Tek, -Tfields, -Tjson or -Tpdml\" was not specified.");
         exit_status = INVALID_OPTION;
@@ -1758,7 +1793,7 @@ main(int argc, char *argv[])
     }
 
     if (print_hex) {
-        if (output_action != WRITE_TEXT && output_action != WRITE_JSON && output_action != WRITE_JSON_RAW && output_action != WRITE_EK) {
+        if (output_action != WRITE_TEXT && output_action != WRITE_JSON && output_action != WRITE_JSON_RAW && output_action != WRITE_EK && output_action != WRITE_EK_ENHANCED) {
             cmdarg_err("Raw packet hex data can only be printed as text, PostScript, JSON, JSONRAW or EK JSON");
             exit_status = INVALID_OPTION;
             goto clean_exit;
@@ -2484,6 +2519,7 @@ main(int argc, char *argv[])
 clean_exit:
     cf_close(&cfile);
     g_free(cf_name);
+    g_free(index_name);
     destroy_print_stream(print_stream);
     g_free(output_file_name);
 #ifdef HAVE_LIBPCAP
@@ -2762,6 +2798,7 @@ capture_input_new_packets(capture_session *cap_session, int to_read)
     capture_file *cf = cap_session->cf;
     gboolean      filtering_tap_listeners;
     guint         tap_flags;
+    gint64        nump = 0;
 
 #ifdef SIGINFO
     /*
@@ -2829,7 +2866,7 @@ capture_input_new_packets(capture_session *cap_session, int to_read)
                 cf->provider.wth = NULL;
             } else {
                 ret = process_packet_single_pass(cf, edt, data_offset, &rec, &buf,
-                        tap_flags);
+                        tap_flags, nump);
             }
             if (ret != FALSE) {
                 /* packet successfully read and gone through the "Read Filter" */
@@ -3536,7 +3573,7 @@ process_cap_file_single_pass(capture_file *cf, wtap_dumper *pdh,
 
         reset_epan_mem(cf, edt, create_proto_tree, print_packet_info && print_details);
 
-        if (process_packet_single_pass(cf, edt, data_offset, &rec, &buf, tap_flags)) {
+        if (process_packet_single_pass(cf, edt, data_offset, &rec, &buf, tap_flags, framenum)) {
             /* Either there's no read filtering or this packet passed the
                filter, so, if we're writing to a capture file, write
                this packet out. */
@@ -3861,11 +3898,14 @@ out:
 
 static gboolean
 process_packet_single_pass(capture_file *cf, epan_dissect_t *edt, gint64 offset,
-        wtap_rec *rec, Buffer *buf, guint tap_flags)
+        wtap_rec *rec, Buffer *buf, guint tap_flags, guint64 nump)
 {
     frame_data      fdata;
     column_info    *cinfo;
     gboolean        passed;
+
+    gboolean dissect = selected_for_dissect(nump);
+    gboolean output_packet = printonly(nump);
 
     /* Count this packet. */
     cf->count++;
@@ -3882,7 +3922,7 @@ process_packet_single_pass(capture_file *cf, epan_dissect_t *edt, gint64 offset,
        do a dissection and do so.  (This is the one and only pass
        over the packets, so, if we'll be printing packet information
        or running taps, we'll be doing it here.) */
-    if (edt) {
+    if (edt && dissect) {
         /* If we're running a filter, prime the epan_dissect_t with that
            filter. */
         if (cf->dfcode)
@@ -3923,11 +3963,11 @@ process_packet_single_pass(capture_file *cf, epan_dissect_t *edt, gint64 offset,
                 &fdata, cinfo);
 
         /* Run the filter if we have it. */
-        if (cf->dfcode)
+        if (cf->dfcode && output_packet)
             passed = dfilter_apply_edt(cf->dfcode, edt);
     }
 
-    if (passed) {
+    if (passed && output_packet) {
         frame_data_set_after_dissect(&fdata, &cum_bytes);
 
         /* Process this packet. */
@@ -3957,7 +3997,7 @@ process_packet_single_pass(capture_file *cf, epan_dissect_t *edt, gint64 offset,
     prev_cap_frame = fdata;
     cf->provider.prev_cap = &prev_cap_frame;
 
-    if (edt) {
+    if (edt && dissect) {
         epan_dissect_reset(edt);
         frame_data_destroy(&fdata);
     }
@@ -3989,6 +4029,9 @@ write_preamble(capture_file *cf)
             return !ferror(stdout);
 
         case WRITE_EK:
+            return TRUE;
+        
+        case WRITE_EK_ENHANCED:
             return TRUE;
 
         default:
@@ -4364,6 +4407,11 @@ print_packet(capture_file *cf, epan_dissect_t *edt)
                     protocolfilter_flags, edt, &cf->cinfo, stdout);
             return !ferror(stdout);
 
+        case WRITE_EK_ENHANCED:
+            write_ek_enhanced_proto_tree(output_fields, print_summary, print_hex, protocolfilter,
+                            protocolfilter_flags, edt, &cf->cinfo, stdout, index_name);
+            return !ferror(stdout);
+
         default:
             ws_assert_not_reached();
     }
@@ -4406,6 +4454,9 @@ write_finale(void)
             return !ferror(stdout);
 
         case WRITE_EK:
+            return TRUE;
+
+        case WRITE_EK_ENHANCED:
             return TRUE;
 
         default:

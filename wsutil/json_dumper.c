@@ -121,7 +121,7 @@ json_puts_string(const json_dumper *dumper, const char *str, gboolean dot_to_und
                 jd_putc(dumper, '\\');
             }
             if (dot_to_underscore && str[i] == '.')
-                jd_putc(dumper, '_');
+                jd_putc(dumper, '#');
             else
                 jd_putc(dumper, str[i]);
         }

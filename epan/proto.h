@@ -3356,7 +3356,7 @@ const gchar *
 proto_custom_set(proto_tree* tree, GSList *field_id,
                              gint occurrence,
                              gchar *result,
-                             gchar *expr, const int size );
+                             gchar *expr, const int size, enum ftenum *type);
 
 /** @} */
 

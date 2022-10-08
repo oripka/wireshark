@@ -48,6 +48,7 @@
 #else
 /* for other system support only local sockets */
 # define SHARKD_UNIX_SUPPORT
+# define SHARKD_TCP_SUPPORT
 #endif
 
 static int mode = 0;
