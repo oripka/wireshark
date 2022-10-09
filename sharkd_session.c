@@ -1399,6 +1399,8 @@ sharkd_session_process_frames_cb(epan_dissect_t *edt, proto_tree *tree _U_,
     sharkd_json_array_open("c");
     for (int col = 0; col < cinfo->num_cols; ++col)
     {
+        const col_item_t *col_item = &cinfo->columns[col];
+        
 		/* "" values are always represented by "" not be the empty string which
 			* JSON parsers do not like */
 		if (strcmp(col_item->col_data, "") == 0){
@@ -1495,7 +1497,6 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 
     const guint8 *filter_data = NULL;
 
-    guint32 next_ref_frame = G_MAXUINT32;
     gboolean justcountnow = FALSE;
 
     guint32 next_ref_frame = G_MAXUINT32, current_ref_frame = 0;
@@ -3561,6 +3562,10 @@ sharkd_follower_visit_layers_cb(const void *key _U_, void *value, void *user_dat
     return FALSE;
 }
 
+struct sharkd_frame_request_data
+{
+    gboolean display_hidden;
+};
 
 static void
 sharkd_session_process_frame_ranges_cb(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data)
@@ -3723,11 +3728,6 @@ sharkd_session_process_frame_ranges_cb(epan_dissect_t *edt, proto_tree *tree, st
     sharkd_json_array_close();
 
 }
-
-struct sharkd_frame_request_data
-{
-    gboolean display_hidden;
-};
 
 static void
 sharkd_session_process_frame_cb(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data)
