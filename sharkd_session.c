@@ -1452,6 +1452,23 @@ sharkd_session_process_frames_cb(epan_dissect_t *edt, proto_tree *tree _U_,
     json_dumper_end_object(&dumper);
 }
 
+typedef void (*sharkd_dissect_cb_t)(epan_dissect_t *edt,
+                                    proto_tree *tree,
+                                    struct epan_column_info *cinfo,
+                                    const GSList *data_src,
+                                    void *data);
+
+static void
+sharkd_session_process_frames_dummy_cb(epan_dissect_t *edt _U_,
+                                       proto_tree *tree _U_,
+                                       struct epan_column_info *cinfo _U_,
+                                       const GSList *data_src _U_,
+                                       void *data _U_)
+{
+    /* Do nothing. We don't add any JSON output here. */
+}
+
+
 /**
  * sharkd_session_process_frames()
  *
@@ -1484,6 +1501,10 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
     const char *tok_refs   = json_find_attr(buf, tokens, count, "refs");
 
 	const char *tok_skip_match_count   = json_find_attr(buf, tokens, count, "skipmatchcount");
+
+        /* 1) Declare a callback pointer that, by default, calls the real callback. */
+    sharkd_dissect_cb_t my_callback = sharkd_session_process_frames_cb;
+
 	struct
 	{
 		unsigned int frames;
@@ -1620,12 +1641,26 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
         }
 
         fdata = sharkd_get_frame(framenum);
-        status = sharkd_dissect_request(framenum,
-                ref_frame, prev_dis_num,
-                &rec, &rec_buf, cinfo,
-                (fdata->color_filter == NULL) ? SHARKD_DISSECT_FLAG_COLOR : SHARKD_DISSECT_FLAG_NULL,
-                &sharkd_session_process_frames_cb, NULL,
-                &err, &err_info);
+
+        status = sharkd_dissect_request(
+            framenum,
+            ref_frame,
+            prev_dis_num,
+            &rec, &rec_buf,
+            cinfo,
+            (fdata->color_filter == NULL) ? SHARKD_DISSECT_FLAG_COLOR : SHARKD_DISSECT_FLAG_NULL,
+            my_callback,              /* <--- Use our callback pointer */
+            NULL,                     /* or pass data if you need it */
+            &err,
+            &err_info
+        );
+
+        // status = sharkd_dissect_request(framenum,
+        //         ref_frame, prev_dis_num,
+        //         &rec, &rec_buf, cinfo,
+        //         (fdata->color_filter == NULL) ? SHARKD_DISSECT_FLAG_COLOR : SHARKD_DISSECT_FLAG_NULL,
+        //         &sharkd_session_process_frames_cb, NULL,
+        //         &err, &err_info);
         switch (status) {
 
             case DISSECT_REQUEST_SUCCESS:
@@ -1662,6 +1697,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun
 
 			if(tok_filter && tok_skip_match_count == NULL){
 				justcountnow = TRUE;
+                my_callback = sharkd_session_process_frames_dummy_cb;
 			} else {
 			/* else we stop here not to waste time counting */
 				matching.bytes = 0;
