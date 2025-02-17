@@ -3546,7 +3546,7 @@ proto_custom_set(proto_tree* tree, GSList *field_id,
                              int occurrence,
                              bool display_details,
                              char *result,
-                             char *expr, const int size );
+                             char *expr, const int size, enum ftenum *type );
 
 /** Construct a display filter string for a custom column
  @param edt epan dissecting

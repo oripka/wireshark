@@ -54,6 +54,9 @@ typedef void (*color_filter_add_cb_func)(color_filter_t *colorf, void *user_data
 /** Init the color filters (incl. initial read from file). */
 WS_DLL_PUBLIC bool color_filters_init(char** err_msg, color_filter_add_cb_func add_cb);
 
+/** Init the color filters (incl. initial read from specified path). */
+WS_DLL_PUBLIC bool color_filters_init_from_file(char** err_msg, color_filter_add_cb_func add_cb, const char* path);
+
 /** Reload the color filters */
 WS_DLL_PUBLIC bool color_filters_reload(char** err_msg, color_filter_add_cb_func add_cb);
 
@@ -128,6 +131,15 @@ color_filters_use_hfid(int hfid);
  */
 WS_DLL_PUBLIC bool
 color_filters_use_proto(int proto_id);
+
+
+/** Colorize a specific packet with all coloring rules.
+ *
+ * @param edt the dissected packet
+ * @return the matching color filter or NULL
+ */
+WS_DLL_PUBLIC const color_filter_t *
+color_filters_all_colorize_packet(struct epan_dissect *edt, uint32_t *matches, uint32_t *nummatched, uint32_t max);
 
 /** Colorize a specific packet.
  *

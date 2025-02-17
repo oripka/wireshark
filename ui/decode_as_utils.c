@@ -23,6 +23,7 @@
 #include "wsutil/filesystem.h"
 #include <wsutil/ws_assert.h>
 #include "wsutil/cmdarg_err.h"
+#include <wsutil/json_dumper.h>
 
 /* XXX - We might want to switch this to a UAT */
 
@@ -95,6 +96,48 @@ display_dissector_names(const char *table _U_, void *handle, void *output)
     }
 }
 
+
+/*
+* For a dissector handle, print on the stream described by output,
+* the filter name (which is what's used in the "-d" option) and the full
+* name for the protocol that corresponds to this handle.
+* Print them as JSON
+*/
+static void
+display_dissector_names_json(const gchar *table _U_, gpointer handle, gpointer dumper)
+{
+    int          proto_id;
+    const gchar *proto_filter_name;
+    const gchar *proto_ui_name;
+
+
+    proto_id = dissector_handle_get_protocol_index((dissector_handle_t)handle);
+
+    if (proto_id != -1) {
+        proto_filter_name = proto_get_protocol_filter_name(proto_id);
+        proto_ui_name = proto_get_protocol_name(proto_id);
+        g_assert(proto_filter_name != NULL);
+        g_assert(proto_ui_name != NULL);
+
+        if ((prev_display_dissector_name == NULL) ||
+            (strcmp(prev_display_dissector_name, proto_filter_name) != 0)) {
+
+                json_dumper_begin_object((json_dumper *)dumper);
+
+                json_dumper_set_member_name((json_dumper *)dumper, "proto");
+                json_dumper_value_string((json_dumper *)dumper, proto_filter_name);
+                json_dumper_set_member_name((json_dumper *)dumper, "name");
+                json_dumper_value_string((json_dumper *)dumper, proto_ui_name);
+
+	            json_dumper_end_object((json_dumper *)dumper);
+            // fprintf((FILE *)output, "{\"proto\":\"%s\", \"name\":\"%s\"}",
+            //     proto_filter_name,
+            //     proto_ui_name);
+            prev_display_dissector_name = proto_filter_name;
+        }
+    }
+}
+
 /*
 * Allow dissector key names to be sorted alphabetically
 */
@@ -130,6 +173,29 @@ fprint_all_protocols_for_layer_types(FILE *output, char *table_name)
     dissector_table_foreach_handle(table_name,
         display_dissector_names,
         (void *)output);
+}
+
+/*
+* Print all protocol names supported for a specific layer type.
+* table_name contains the layer type name in which the search is performed.
+* We send the output to the stream described by the handle output.
+* Print as json
+*/
+static void
+fprint_all_protocols_for_layer_types_json(json_dumper *dumper, char *table_name)
+
+{
+
+	json_dumper_set_member_name(dumper, "decodeas");
+	json_dumper_begin_array(dumper);
+
+
+    prev_display_dissector_name = NULL;
+    dissector_table_foreach_handle(table_name,
+        display_dissector_names_json,
+        (gpointer)dumper);
+
+	json_dumper_end_array(dumper);
 }
 
 /*
@@ -180,6 +246,42 @@ find_protocol_name_func(const char *table _U_, void *handle, void *user_data)
 }
 
 /*
+ * Backward compatible wrapper around decode_as_command_option_extended
+*/
+bool decode_as_command_option(const char *cl_param)
+{
+    return decode_as_command_option_extended(cl_param, FALSE, NULL);
+}
+
+
+/*
+ * Report an error in command-line arguments. Or put into json.
+ */
+void
+cmdarg_err_or_json(const gboolean isjson, json_dumper *dumper, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+
+
+    /* TODO broken disabled, because can be called multiple times */
+    if(isjson && 1==2){
+
+        json_dumper_set_member_name(dumper, "err");
+        json_dumper_value_string(dumper, "1");
+
+		// char* sformat = g_strdup_printf("\"%s\"", fmt);
+		// json_dumper_value_va_list(dumper, sformat, ap);
+		// g_free(sformat);
+
+    } else{
+    cmdarg_err(fmt, ap);
+    }
+    va_end(ap);
+}
+
+
+/*
 * The function below parses the command-line parameters for the decode as
 * feature (a string pointer by cl_param).
 * It checks the format of the command-line, searches for a matching table
@@ -188,7 +290,7 @@ find_protocol_name_func(const char *table _U_, void *handle, void *user_data)
 * If everything is fine, we get the "Decode as" preference activated,
 * then we return true.
 */
-bool decode_as_command_option(const char *cl_param)
+bool decode_as_command_option_extended(const char *cl_param, bool asjsonlist, json_dumper *dumper)
 {
     char                         *table_name;
     uint32_t                      selector = 0, selector2 = 0;
@@ -223,7 +325,7 @@ bool decode_as_command_option(const char *cl_param)
            just check for comma */
         remaining_param = strchr(table_name, ',');
         if (remaining_param == NULL) {
-            cmdarg_err("Parameter \"%s\" doesn't follow the template \"%s\"", cl_param, DECODE_AS_ARG_TEMPLATE);
+            cmdarg_err_or_json(asjsonlist, dumper, "Parameter \"%s\" doesn't follow the template \"%s\"", cl_param, DECODE_AS_ARG_TEMPLATE);
         } else {
             *remaining_param = '\0'; /* Terminate the layer type string (table_name) where ',' was detected */
         }
@@ -246,20 +348,24 @@ bool decode_as_command_option(const char *cl_param)
 
     /* Look for the requested table */
     if (!(*(table_name))) { /* Is the table name empty, if so, don't even search for anything, display a message */
-        cmdarg_err("No layer type specified"); /* Note, we don't exit here, but table_matching will remain NULL, so we exit below */
+        cmdarg_err_or_json(asjsonlist, dumper, "No layer type specified"); /* Note, we don't exit here, but table_matching will remain NULL, so we exit below */
     }
     else {
         table_matching = find_dissector_table(table_name);
         if (!table_matching) {
-            cmdarg_err("Unknown layer type -- %s", table_name); /* Note, we don't exit here, but table_matching will remain NULL, so we exit below */
+            cmdarg_err_or_json(asjsonlist, dumper, "Unknown layer type -- %s", table_name); /* Note, we don't exit here, but table_matching will remain NULL, so we exit below */
         }
     }
 
     if (!table_matching) {
         /* Display a list of supported layer types to help the user, if the
         specified layer type was not found */
-        cmdarg_err("Valid layer types are:");
-        fprint_all_layer_types(stderr);
+        if( asjsonlist == FALSE){
+            cmdarg_err("Valid layer types are:");
+            fprint_all_layer_types(stderr);
+        }else {
+            // TODO implement as json
+        }
     }
     if (remaining_param == NULL || !table_matching) {
         /* Exit if the layer type was not found, or if no '=' separator was found
@@ -272,7 +378,7 @@ bool decode_as_command_option(const char *cl_param)
 
     if (dissector_table_selector_type != FT_NONE) {
         if (*(remaining_param + 1) != '=') { /* Check for "==" and not only '=' */
-                cmdarg_err("WARNING: -d requires \"==\" instead of \"=\". Option will be treated as \"%s==%s\"", table_name, remaining_param + 1);
+                cmdarg_err_or_json(asjsonlist, dumper, "WARNING: -d requires \"==\" instead of \"=\". Option will be treated as \"%s==%s\"", table_name, remaining_param + 1);
         }
         else {
             remaining_param++; /* Move to the second '=' */
@@ -287,7 +393,7 @@ bool decode_as_command_option(const char *cl_param)
 
         remaining_param = strchr(selector_str, ',');
         if (remaining_param == NULL) {
-            cmdarg_err("Parameter \"%s\" doesn't follow the template \"%s\"", cl_param, DECODE_AS_ARG_TEMPLATE);
+            cmdarg_err_or_json(asjsonlist, dumper, "Parameter \"%s\" doesn't follow the template \"%s\"", cl_param, DECODE_AS_ARG_TEMPLATE);
             /* If the argument does not follow the template, carry on anyway to check
             if the selector value is at least correct.  If remaining_param is NULL,
             we'll exit anyway further down */
@@ -316,7 +422,7 @@ bool decode_as_command_option(const char *cl_param)
 
         val = g_ascii_strtoull(str, &end, 0);
         if (str == end || val > UINT32_MAX) {
-            cmdarg_err("Invalid selector number \"%s\"", selector_str);
+            cmdarg_err_or_json(asjsonlist, dumper, "Invalid selector number \"%s\"", selector_str);
             g_free(decoded_param);
             return false;
         }
@@ -333,7 +439,7 @@ bool decode_as_command_option(const char *cl_param)
 
             val = g_ascii_strtoull(str, &end, 0);
             if (str == end || val > UINT32_MAX || *end != '\0') {
-                cmdarg_err("Invalid selector numeric range \"%s\"", selector_str);
+                cmdarg_err_or_json(asjsonlist, dumper, "Invalid selector numeric range \"%s\"", selector_str);
                 g_free(decoded_param);
                 return false;
             }
@@ -341,7 +447,7 @@ bool decode_as_command_option(const char *cl_param)
 
             if (op == ':') {
                 if ((selector2 == 0) || ((uint64_t)selector + selector2 - 1) > UINT32_MAX) {
-                    cmdarg_err("Invalid selector numeric range \"%s\"", selector_str);
+                    cmdarg_err_or_json(asjsonlist, dumper, "Invalid selector numeric range \"%s\"", selector_str);
                     g_free(decoded_param);
                     return false;
                 }
@@ -349,13 +455,13 @@ bool decode_as_command_option(const char *cl_param)
             else if (selector2 < selector) {
                 /* We could swap them for the user, but maybe it's better to call
                 * this out as an error in case it's not what was intended? */
-                cmdarg_err("Invalid selector numeric range \"%s\"", selector_str);
+                cmdarg_err_or_json(asjsonlist, dumper, "Invalid selector numeric range \"%s\"", selector_str);
                 g_free(decoded_param);
                 return false;
             }
         } else {
             /* neither a valid single value, nor a range. */
-            cmdarg_err("Invalid selector number \"%s\"", selector_str);
+            cmdarg_err_or_json(asjsonlist, dumper, "Invalid selector number \"%s\"", selector_str);
             g_free(decoded_param);
             return false;
         }
@@ -395,7 +501,7 @@ bool decode_as_command_option(const char *cl_param)
 
     if (remaining_param == NULL) {
         /* Exit if no ',' separator was found (see above) */
-        cmdarg_err("Valid protocols for layer type \"%s\" are:", table_name);
+        cmdarg_err_or_json(asjsonlist, dumper, "Valid protocols for layer type \"%s\" are:", table_name);
         fprint_all_protocols_for_layer_types(stderr, table_name);
         g_free(decoded_param);
         return false;
@@ -417,7 +523,7 @@ bool decode_as_command_option(const char *cl_param)
 
     /* We now have a pointer to the handle for the requested table inside the variable table_matching */
     if (!(*dissector_str)) { /* Is the dissector name empty, if so, don't even search for a matching dissector and display all dissectors found for the selected table */
-        cmdarg_err("No protocol name specified"); /* Note, we don't exit here, but dissector_matching will remain NULL, so we exit below */
+        cmdarg_err_or_json(asjsonlist, dumper, "No protocol name specified"); /* Note, we don't exit here, but dissector_matching will remain NULL, so we exit below */
     }
     else {
         header_field_info *hfi = proto_registrar_get_byalias(dissector_str);
@@ -435,7 +541,7 @@ bool decode_as_command_option(const char *cl_param)
         if (user_protocol_name.nb_match != 0) {
             dissector_matching = user_protocol_name.matched_handle;
             if (user_protocol_name.nb_match > 1) {
-                cmdarg_err("WARNING: Protocol \"%s\" matched %u dissectors, first one will be used", dissector_str, user_protocol_name.nb_match);
+                cmdarg_err_or_json(asjsonlist, dumper, "WARNING: Protocol \"%s\" matched %u dissectors, first one will be used", dissector_str, user_protocol_name.nb_match);
             }
         }
         else {
@@ -446,20 +552,23 @@ bool decode_as_command_option(const char *cl_param)
             so we exit below */
             if (proto_get_id_by_filter_name(dissector_str) == -1) {
                 /* No such protocol */
-                cmdarg_err("Unknown protocol -- \"%s\"", dissector_str);
+                cmdarg_err_or_json(asjsonlist, dumper, "Unknown protocol -- \"%s\"", dissector_str);
             }
             else {
-                cmdarg_err("Protocol \"%s\" isn't valid for layer type \"%s\"",
-                    dissector_str, table_name);
+                cmdarg_err_or_json(asjsonlist, dumper, "Protocol \"%s\" isn't valid for layer type \"%s\"", dissector_str, table_name);
             }
         }
     }
 
-    if (!dissector_matching) {
+    if (!dissector_matching && asjsonlist == FALSE) {
         cmdarg_err("Valid protocols for layer type \"%s\" are:", table_name);
         fprint_all_protocols_for_layer_types(stderr, table_name);
         g_free(decoded_param);
-        return false;
+        return FALSE;
+    } else {
+        fprint_all_protocols_for_layer_types_json(dumper, table_name);
+        g_free(decoded_param);
+        return FALSE;
     }
 
     /* This is the end of the code that parses the command-line options.

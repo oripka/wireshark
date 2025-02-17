@@ -73,6 +73,7 @@ static int hf_frame_verdict_hardware;
 static int hf_frame_verdict_tc;
 static int hf_frame_verdict_xdp;
 static int hf_frame_verdict_unknown;
+static int hf_frame_color_rules_all;
 static int hf_frame_drop_count;
 static int hf_frame_protocols;
 static int hf_frame_color_filter_name;
@@ -218,6 +219,7 @@ static bool force_docsis_encap;
 static bool generate_md5_hash;
 static bool generate_bits_field = true;
 static bool disable_packet_size_limited_in_summary;
+static bool evaluate_all_colorrules;
 static unsigned max_comment_lines   = 30;
 
 static const value_string p2p_dirs[] = {
@@ -1469,14 +1471,59 @@ dissect_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 		ENDTRY;
 	}
 
-	/* Attempt to (re-)calculate color filters (if any). */
-	if (pinfo->fd->need_colorize) {
-		color_filter = color_filters_colorize_packet(fr_data->color_edt);
+	// if need_colorize set or we want to evaluate all rules and they are not yet evaluated
+	// this happends if packet details are requested before a packet list run
+	uint32_t num_colorrules_matched = 0;
+
+	evaluate_all_colorrules = TRUE;
+	if ((pinfo->fd->need_colorize)) {
+		if(evaluate_all_colorrules){
+			/* Attempt to (re-)calculate color filters (if any). */
+		
+					//fprintf(stderr, "[+] Evaluating colorrules for frame %" G_GUINT32_FORMAT "\n", pinfo->fd->num);
+		
+					color_filter = color_filters_all_colorize_packet(fr_data->color_edt, pinfo->fd->colorrules_matched, &num_colorrules_matched, MAX_COLORRULES_MATCHED);
+		
+					/*if(pinfo->fd->nummatched > 0 ){
+						fprintf(stderr, "[+] Rules were already matched was %" G_GUINT32_FORMAT ", now %" G_GUINT32_FORMAT "\n", pinfo->fd->nummatched, num_colorrules_matched);
+					}*/
+		
+					pinfo->fd->nummatched = num_colorrules_matched;
+		
+					/*if(num_colorrules_matched > 0 ){
+						fprintf(stderr, "[+] Rules matched %" G_GUINT32_FORMAT "\n", num_colorrules_matched);
+					}*/
+		}	else {
+			//fprintf(stderr, "[+] Not evaluating all color rules\n");
+			color_filter = color_filters_colorize_packet(fr_data->color_edt);
+		}
 		pinfo->fd->color_filter = color_filter;
 		pinfo->fd->need_colorize = 0;
 	} else {
 		color_filter = pinfo->fd->color_filter;
 	}
+
+	if(pinfo->fd->nummatched > 0){
+
+		// 6 chars (-> worst case '99999,') * 20 rules => 80, 128 should be enough
+		wmem_strbuf_t *val2 = wmem_strbuf_new_sized(wmem_packet_scope(), (6*pinfo->fd->nummatched)+4);
+
+		wmem_strbuf_append_c(val2, ' ');
+
+		for(uint i =0; i< pinfo->fd->nummatched; i++){
+			if(i>0){
+				wmem_strbuf_append_c(val2, ',');
+			}
+			wmem_strbuf_append_printf(val2, "%u", pinfo->fd->colorrules_matched[i]);
+		}
+
+		//fprintf(stderr, "[+] Coloring rules for frame are: %s\n", wmem_strbuf_get_str(val2));
+		ensure_tree_item(fh_tree, 1);
+		ti = proto_tree_add_string(fh_tree, hf_frame_color_rules_all, tvb, 0, 0, wmem_strbuf_get_str(val2));
+
+		proto_item_set_generated(ti);
+	}
+
 	if (color_filter) {
 		ensure_tree_item(fh_tree, 1);
 		item = proto_tree_add_string(fh_tree, hf_frame_color_filter_name, tvb,
@@ -1626,6 +1673,11 @@ proto_register_frame(void)
 		  { "Protocols in frame", "frame.protocols",
 		    FT_STRING, BASE_NONE, NULL, 0x0,
 		    "Protocols carried by this frame", HFILL }},
+
+		{ &hf_frame_color_rules_all,
+		  { "Coloringrules in frame", "frame.colorrules_matched",
+		    FT_STRING, BASE_NONE, NULL, 0x0,
+		    "Colorrules that matched", HFILL }},
 
 		{ &hf_frame_color_filter_name,
 		  { "Coloring Rule Name", "frame.coloring_rule.name",
@@ -2330,6 +2382,10 @@ proto_register_frame(void)
 	    "Disable 'packet size limited during capture' message in summary",
 	    "Whether or not 'packet size limited during capture' message in shown in Info column.",
 	    &disable_packet_size_limited_in_summary);
+	prefs_register_bool_preference(frame_module, "evaluate_all_colorrules",
+		"Evaluate all colorrules",
+		"Whether or not to evaluate all colorrules not just the first one.",
+		&evaluate_all_colorrules);
 	prefs_register_uint_preference(frame_module, "max_comment_lines",
 	    "Maximum number of lines to display for one packet comment",
 	    "Show at most this many lines of a multi-line packet comment"

@@ -13,6 +13,7 @@
 #include <wsutil/feature_list.h>
 #include <epan/tvbuff.h>
 #include <epan/prefs.h>
+#include <epan/proto.h>
 #include <epan/frame_data.h>
 #include <epan/register.h>
 #include <wiretap/wtap_opttypes.h>
@@ -259,7 +260,7 @@ epan_dissect_free(epan_dissect_t* edt);
 /** Sets custom column */
 const char *
 epan_custom_set(epan_dissect_t *edt, GSList *ids, int occurrence, bool display_details,
-				char *result, char *expr, const int size);
+				char *result, char *expr, const int size, enum ftenum *type);
 
 /**
  * Get compile-time information for libraries used by libwireshark.

@@ -30,7 +30,7 @@ typedef void (*sharkd_dissect_func_t)(epan_dissect_t *edt, proto_tree *tree, str
 
 /* sharkd.c */
 cf_status_t sharkd_cf_open(const char *fname, unsigned int type, bool is_tempfile, int *err);
-int sharkd_load_cap_file(void);
+int sharkd_load_cap_file(int output_file, bool showprogress);
 int sharkd_retap(void);
 int sharkd_filter(const char *dftext, uint8_t **result);
 frame_data *sharkd_get_frame(uint32_t framenum);

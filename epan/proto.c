@@ -7311,7 +7311,7 @@ proto_item_fill_display_label(const field_info *finfo, char *display_label_str, 
 
 const char *
 proto_custom_set(proto_tree* tree, GSList *field_ids, int occurrence, bool display_details,
-		 char *result, char *expr, const int size)
+		 char *result, char *expr, const int size, enum ftenum *type)
 {
 	int                 len, prev_len, last, i, offset_r = 0, offset_e = 0;
 	GPtrArray          *finfos;
@@ -7404,6 +7404,7 @@ proto_custom_set(proto_tree* tree, GSList *field_ids, int occurrence, bool displ
 		if (!hfinfo)
 			return "";
 
+		*type = hfinfo->type;
 		if (occurrence < 0) {
 			/* Search other direction */
 			while (hfinfo->same_name_prev_id != -1) {

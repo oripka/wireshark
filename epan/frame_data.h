@@ -92,6 +92,10 @@ typedef struct _frame_data {
   nstime_t     shift_offset; /**< How much the abs_tm of the frame is shifted */
   uint32_t     frame_ref_num; /**< Previous reference frame (0 if this is one) */
   uint32_t     prev_dis_num; /**< Previous displayed frame (0 if first one) */
+  #define      MAX_COLORRULES_MATCHED 20
+  uint32_t     colorrules_matched[MAX_COLORRULES_MATCHED];
+  uint32_t     nummatched;
+  unsigned int colorrules_evaluated    : 1; /**< colorrules already evaluated */
 } frame_data;
 DIAG_ON_PEDANTIC
 

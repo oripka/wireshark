@@ -374,7 +374,7 @@ void col_custom_set_edt(epan_dissect_t *edt, column_info *cinfo)
                                      get_column_display_format(i) == COLUMN_DISPLAY_DETAILS,
                                      col_item->col_buf,
                                      cinfo->col_expr.col_expr_val[i],
-                                     COL_MAX_LEN);
+                                     COL_MAX_LEN, &(col_item->type));
     }
   }
 }

@@ -34,6 +34,7 @@
 #include <epan/dfilter/dfilter.h>
 #include <epan/prefs.h>
 #include <epan/epan_dissect.h>
+#include <epan/frame_data.h>
 
 /*
  * Each line in the colorfilters file has the following format:
@@ -583,19 +584,37 @@ color_filters_colorize_packet(epan_dissect_t *edt)
     GSList         *curr;
     color_filter_t *colorf;
 
+    color_filter_t *first;
+    gboolean  firstset = FALSE;
+
     /* If we have color filters, "search" for the matching one. */
     if ((edt->tree != NULL) && (color_filters_used())) {
         curr = color_filter_list;
 
+
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
+            //fprintf(stderr, "Checking %s\n" , colorf->filter_name);
             if ( (!colorf->disabled) &&
                  (colorf->c_colorfilter != NULL) &&
                  dfilter_apply_edt(colorf->c_colorfilter, edt)) {
-                return colorf;
+                //fprintf(stderr, "Matched %s\n" , colorf->filter_name);
+
+                if (!firstset){
+                    firstset= TRUE;
+                    first = (color_filter_t *)curr->data;
+                }
+
+                //return colorf;
             }
             curr = g_slist_next(curr);
         }
+
+
+    }
+
+    if(firstset){
+        return first;
     }
 
     return NULL;
@@ -916,6 +935,102 @@ color_filters_export(const char *path, GSList *cfl, bool only_marked, char** err
     fclose(f);
     return true;
 }
+
+static bool
+color_filters_get_from_path(char** err_msg, color_filter_add_cb_func add_cb, const char *path)
+{
+    FILE     *f;
+    int       ret;
+
+    /* start the list with the temporary colorizing rules */
+    color_filters_add_tmp(&color_filter_list);
+
+    if ((f = ws_fopen(path, "r")) == NULL) {
+        return FALSE;
+    }
+
+    /*
+     * We've opened it; try to read it.
+     */
+    ret = read_filters_file(path, f, &color_filter_list, add_cb);
+    if (ret != 0) {
+        *err_msg = g_strdup_printf("Error reading filter file\n\"%s\": %s.",
+                                   path, g_strerror(errno));
+        fclose(f);
+        return FALSE;
+    }
+
+    /* Success. */
+    fclose(f);
+    return TRUE;
+}
+
+/* Initialize the filter structures (reading from file) for general running, including app startup */
+bool
+color_filters_init_from_file(char** err_msg, color_filter_add_cb_func add_cb, const char* path)
+{
+    /* delete all currently existing filters */
+    color_filter_list_delete(&color_filter_list);
+
+    /* now try to construct the filters list */
+    return color_filters_get_from_path(err_msg, add_cb, path);
+}
+
+/* * Return the color_t for later use */
+const color_filter_t *
+color_filters_all_colorize_packet(epan_dissect_t *edt, uint32_t *matches, uint32_t *nummatched, uint32_t max)
+{
+    GSList         *curr;
+    color_filter_t *colorf;
+
+    color_filter_t *first;
+    bool  firstset = FALSE;
+    uint32_t num_colorrules_matched = 0;
+    uint32_t rulenum = 1;
+
+    /* If we have color filters, "search" for the matching one. */
+    if ((edt->tree != NULL) && (color_filters_used())) {
+        curr = color_filter_list;
+
+
+        while(curr != NULL) {
+            colorf = (color_filter_t *)curr->data;
+            //fprintf(stderr, "Checking %s\n" , colorf->filter_name);
+            if ( (!colorf->disabled) &&
+                 (colorf->c_colorfilter != NULL) &&
+                 dfilter_apply_edt(colorf->c_colorfilter, edt)) {
+                //fprintf(stderr, "Matched %s\n" , colorf->filter_name);
+
+                if(num_colorrules_matched < max){
+                    //fprintf(stderr, "Adding %s\n" , colorf->filter_name);
+                    // first then are ___conversation_color_filter___01
+                    // so we need to substract 10
+                    matches[num_colorrules_matched] = rulenum - 10;
+                    num_colorrules_matched++;
+                }
+
+                if (!firstset){
+                    firstset= TRUE;
+                    first = (color_filter_t *)curr->data;
+                }
+
+                //return colorf;
+            }
+            curr = g_slist_next(curr);
+            rulenum++;
+        }
+
+
+    }
+
+    if(firstset){
+        *nummatched = num_colorrules_matched;
+        return first;
+    }
+
+    return NULL;
+}
+
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

@@ -56,6 +56,7 @@
 # define SHARKD_UNIX_SUPPORT
 #endif
 
+# define SHARKD_TCP_SUPPORT
 static int mode;
 static socket_handle_t _server_fd = INVALID_SOCKET;
 

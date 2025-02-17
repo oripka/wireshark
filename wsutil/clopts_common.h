@@ -13,6 +13,7 @@
 #define __CLOPTS_COMMON_H__
 
 #include <wireshark.h>
+#include <wsutil/jsmn.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,6 +69,22 @@ get_nonzero_uint64(const char *string, const char *name);
 
 WS_DLL_PUBLIC double
 get_positive_double(const char *string, const char *name);
+
+
+struct select_item_range
+{
+  bool inclusive;
+  uint32_t first, second;
+};
+
+
+WS_DLL_PUBLIC void parse_add_print_only(const char *buf, const jsmntok_t *tokens, int count);
+WS_DLL_PUBLIC int selected_for_dissect(uint32_t recno);
+WS_DLL_PUBLIC int printonly(uint32_t val);
+WS_DLL_PUBLIC void add_print_only(unsigned int val);
+WS_DLL_PUBLIC void add_string_selection(char * sel);
+WS_DLL_PUBLIC void parse_selected_frames(const char *buf, const jsmntok_t *tokens, int count);
+WS_DLL_PUBLIC void parse_frame_range(const char *buf, const jsmntok_t *tokens, int count, struct select_item_range selections[], size_t maxlen, uint32_t *numselections);
 
 #ifdef __cplusplus
 }
