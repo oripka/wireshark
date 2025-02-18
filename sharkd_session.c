@@ -4537,170 +4537,170 @@ sharkd_session_process_frame_ranges_cb(epan_dissect_t *edt, proto_tree *tree,
 }
 
 
-static void
-sharkd_session_process_frame_ranges_cb2(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data)
-{
-    packet_info *pi = &edt->pi;
-    frame_data *fdata = pi->fd;
-    wtap_block_t pkt_block = NULL;
+// static void
+// sharkd_session_process_frame_ranges_cb2(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data)
+// {
+//     packet_info *pi = &edt->pi;
+//     frame_data *fdata = pi->fd;
+//     wtap_block_t pkt_block = NULL;
 
-    const struct sharkd_frame_request_data * const req_data = (const struct sharkd_frame_request_data * const) data;
-    const gboolean display_hidden = (req_data) ? req_data->display_hidden : FALSE;
+//     const struct sharkd_frame_request_data * const req_data = (const struct sharkd_frame_request_data * const) data;
+//     const gboolean display_hidden = (req_data) ? req_data->display_hidden : FALSE;
 
-    if (fdata->has_modified_block)
-        pkt_block = sharkd_get_modified_block(fdata);
-    else
-        pkt_block = pi->rec->block;
+//     if (fdata->has_modified_block)
+//         pkt_block = sharkd_get_modified_block(fdata);
+//     else
+//         pkt_block = pi->rec->block;
 
-    if (pkt_block)
-    {
-        uint32_t i;
-        uint32_t n;
-        char *comment;
+//     if (pkt_block)
+//     {
+//         uint32_t i;
+//         uint32_t n;
+//         char *comment;
 
-        n = wtap_block_count_option(pkt_block, OPT_COMMENT);
+//         n = wtap_block_count_option(pkt_block, OPT_COMMENT);
 
-        sharkd_json_array_open("comment");
-        for (i = 0; i < n; i++) {
-            if (WTAP_OPTTYPE_SUCCESS == wtap_block_get_nth_string_option_value(pkt_block, OPT_COMMENT, i, &comment)) {
-                sharkd_json_value_string(NULL, comment);
-            }
-        }
-        sharkd_json_array_close();
-    }
+//         sharkd_json_array_open("comment");
+//         for (i = 0; i < n; i++) {
+//             if (WTAP_OPTTYPE_SUCCESS == wtap_block_get_nth_string_option_value(pkt_block, OPT_COMMENT, i, &comment)) {
+//                 sharkd_json_value_string(NULL, comment);
+//             }
+//         }
+//         sharkd_json_array_close();
+//     }
 
-    if (tree)
-    {
-        tvbuff_t **tvbs = NULL;
+//     if (tree)
+//     {
+//         tvbuff_t **tvbs = NULL;
 
-        /* arrayize data src, to speedup searching for ds_tvb index */
-        if (data_src && data_src->next /* only needed if there are more than one data source */)
-        {
-            guint count = g_slist_length((GSList *) data_src);
-            guint i;
+//         /* arrayize data src, to speedup searching for ds_tvb index */
+//         if (data_src && data_src->next /* only needed if there are more than one data source */)
+//         {
+//             guint count = g_slist_length((GSList *) data_src);
+//             guint i;
 
-            tvbs = (tvbuff_t **) g_malloc0((count + 1) * sizeof(*tvbs));
+//             tvbs = (tvbuff_t **) g_malloc0((count + 1) * sizeof(*tvbs));
 
-            for (i = 0; i < count; i++)
-            {
-                const struct data_source *src = (const struct data_source *) g_slist_nth_data((GSList *) data_src, i);
+//             for (i = 0; i < count; i++)
+//             {
+//                 const struct data_source *src = (const struct data_source *) g_slist_nth_data((GSList *) data_src, i);
 
-                tvbs[i] = get_data_source_tvb(src);
-            }
+//                 tvbs[i] = get_data_source_tvb(src);
+//             }
 
-            tvbs[count] = NULL;
-        }
+//             tvbs[count] = NULL;
+//         }
 
-        //sharkd_json_array_open("tree");
-        //sharkd_json_value_anyf("tree", NULL);
-        sharkd_session_process_frame_cb_tree("tree", edt, tree, tvbs, display_hidden);
-        //sharkd_json_array_close();
+//         //sharkd_json_array_open("tree");
+//         //sharkd_json_value_anyf("tree", NULL);
+//         sharkd_session_process_frame_cb_tree("tree", edt, tree, tvbs, display_hidden);
+//         //sharkd_json_array_close();
 
 
-        g_free(tvbs);
-    }
+//         g_free(tvbs);
+//     }
 
-    if (cinfo)
-    {
-        int col;
+//     if (cinfo)
+//     {
+//         int col;
 
-        sharkd_json_array_open("col");
-        for (col = 0; col < cinfo->num_cols; ++col)
-        {
-            const col_item_t *col_item = &cinfo->columns[col];
+//         sharkd_json_array_open("col");
+//         for (col = 0; col < cinfo->num_cols; ++col)
+//         {
+//             const col_item_t *col_item = &cinfo->columns[col];
 
-            sharkd_json_value_string(NULL, col_item->col_data);
-        }
-        sharkd_json_array_close();
-    }
+//             sharkd_json_value_string(NULL, col_item->col_data);
+//         }
+//         sharkd_json_array_close();
+//     }
 
-    if (fdata->ignored)
-        sharkd_json_value_anyf("i", "true");
+//     if (fdata->ignored)
+//         sharkd_json_value_anyf("i", "true");
 
-    if (fdata->marked)
-        sharkd_json_value_anyf("m", "true");
+//     if (fdata->marked)
+//         sharkd_json_value_anyf("m", "true");
 
-    sharkd_json_value_anyf("f", "%u", fdata->num);
+//     sharkd_json_value_anyf("f", "%u", fdata->num);
 
-    if (fdata->color_filter)
-    {
-        sharkd_json_value_stringf("bg", "%x", color_t_to_rgb(&fdata->color_filter->bg_color));
-        sharkd_json_value_stringf("fg", "%x", color_t_to_rgb(&fdata->color_filter->fg_color));
-    }
+//     if (fdata->color_filter)
+//     {
+//         sharkd_json_value_stringf("bg", "%x", color_t_to_rgb(&fdata->color_filter->bg_color));
+//         sharkd_json_value_stringf("fg", "%x", color_t_to_rgb(&fdata->color_filter->fg_color));
+//     }
 
-    if (data_src)
-    {
-        struct data_source *src = (struct data_source *) data_src->data;
-        gboolean ds_open = FALSE;
+//     if (data_src)
+//     {
+//         struct data_source *src = (struct data_source *) data_src->data;
+//         gboolean ds_open = FALSE;
 
-        tvbuff_t *tvb;
-        guint length;
+//         tvbuff_t *tvb;
+//         guint length;
 
-        tvb = get_data_source_tvb(src);
-        length = tvb_captured_length(tvb);
+//         tvb = get_data_source_tvb(src);
+//         length = tvb_captured_length(tvb);
 
-        if (length != 0)
-        {
-            const guchar *cp = tvb_get_ptr(tvb, 0, length);
+//         if (length != 0)
+//         {
+//             const guchar *cp = tvb_get_ptr(tvb, 0, length);
 
-            /* XXX pi.fd->encoding */
-            sharkd_json_value_base64("bytes", cp, length);
-        }
-        else
-        {
-            sharkd_json_value_base64("bytes", "", 0);
-        }
+//             /* XXX pi.fd->encoding */
+//             sharkd_json_value_base64("bytes", cp, length);
+//         }
+//         else
+//         {
+//             sharkd_json_value_base64("bytes", "", 0);
+//         }
 
-        data_src = data_src->next;
-        if (data_src)
-        {
-            sharkd_json_array_open("ds");
-            ds_open = TRUE;
-        }
+//         data_src = data_src->next;
+//         if (data_src)
+//         {
+//             sharkd_json_array_open("ds");
+//             ds_open = TRUE;
+//         }
 
-        while (data_src)
-        {
-            src = (struct data_source *) data_src->data;
+//         while (data_src)
+//         {
+//             src = (struct data_source *) data_src->data;
 
-            json_dumper_begin_object(&dumper);
+//             json_dumper_begin_object(&dumper);
 
-            {
-                char *src_name = get_data_source_name(src);
+//             {
+//                 char *src_name = get_data_source_name(src);
 
-                sharkd_json_value_string("name", src_name);
-                wmem_free(NULL, src_name);
-            }
+//                 sharkd_json_value_string("name", src_name);
+//                 wmem_free(NULL, src_name);
+//             }
 
-            tvb = get_data_source_tvb(src);
-            length = tvb_captured_length(tvb);
+//             tvb = get_data_source_tvb(src);
+//             length = tvb_captured_length(tvb);
 
-            if (length != 0)
-            {
-                const guchar *cp = tvb_get_ptr(tvb, 0, length);
+//             if (length != 0)
+//             {
+//                 const guchar *cp = tvb_get_ptr(tvb, 0, length);
 
-                /* XXX pi.fd->encoding */
-                sharkd_json_value_base64("bytes", cp, length);
-            }
-            else
-            {
-                sharkd_json_value_base64("bytes", "", 0);
-            }
+//                 /* XXX pi.fd->encoding */
+//                 sharkd_json_value_base64("bytes", cp, length);
+//             }
+//             else
+//             {
+//                 sharkd_json_value_base64("bytes", "", 0);
+//             }
 
-            json_dumper_end_object(&dumper);
+//             json_dumper_end_object(&dumper);
 
-            data_src = data_src->next;
-        }
+//             data_src = data_src->next;
+//         }
 
-        /* close ds, only if was opened */
-        if (ds_open)
-            sharkd_json_array_close();
-    }
+//         /* close ds, only if was opened */
+//         if (ds_open)
+//             sharkd_json_array_close();
+//     }
 
-    sharkd_json_array_open("fol");
-    follow_iterate_followers(sharkd_follower_visit_layers_cb, pi);
-    sharkd_json_array_close();
+//     sharkd_json_array_open("fol");
+//     follow_iterate_followers(sharkd_follower_visit_layers_cb, pi);
+//     sharkd_json_array_close();
 
-}
+// }
 
 static void
 sharkd_session_process_frame_cb(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data)
