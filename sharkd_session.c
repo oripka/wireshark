@@ -4410,6 +4410,7 @@ struct sharkd_frame_request_data
     bool display_hidden;
 };
 
+// o3-mini generated, seems to work too
 // static void
 // sharkd_session_process_frame_ranges_cb(epan_dissect_t *edt, proto_tree *tree,
 //                                          struct epan_column_info *cinfo,
