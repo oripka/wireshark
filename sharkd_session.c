@@ -4464,8 +4464,11 @@ sharkd_session_process_frame_ranges_cb(epan_dissect_t *edt, proto_tree *tree, st
             tvbs[count] = NULL;
         }
 
-        sharkd_json_value_anyf("tree", NULL);
+        sharkd_json_object_open("tree");
+        //sharkd_json_value_anyf("tree", NULL);
         sharkd_session_process_frame_cb_tree(NULL, edt, tree, tvbs, display_hidden);
+        sharkd_json_object_close();
+
 
         g_free(tvbs);
     }
